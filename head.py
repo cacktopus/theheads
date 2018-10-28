@@ -8,8 +8,6 @@ import etcd3
 
 from multiprocessing import Pool, Lock
 
-from etcd.etcdserver.api.v3lock.v3lockpb.v3lock_pb2 import LockResponse
-
 stdout_lock = Lock()
 
 hosts = [
@@ -20,8 +18,6 @@ hosts = [
 
 
 def get_lock(args):
-    LockResponse
-
     pid, lockname, t0 = args
 
     def out(*args, **kw):
