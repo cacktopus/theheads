@@ -22,7 +22,13 @@ def value(kv: dict) -> Optional[bytes]:
 
 
 def key(d: dict) -> Optional[bytes]:
+    if d is None:
+        return None
     key = d.get("key")
     if key is None:
         return None
     return d64(key)
+
+
+def null_logger(*args, **kw):
+    pass
