@@ -1,28 +1,14 @@
 import json
-import base64
-from typing import Optional
 
 import requests
 import time
 
-
-def e64(s: bytes) -> str:
-    return base64.b64encode(s).decode()
-
-
-def d64(s: str) -> bytes:
-    return base64.b64decode(s.encode())
-
-
-def value(kv: dict) -> Optional[bytes]:
-    if kv is None:
-        return None
-
-    return base64.b64decode(kv['value'])
+from config import BASE
+from rpc_util import e64, d64, value
 
 
 def get(key: bytes):
-    url = "http://localhost:2379/v3alpha/kv/range"
+    url = BASE + "/kv/range"
     resp = requests.post(
         url=url,
         data=json.dumps({
@@ -48,7 +34,7 @@ def get(key: bytes):
 
 
 def lock(name: bytes, lease: int):
-    url = "http://localhost:2379/v3alpha/lock/lock"
+    url = BASE + "/lock/lock"
     resp = requests.post(
         url=url,
         data=json.dumps({
@@ -62,7 +48,7 @@ def lock(name: bytes, lease: int):
 
 
 def unlock(key: bytes):
-    url = "http://localhost:2379/v3alpha/lock/unlock"
+    url = BASE + "/lock/unlock"
     resp = requests.post(
         url=url,
         data=json.dumps({
