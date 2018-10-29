@@ -6,29 +6,28 @@ from config import BASE
 from rpc_util import EtcdServerError, e64, null_logger
 
 
-def txn(lock_key: bytes, lock_create_revision: int, msg: bytes, log=null_logger):
+def txn(lock_key: bytes, msg_success: bytes, msg_failure: bytes, log=null_logger):
     test = [{
         "key": e64(lock_key),
         "range_end": e64(lock_key + b"\x00"),
-        "create_revision": lock_create_revision,
+        "create_revision": 0,
         "target": "CREATE",
-        "result": "EQUAL",
+        "result": "GREATER",
     }]
 
     success = [{
         "request_put": {
-            "key": e64(b"abc"),
-            "value": e64(msg),
+            "key": e64(b"abc-success"),
+            "value": e64(msg_success),
         }
     }]
 
-    # failure = [{
-    #     "request_put": {
-    #         "key": e64(b"abc"),
-    #         "value": e64(b"I didn't have the lock"),
-    #     }
-    # }]
-    failure = []
+    failure = [{
+        "request_put": {
+            "key": e64(b"abc-failure"),
+            "value": e64(msg_failure),
+        }
+    }]
 
     url = BASE + "/v3beta/kv/txn"
     req = json.dumps({"compare": test, "success": success, "failure": failure, })

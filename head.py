@@ -40,23 +40,22 @@ def get_lock(args):
     out("delay {:.2f}".format(next_tick))
 
     start = int(math.ceil(next_tick))
-    # ttl = random.randint(start, start + 60)
-    target_ttl = {1: 15, 2: 500}[pid]
+    target_ttl = random.randint(start, start + 60)
+    # target_ttl = {1: 15, 2: 500}[pid]
 
     out("getting lease, ttl:", target_ttl)
-    lease_id = grant(target_ttl, pid)['ID']
+    lease_id = grant(target_ttl)['ID']
 
     time.sleep(next_tick)
 
     out("calling lock")
     mylock = lock(lockname, lease_id)
     lock_key = key(mylock)
-    lock_create_revision = mylock['header']['revision']
     out("mylock:", lock_key, json.dumps(mylock))
     read = get(lock_key)
     out("readlock:", key(read), json.dumps(read))
 
-    lease = read.get('lease')
+    lease = (read or {}).get('lease')
     if lease is not None:
         out("ttl", ttl(lease))
 
@@ -64,8 +63,8 @@ def get_lock(args):
         out("attempting txn")
         res = txn(
             lock_key=lock_key,
-            lock_create_revision=lock_create_revision,
-            msg="{:x} Doin' some work with {} at {}".format(pid, lockname, datetime.now()).encode(),
+            msg_success="{:x} Doin' some work with {} at {}".format(pid, lockname, datetime.now()).encode(),
+            msg_failure="{:x} out".format(pid).encode(),
             log=out,
         )
         out(res.keys())
@@ -82,8 +81,8 @@ def main():
     lockname = "lock-{}".format(pid).encode()
     t0 = time.time()
 
-    start = 0x1
-    num = 2
+    start = 0x20
+    num = 10
 
     with Pool(num) as p:
         p.map(get_lock, [(i, lockname, t0) for i in range(start, start + num)])
