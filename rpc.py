@@ -5,7 +5,7 @@ import requests
 import time
 
 from config import BASE
-from lease_rpc import grant, revoke, leases, ttl
+from lease_rpc import grant, revoke, leases, ttl, keepalive
 from rpc_util import e64, d64, value
 
 
@@ -79,13 +79,19 @@ def main():
 
     print(ttl(lease_id))
 
-    mylock = lock(b"mylock7", lease_id)
+    mylock = lock(b"mylock8", lease_id)
     key = d64(mylock['key'])
     print(key)
 
     print("key:", get(key))
 
     print("sleeping")
+    time.sleep(5)
+
+    print("keep alive")
+    keepalive(lease_id)
+
+    print("sleeping, again")
     time.sleep(30)
 
     print("unlocking")

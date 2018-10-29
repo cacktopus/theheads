@@ -86,3 +86,25 @@ def leases():
         raise EtcdServerError(err)
 
     return msg
+
+
+def keepalive(lease_id: str):
+    assert isinstance(lease_id, str)
+    int(lease_id)
+
+    url = BASE + "/v3beta/lease/keepalive"
+    resp = requests.post(
+        url=url,
+        data=json.dumps({
+            "ID": lease_id,
+        })
+    )
+    print(resp.status_code)
+    print(resp.text)
+
+    msg = json.loads(resp.text)
+    err = msg.get('error')
+    if err is not None:
+        raise EtcdServerError(err)
+
+    return msg
