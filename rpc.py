@@ -39,7 +39,7 @@ def lock(name: bytes, lease: int):
         url=url,
         data=json.dumps({
             "name": e64(name),
-            lease: lease,
+            "lease": lease,
         })
     )
     print(resp.status_code)
@@ -67,7 +67,7 @@ def main():
     result = value(get(b"foo\x00"))
     print(result)
 
-    mylock = lock(b"mylock5", 1)
+    mylock = lock(b"mylock6", 0)
     key = d64(mylock['key'])
     print(key)
 
