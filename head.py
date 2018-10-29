@@ -1,4 +1,6 @@
 import base64
+import json
+import math
 import os
 import random
 import sys
@@ -26,7 +28,7 @@ def get_lock(args):
     def out(*args, **kw):
         t = time.time() - t0
         with stdout_lock:
-            print("{} | {:>6.2f} |".format(pid, t), *args, **kw)
+            print("{:x} | {:>6.2f} |".format(pid, t), *args, **kw)
             sys.stdout.flush()
 
     host = random.choice(hosts)
@@ -39,16 +41,18 @@ def get_lock(args):
     next_tick = 15 - (time.time() % 15)
     out("delay {:.2f}".format(next_tick))
 
-    time.sleep(next_tick)
-
+    start = int(math.ceil(next_tick))
+    ttl = random.randint(start, start + 30)
     # lock = conn.lock(lockname, ttl=10)
 
-    ttl = random.randint(10, 120)
     out("getting lease, ttl:", ttl)
-    lease_id = grant(ttl)['ID']
+    lease_id = grant(ttl, pid)['ID']
+
+    time.sleep(next_tick)
 
     out("calling lock")
-    lock(lockname, lease_id)
+    mylock = lock(lockname, lease_id)
+    out("mylock:", json.dumps(mylock))
 
     # out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
     #     lock.is_acquired(),
@@ -63,7 +67,7 @@ def get_lock(args):
 
     # out(" - I GOT THE LOCK - " if acquired else "I didn't get the lock")
 
-    out("I'm here")
+    out("I'm here:", ttl)
 
     # out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
     #     lock.is_acquired(),
@@ -79,8 +83,11 @@ def main():
     lockname = "lock-{}".format(pid).encode()
     t0 = time.time()
 
-    with Pool(5) as p:
-        p.map(get_lock, [(i, lockname, t0) for i in range(5)])
+    start = 0x20
+    num = 10
+
+    with Pool(num) as p:
+        p.map(get_lock, [(i, lockname, t0) for i in range(start, start + num)])
 
 
 if __name__ == '__main__':

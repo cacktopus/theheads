@@ -16,8 +16,7 @@ def grant(ttl: int, lease_id: Optional[int] = 0):
             "ID": lease_id
         })
     )
-    print(resp.status_code)
-    print(resp.text)
+    assert resp.status_code == 200  # TODO
 
     msg = json.loads(resp.text)
     err = msg.get('error')
@@ -38,8 +37,7 @@ def ttl(lease_id: str):
             "ID": lease_id,
         })
     )
-    print(resp.status_code)
-    print(resp.text)
+    assert resp.status_code == 200  # TODO
 
     msg = json.loads(resp.text)
     err = msg.get('error')
@@ -60,8 +58,7 @@ def revoke(lease_id: str):
             "ID": lease_id,
         })
     )
-    print(resp.status_code)
-    print(resp.text)
+    assert resp.status_code == 200  # TODO
 
     msg = json.loads(resp.text)
     err = msg.get('error')
@@ -77,8 +74,7 @@ def leases():
         url=url,
         data=json.dumps({})
     )
-    print(resp.status_code)
-    print(resp.text)
+    assert resp.status_code == 200  # TODO
 
     msg = json.loads(resp.text)
     err = msg.get('error')
@@ -99,8 +95,7 @@ def keepalive(lease_id: str):
             "ID": lease_id,
         })
     )
-    print(resp.status_code)
-    print(resp.text)
+    assert resp.status_code == 200  # TODO
 
     msg = json.loads(resp.text)
     err = msg.get('error')
