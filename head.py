@@ -4,9 +4,12 @@ import random
 import sys
 import time
 
-import etcd3
+# import etcd3
 
 from multiprocessing import Pool, Lock
+
+from lease_rpc import grant
+from rpc import lock
 
 stdout_lock = Lock()
 
@@ -29,7 +32,7 @@ def get_lock(args):
     host = random.choice(hosts)
     out("start", host)
 
-    conn = etcd3.Etcd3Client(host=host)
+    # conn = etcd3.Etcd3Client(host=host)
 
     out("connected")
 
@@ -38,37 +41,42 @@ def get_lock(args):
 
     time.sleep(next_tick)
 
+    # lock = conn.lock(lockname, ttl=10)
+
+    ttl = random.randint(10, 120)
+    out("getting lease, ttl:", ttl)
+    lease_id = grant(ttl)['ID']
+
     out("calling lock")
-    lock = conn.lock(lockname, ttl=10)
+    lock(lockname, lease_id)
 
-    out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
-        lock.is_acquired(),
-        lock.name,
-        lock.key,
-        base64.b64encode(lock.uuid),
-        lock.ttl,
-    ))
+    # out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
+    #     lock.is_acquired(),
+    #     lock.name,
+    #     lock.key,
+    #     base64.b64encode(lock.uuid),
+    #     lock.ttl,
+    # ))
 
-    out("acquiring")
-    acquired = lock.acquire()
+    # out("acquiring")
+    # acquired = lock.acquire()
 
-    out(" - I GOT THE LOCK - " if acquired else "I didn't get the lock")
+    # out(" - I GOT THE LOCK - " if acquired else "I didn't get the lock")
 
-    out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
-        lock.is_acquired(),
-        lock.name,
-        lock.key,
-        base64.b64encode(lock.uuid),
-        lock.ttl,
-    ))
+    out("I'm here")
 
-    out("sleeping")
-    time.sleep(120)
+    # out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
+    #     lock.is_acquired(),
+    #     lock.name,
+    #     lock.key,
+    #     base64.b64encode(lock.uuid),
+    #     lock.ttl,
+    # ))
 
 
 def main():
     pid = os.getpid()
-    lockname = "lock-{}".format(pid)
+    lockname = "lock-{}".format(pid).encode()
     t0 = time.time()
 
     with Pool(5) as p:
