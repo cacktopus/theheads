@@ -35,9 +35,12 @@ def get(key: bytes):
         raise RuntimeError("Unexpected number of results")
 
 
-def lock(name: bytes, lease: Optional[int] = None):
+def lock(name: bytes, lease: Optional[int] = 0):
     url = BASE + "/lock/lock"
-    data = json.dumps({"name": e64(name)})
+    data = json.dumps({
+        "name": e64(name),
+        "lease": lease,
+    })
 
     if lease is not None:
         data["lease"] = lease
@@ -71,7 +74,7 @@ def main():
     result = value(get(b"foo\x00"))
     print(result)
 
-    lease_id = grant(120, 2 ** 63 - 1)['ID']
+    lease_id = grant(120)['ID']
 
     mylock = lock(b"mylock6", lease_id)
     key = d64(mylock['key'])
