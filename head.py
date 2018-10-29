@@ -12,6 +12,7 @@ from multiprocessing import Pool, Lock
 
 from lease_rpc import grant
 from rpc import lock
+from txn_rpc import txn
 
 stdout_lock = Lock()
 
@@ -38,11 +39,11 @@ def get_lock(args):
 
     out("connected")
 
-    next_tick = 15 - (time.time() % 15)
+    next_tick = 1 - (time.time() % 1)
     out("delay {:.2f}".format(next_tick))
 
     start = int(math.ceil(next_tick))
-    ttl = random.randint(start, start + 30)
+    ttl = random.randint(start, start + 60)
     # lock = conn.lock(lockname, ttl=10)
 
     out("getting lease, ttl:", ttl)
@@ -53,6 +54,9 @@ def get_lock(args):
     out("calling lock")
     mylock = lock(lockname, lease_id)
     out("mylock:", json.dumps(mylock))
+
+    res = txn()
+    print(res)
 
     # out("lock: acquired={}, name={}, key={}, uuid={}, ttl={}".format(
     #     lock.is_acquired(),
@@ -83,8 +87,8 @@ def main():
     lockname = "lock-{}".format(pid).encode()
     t0 = time.time()
 
-    start = 0x20
-    num = 10
+    start = 0x00
+    num = 1
 
     with Pool(num) as p:
         p.map(get_lock, [(i, lockname, t0) for i in range(start, start + num)])
