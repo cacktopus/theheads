@@ -1,9 +1,11 @@
 import json
+from typing import Optional
 
 import requests
 import time
 
 from config import BASE
+from lease_rpc import grant
 from rpc_util import e64, d64, value
 
 
@@ -33,14 +35,16 @@ def get(key: bytes):
         raise RuntimeError("Unexpected number of results")
 
 
-def lock(name: bytes, lease: int):
+def lock(name: bytes, lease: Optional[int] = None):
     url = BASE + "/lock/lock"
+    data = json.dumps({"name": e64(name)})
+
+    if lease is not None:
+        data["lease"] = lease
+
     resp = requests.post(
         url=url,
-        data=json.dumps({
-            "name": e64(name),
-            "lease": lease,
-        })
+        data=data
     )
     print(resp.status_code)
     print(resp.text)
@@ -67,7 +71,9 @@ def main():
     result = value(get(b"foo\x00"))
     print(result)
 
-    mylock = lock(b"mylock6", 0)
+    lease_id = grant(120, 2 ** 63 - 1)['ID']
+
+    mylock = lock(b"mylock6", lease_id)
     key = d64(mylock['key'])
     print(key)
 

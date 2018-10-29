@@ -2,6 +2,10 @@ import base64
 from typing import Optional
 
 
+class EtcdServerError(RuntimeError):
+    pass
+
+
 def e64(s: bytes) -> str:
     return base64.b64encode(s).decode()
 

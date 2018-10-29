@@ -3,6 +3,7 @@ import json
 import requests
 
 from config import BASE
+from rpc_util import EtcdServerError
 
 
 def grant(ttl: int, lease_id: int):
@@ -16,4 +17,10 @@ def grant(ttl: int, lease_id: int):
     )
     print(resp.status_code)
     print(resp.text)
-    return json.loads(resp.text)
+
+    msg = json.loads(resp.text)
+    err = msg.get('error')
+    if err is not None:
+        raise EtcdServerError(err)
+
+    return msg
