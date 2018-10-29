@@ -42,9 +42,6 @@ def lock(name: bytes, lease: Optional[int] = 0):
         "lease": lease,
     })
 
-    if lease is not None:
-        data["lease"] = lease
-
     resp = requests.post(
         url=url,
         data=data
