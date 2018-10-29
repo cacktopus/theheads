@@ -5,12 +5,12 @@ import requests
 import time
 
 from config import BASE
-from lease_rpc import grant
+from lease_rpc import grant, revoke, leases, ttl
 from rpc_util import e64, d64, value
 
 
 def get(key: bytes):
-    url = BASE + "/kv/range"
+    url = BASE + "/v3beta/kv/range"
     resp = requests.post(
         url=url,
         data=json.dumps({
@@ -36,7 +36,7 @@ def get(key: bytes):
 
 
 def lock(name: bytes, lease: Optional[int] = 0):
-    url = BASE + "/lock/lock"
+    url = BASE + "/v3alpha/lock/lock"
     data = json.dumps({
         "name": e64(name),
         "lease": lease,
@@ -73,7 +73,13 @@ def main():
 
     lease_id = grant(120)['ID']
 
-    mylock = lock(b"mylock6", lease_id)
+    leases()
+
+    print(lease_id)
+
+    print(ttl(lease_id))
+
+    mylock = lock(b"mylock7", lease_id)
     key = d64(mylock['key'])
     print(key)
 
@@ -83,7 +89,7 @@ def main():
     time.sleep(30)
 
     print("unlocking")
-    unlock(key)
+    revoke(lease_id)
 
     print("unlocked?")
 
