@@ -19,3 +19,10 @@ def value(kv: dict) -> Optional[bytes]:
         return None
 
     return base64.b64decode(kv['value'])
+
+
+def key(d: dict) -> Optional[bytes]:
+    key = d.get("key")
+    if key is None:
+        return None
+    return d64(key)

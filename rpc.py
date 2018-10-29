@@ -46,8 +46,6 @@ def lock(name: bytes, lease: Optional[int] = 0):
         url=url,
         data=data
     )
-    print(resp.status_code)
-    print(resp.text)
     return json.loads(resp.text)
 
 
@@ -59,8 +57,6 @@ def unlock(key: bytes):
             "key": e64(key),
         })
     )
-    print(resp.status_code)
-    print(resp.text)
     return json.loads(resp.text)
 
 
