@@ -14,6 +14,8 @@ NUM_STEPS = 200
 
 DEFAULT_SPEED = 50
 
+directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
+
 
 @app.route('/forward/<steps>')
 def index(steps):
@@ -22,11 +24,11 @@ def index(steps):
     speed = float(request.params.get("speed") or DEFAULT_SPEED)
 
     steps = int(steps)
-    direction = MotorHAT.FORWARD if steps >= 0 else MotorHAT.BACKWARD
+    direction = 1 if steps >= 0 else -1
     steps = abs(steps)
     for i in range(steps):
-        pos += 1
-        stepper.oneStep(direction, MotorHAT.DOUBLE)
+        pos += direction
+        stepper.oneStep(directions[direction], MotorHAT.DOUBLE)
         time.sleep(1 / speed)
     return template('Hello {{steps}}\n', steps=steps)
 
@@ -35,15 +37,21 @@ def index(steps):
 def index(target):
     global pos
 
+    target = int(target)
+
     speed = float(request.params.get("speed") or DEFAULT_SPEED)
     print(speed)
 
-    target = int(target) % NUM_STEPS
-    delta = (target - pos) % NUM_STEPS
+    options = [
+        ((target - pos) % NUM_STEPS, 1),
+        ((pos - target) % NUM_STEPS, -1),
+    ]
 
-    for i in range(delta):
-        pos += 1
-        stepper.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
+    steps, direction = min(options)
+
+    for i in range(steps):
+        pos += direction
+        stepper.oneStep(directions[direction], MotorHAT.DOUBLE)
         time.sleep(1 / speed)
     return template('at {{pos}}\n', pos=pos)
 
