@@ -1,25 +1,25 @@
-import atexit
 import sys
 import time
 
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
+from bottle import run, template, Bottle
+
+from motors import setup
+
+app = Bottle()
+stepper = setup()
 
 
-def main():
-    mh = MotorHAT()
+@app.route('/forward/<steps>')
+def index(steps):
+    steps = int(steps)
+    for i in range(steps):
+        stepper.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
+    return template('Hello {{steps}}', steps=steps)
 
-    # recommended for auto-disabling motors on shutdown!
-    def turn_off_motors():
-        mh.getMotor(1).run(MotorHAT.RELEASE)
-        mh.getMotor(2).run(MotorHAT.RELEASE)
-        mh.getMotor(3).run(MotorHAT.RELEASE)
-        mh.getMotor(4).run(MotorHAT.RELEASE)
 
-    atexit.register(turn_off_motors)
-
-    stepper = mh.getStepper(200, 1)
-    # stepper.setSpeed(30)
-
+def console_fun():
+    stepper = setup()
     steps = int(sys.argv[1])
 
     direction = MotorHAT.FORWARD if steps >= 0 else MotorHAT.BACKWARD
@@ -35,6 +35,10 @@ def main():
             stepper.oneStep(MotorHAT.BACKWARD, MotorHAT.DOUBLE)
             # stepper.oneStep(MotorHAT.BACKWARD, MotorHAT.SINGLE)
             time.sleep(0.01)
+
+
+def main():
+    run(app, host='0.0.0.0', port=8080)
 
 
 if __name__ == '__main__':
