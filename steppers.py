@@ -8,14 +8,31 @@ from motors import setup
 
 app = Bottle()
 stepper = setup()
+pos = 0
+
+NUM_STEPS = 200
 
 
 @app.route('/forward/<steps>')
 def index(steps):
+    global pos
     steps = int(steps)
     for i in range(steps):
+        pos += 1
         stepper.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
     return template('Hello {{steps}}', steps=steps)
+
+
+@app.route('/position/<target>')
+def index(target):
+    global pos
+    target = int(target) % NUM_STEPS
+    delta = (target - pos) % NUM_STEPS
+
+    for i in range(delta):
+        pos += 1
+        stepper.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
+    return template('at {{pos}}', pos=pos)
 
 
 def console_fun():
