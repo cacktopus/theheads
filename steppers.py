@@ -5,61 +5,59 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from bottle import run, template, Bottle, request
 
 from motors import setup
+from threading import Thread
 
 app = Bottle()
-stepper = setup()
-pos = 0
 
 NUM_STEPS = 200
-
 DEFAULT_SPEED = 50
-
 directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
 
 
-@app.route('/forward/<steps>')
-def index(steps):
-    global pos
+class Stepper:
+    def __init__(self):
+        self._pos = 0
+        self._target = 0
+        self._motor = setup()
+        self._speed = DEFAULT_SPEED
 
-    speed = float(request.params.get("speed") or DEFAULT_SPEED)
+    def set_target(self, target: int):
+        self._target = target
 
-    steps = int(steps)
-    direction = 1 if steps >= 0 else -1
-    steps = abs(steps)
-    for i in range(steps):
-        pos += direction
-        stepper.oneStep(directions[direction], MotorHAT.DOUBLE)
-        time.sleep(1 / speed)
-    return template('Hello {{steps}}\n', steps=steps)
+    def set_speed(self, speed: float):
+        self._speed = speed
+
+    def seek(self):
+        while True:
+            options = [
+                ((self._target - self._pos) % NUM_STEPS, 1),
+                ((self._pos - self._target) % NUM_STEPS, -1),
+            ]
+
+            steps, direction = min(options)
+
+            if steps > 0:
+                self._pos += direction
+                self._pos %= NUM_STEPS
+                self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
+
+            time.sleep(1.0 / self._speed)
+
+
+stepper = Stepper()
 
 
 @app.route('/position/<target>')
 def index(target):
-    global pos
-
     target = int(target)
+    speed = request.params.get("speed")
+    speed = float(speed) if speed else None
 
-    speed = float(request.params.get("speed") or DEFAULT_SPEED)
-    print(speed)
+    stepper.set_target(target)
+    if speed is not None:
+        stepper.set_speed(speed)
 
-    options = [
-        ((target - pos) % NUM_STEPS, 1),
-        ((pos - target) % NUM_STEPS, -1),
-    ]
-
-    steps, direction = min(options)
-
-    for i in range(steps):
-        pos += direction
-        stepper.oneStep(directions[direction], MotorHAT.DOUBLE)
-        time.sleep(1 / speed)
-    return template('at {{pos}}\n', pos=pos)
-
-
-@app.route('/zero')
-def index():
-    global pos
-    pos = 0
+    return template('OK\n')
 
 
 def console_fun():
@@ -82,6 +80,9 @@ def console_fun():
 
 
 def main():
+    t = Thread(target=stepper.seek, daemon=True)
+    t.start()
+
     run(app, host='0.0.0.0', port=8080, reloader=True)
 
 
