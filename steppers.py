@@ -21,6 +21,10 @@ class Stepper:
         self._motor = setup()
         self._speed = DEFAULT_SPEED
 
+    def zero(self):
+        self._pos = 0
+        self._target = 0
+
     def set_target(self, target: int):
         self._target = target
 
@@ -56,6 +60,13 @@ def index(target):
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
+
+    return template('OK\n')
+
+
+@app.route('/zero')
+def index():
+    stepper.zero()
 
     return template('OK\n')
 
