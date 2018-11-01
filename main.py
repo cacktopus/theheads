@@ -1,4 +1,5 @@
 import numpy as np
+import requests
 import cv2
 import time
 
@@ -10,10 +11,12 @@ MIN_AREA = 500 * 4
 NUM_FRAMES = 10
 frame_times = []
 
+SCALE = 20
+
 avg = None
 
 # warmup
-for i in range(25):
+for i in range(5):
     ret, frame = cap.read()
 
 do_dilate = True
@@ -22,6 +25,7 @@ while True:
     fps = 0
     ret, frame = cap.read()
     frame = cv2.flip(frame, 1)
+    height, width, channels = frame.shape
 
     # Our operations on the frame come here
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -45,22 +49,44 @@ while True:
 
     countours = [c for c in countours if cv2.contourArea(c) > MIN_AREA]
 
+    if countours:
+        _, track = max((cv2.contourArea(c), c) for c in countours)
+    else:
+        track = None
+
     ############################ draw `show` ##############################
     # show = avg.astype("uint8")
     show = frame
 
-    for c in countours:
-        (x, y, w, h) = cv2.boundingRect(c)
+    if track is not None:
+        (x, y, w, h) = cv2.boundingRect(track)
         cv2.rectangle(show, (x, y), (x + w, y + h), (128, 128, 128), 2)
+
+        pos = x + w // 2
+        cv2.line(show, (pos, y), (pos, y + h), (128, 128, 128), 2)
+
+        half = width / 2
+        pos2 = int(SCALE * ((pos - half) / half))
+        requests.get(
+            url="http://rpi3-04:8080/position/{}?speed=1000".format(pos2)
+        )
+
+    else:
+        pos = None
+        pos2 = None
 
     if len(frame_times) > NUM_FRAMES:
         frames = frame_times[-NUM_FRAMES:]
         fps = (len(frames) - 1) / (frames[-1] - frames[0])
 
-    text = "FPS: [{:.1f}] Dilate: [{}] Contours: [{}]".format(
+
+    text = "FPS: [{:.1f}] Dilate: [{}] Contours: [{}], Pos: [{}], Pos2: [{}], Width: [{}]".format(
         fps,
         int(do_dilate),
         len(countours),
+        pos,
+        pos2,
+        width,
     )
 
     cv2.putText(show, text, (11, 21),
