@@ -1,7 +1,7 @@
-import numpy as np
-import requests
-import cv2
 import time
+
+import cv2
+import requests
 
 cap = cv2.VideoCapture(0)
 # cap.set(3, 320)
@@ -11,7 +11,7 @@ MIN_AREA = 500 * 4
 NUM_FRAMES = 10
 frame_times = []
 
-SCALE = 20
+SCALE = 25
 
 avg = None
 
