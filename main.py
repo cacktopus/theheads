@@ -6,6 +6,7 @@ cap = cv2.VideoCapture(0)
 # cap.set(3, 320)
 # cap.set(4, 240)
 
+MIN_AREA = 500
 NUM_FRAMES = 10
 frame_times = []
 
@@ -37,14 +38,28 @@ while True:
     if do_dilate:
         thresh = cv2.dilate(thresh, None, iterations=2)
 
+    _, countours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
+
+    countours = [c for c in countours if cv2.contourArea(c) < MIN_AREA]
+
     show = thresh
+
+    for c in countours:
+        (x, y, w, h) = cv2.boundingRect(c)
+        cv2.rectangle(show, (x, y), (x + w, y + h), (128, 128, 128), 2)
 
     # draw `show`
     if len(frame_times) > NUM_FRAMES:
         frames = frame_times[-NUM_FRAMES:]
         fps = (len(frames) - 1) / (frames[-1] - frames[0])
 
-    text = "FPS: [{:.1f}] Dilate: [{}]".format(fps, int(do_dilate))
+    text = "FPS: [{:.1f}] Dilate: [{}] Contours: [{}]".format(
+        fps,
+        int(do_dilate),
+        len(countours),
+    )
+
     cv2.putText(show, text, (11, 21),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
