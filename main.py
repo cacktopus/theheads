@@ -6,7 +6,7 @@ cap = cv2.VideoCapture(0)
 # cap.set(3, 320)
 # cap.set(4, 240)
 
-MIN_AREA = 500
+MIN_AREA = 500 * 4
 NUM_FRAMES = 10
 frame_times = []
 
@@ -18,16 +18,15 @@ for i in range(25):
 
 do_dilate = True
 
-
 while True:
     fps = 0
     ret, frame = cap.read()
+    frame = cv2.flip(frame, 1)
 
     # Our operations on the frame come here
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # gray = frame
-    gray = cv2.GaussianBlur(gray, (101, 101), 0)
-    gray = cv2.flip(gray, 1)
+    gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
     if avg is None:
         avg = gray.copy().astype("float32")
@@ -36,7 +35,7 @@ while True:
     cv2.accumulateWeighted(gray, avg, 0.4)
 
     frame_delta = cv2.absdiff(gray, cv2.convertScaleAbs(avg))
-    thresh = cv2.threshold(frame_delta, 10, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.threshold(frame_delta, 20, 255, cv2.THRESH_BINARY)[1]
 
     if do_dilate:
         thresh = cv2.dilate(thresh, None, iterations=2)
@@ -46,13 +45,14 @@ while True:
 
     countours = [c for c in countours if cv2.contourArea(c) > MIN_AREA]
 
-    show = thresh
+    ############################ draw `show` ##############################
+    # show = avg.astype("uint8")
+    show = frame
 
     for c in countours:
         (x, y, w, h) = cv2.boundingRect(c)
         cv2.rectangle(show, (x, y), (x + w, y + h), (128, 128, 128), 2)
 
-    # draw `show`
     if len(frame_times) > NUM_FRAMES:
         frames = frame_times[-NUM_FRAMES:]
         fps = (len(frames) - 1) / (frames[-1] - frames[0])
