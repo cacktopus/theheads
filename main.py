@@ -10,13 +10,14 @@ MIN_AREA = 500
 NUM_FRAMES = 10
 frame_times = []
 
-first_frame = None
+avg = None
 
 # warmup
 for i in range(25):
     ret, frame = cap.read()
 
 do_dilate = True
+
 
 while True:
     fps = 0
@@ -25,15 +26,17 @@ while True:
     # Our operations on the frame come here
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # gray = frame
-    gray = cv2.GaussianBlur(gray, (31, 31), 0)
+    gray = cv2.GaussianBlur(gray, (101, 101), 0)
     gray = cv2.flip(gray, 1)
 
-    if first_frame is None:
-        first_frame = gray
+    if avg is None:
+        avg = gray.copy().astype("float32")
         continue
 
-    frame_delta = cv2.absdiff(first_frame, gray)
-    thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
+    cv2.accumulateWeighted(gray, avg, 0.4)
+
+    frame_delta = cv2.absdiff(gray, cv2.convertScaleAbs(avg))
+    thresh = cv2.threshold(frame_delta, 10, 255, cv2.THRESH_BINARY)[1]
 
     if do_dilate:
         thresh = cv2.dilate(thresh, None, iterations=2)
@@ -41,7 +44,7 @@ while True:
     _, countours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                                        cv2.CHAIN_APPROX_SIMPLE)
 
-    countours = [c for c in countours if cv2.contourArea(c) < MIN_AREA]
+    countours = [c for c in countours if cv2.contourArea(c) > MIN_AREA]
 
     show = thresh
 
