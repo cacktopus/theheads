@@ -1,0 +1,6 @@
+Adafruit-GPIO==1.0.3
+Adafruit-MotorHAT==1.4.0
+Adafruit-PureIO==0.2.3
+bottle==0.12.13
+pkg-resources==0.0.0
+spidev==3.2
