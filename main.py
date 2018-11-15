@@ -114,7 +114,7 @@ def position_head():
     while True:
         pos = q.get()
         requests.get(
-            url="http://192.168.1.30:8080/position/{}?speed=1000".format(pos)
+            url="http://192.168.42.30:8080/position/{}?speed=1000".format(pos)
         )
 
 
