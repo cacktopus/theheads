@@ -34,7 +34,15 @@ def motion_detect(cap):
 
     do_dilate = True
 
+    t0 = None
     while True:
+        if t0:
+            t1 = time.time()
+            dt = t1 - t0
+            t0 = t1
+            print(1/dt)
+        else:
+            t0 = time.time()
         fps = 0
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
@@ -98,6 +106,7 @@ def motion_detect(cap):
             pos2,
             width,
         )
+        print(text)
 
         cv2.putText(show, text, (11, 21),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
@@ -106,7 +115,7 @@ def motion_detect(cap):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Display the resulting frame
-        # cv2.imshow('frame', show)
+        cv2.imshow('frame', show)
 
         key = cv2.waitKey(1) & 0xFF
         if key in (ord('q'), 27):
