@@ -1,0 +1,11 @@
+Adafruit-GPIO==1.0.3
+Adafruit-MotorHAT==1.4.0
+Adafruit-PureIO==0.2.3
+bottle==0.12.13
+certifi==2018.10.15
+chardet==3.0.4
+idna==2.7
+numpy==1.15.4
+opencv-contrib-python==3.4.3.18
+requests==2.20.1
+urllib3==1.24.1
