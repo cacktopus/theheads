@@ -1,9 +1,15 @@
+from flask import Flask
+from werkzeug.serving import run_simple
+
+from werkzeug.wsgi import DispatcherMiddleware
+from prometheus_client import make_wsgi_app
+
+import queue
+import threading
 import time
 
 import cv2
 import requests
-import threading
-import queue
 
 MIN_AREA = 500 * 4
 NUM_FRAMES = 10
@@ -11,6 +17,8 @@ NUM_FRAMES = 10
 SCALE = 22.5
 
 q = queue.Queue()
+
+app = Flask(__name__)
 
 
 def motion_detect(cap):
@@ -98,7 +106,7 @@ def motion_detect(cap):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Display the resulting frame
-        cv2.imshow('frame', show)
+        # cv2.imshow('frame', show)
 
         key = cv2.waitKey(1) & 0xFF
         if key in (ord('q'), 27):
@@ -118,9 +126,21 @@ def position_head():
         )
 
 
+def run_webserver():
+    app_dispatch = DispatcherMiddleware(app, {
+        '/metrics': make_wsgi_app()
+    })
+
+    run_simple('0.0.0.0', 5000, app_dispatch,
+               use_reloader=False, use_debugger=True)
+
+
 def main():
-    t = threading.Thread(target=position_head, daemon=True)
-    t.start()
+    t0 = threading.Thread(target=run_webserver, daemon=True)
+    t0.start()
+
+    t1 = threading.Thread(target=position_head, daemon=True)
+    t1.start()
 
     cap = cv2.VideoCapture(0)
 
