@@ -1,3 +1,12 @@
+import prometheus_client
+from flask import Flask
+from werkzeug.serving import run_simple
+
+from werkzeug.wsgi import DispatcherMiddleware
+from prometheus_client import make_wsgi_app, Summary
+
+import queue
+import threading
 import queue
 import threading
 import time
@@ -18,6 +27,14 @@ HEIGHT = 480
 RATE = 25
 
 q = queue.Queue()
+
+app = Flask(__name__)
+
+FPS = prometheus_client.Gauge(
+    'heads_camera_fps',
+    "Camera frames per second",
+    ["env"]
+)
 
 converter = Popen([
     'ffmpeg',
@@ -61,7 +78,15 @@ def motion_detect(cap):
     t1 = threading.Thread(target=broadcast_thread, args=[converter, ws], daemon=True)
     t1.start()
 
+    t0 = None
     while True:
+        # with 0:
+        if t0:
+            t1 = time.time()
+            dt = t1 - t0
+            t0 = t1
+        else:
+            t0 = time.time()
         fps = 0
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
@@ -119,6 +144,7 @@ def motion_detect(cap):
         if len(frame_times) > NUM_FRAMES:
             frames = frame_times[-NUM_FRAMES:]
             fps = (len(frames) - 1) / (frames[-1] - frames[0])
+            FPS.labels("dev").set(fps)
 
         text = "FPS: [{:.1f}] Dilate: [{}] Contours: [{}], Pos: [{}], Pos2: [{}], Width: [{}]".format(
             fps,
@@ -128,6 +154,7 @@ def motion_detect(cap):
             pos2,
             width,
         )
+        print(text)
 
         cv2.putText(show, text, (11, 21),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
@@ -136,7 +163,7 @@ def motion_detect(cap):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Display the resulting frame
-        cv2.imshow('frame', show)
+        # cv2.imshow('frame', show)
 
         key = cv2.waitKey(1) & 0xFF
         if key in (ord('q'), 27):
@@ -152,13 +179,25 @@ def position_head():
     while True:
         pos = q.get()
         requests.get(
-            url="http://192.168.42.30:8080/position/{}?speed=40".format(pos)
+            url="http://192.168.42.30:8080/position/{}?speed=25".format(pos)
         )
 
 
+def run_webserver():
+    app_dispatch = DispatcherMiddleware(app, {
+        '/metrics': make_wsgi_app()
+    })
+
+    run_simple('0.0.0.0', 5000, app_dispatch,
+               use_reloader=False, use_debugger=True)
+
+
 def main():
-    t = threading.Thread(target=position_head, daemon=True)
-    t.start()
+    t0 = threading.Thread(target=run_webserver, daemon=True)
+    t0.start()
+
+    t1 = threading.Thread(target=position_head, daemon=True)
+    t1.start()
 
     cap = cv2.VideoCapture(0)
 
