@@ -22,7 +22,7 @@ q = queue.Queue()
 app = Flask(__name__)
 
 FPS = prometheus_client.Gauge(
-    'fps',
+    'heads_camera_fps',
     "Camera frames per second",
     ["env"]
 )
@@ -123,7 +123,7 @@ def motion_detect(cap):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Display the resulting frame
-        cv2.imshow('frame', show)
+        # cv2.imshow('frame', show)
 
         key = cv2.waitKey(1) & 0xFF
         if key in (ord('q'), 27):
