@@ -6,6 +6,8 @@ from subprocess import Popen, PIPE
 import cv2
 import requests
 
+from ws import websocket_server, broadcast_thread
+
 MIN_AREA = 500 * 4
 NUM_FRAMES = 10
 
@@ -27,7 +29,7 @@ converter = Popen([
     '-f', 'mpegts',
     '-b:v', '800k',
     '-codec:v', 'mpeg1video',
-    'file.ts',
+    '-',
 ],
     stdin=PIPE,
     stdout=PIPE,
@@ -49,6 +51,15 @@ def motion_detect(cap):
         ret, frame = cap.read()
 
     do_dilate = True
+
+    print("running websocket")
+    ws = websocket_server()
+    t0 = threading.Thread(target=ws.serve_forever, daemon=True)
+    t0.start()
+
+    print("running broadcaster")
+    t1 = threading.Thread(target=broadcast_thread, args=[converter, ws], daemon=True)
+    t1.start()
 
     while True:
         fps = 0

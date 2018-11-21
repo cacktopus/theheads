@@ -19,16 +19,20 @@ class StreamingWebSocket(WebSocket):
         self.send(JSMPEG_HEADER.pack(JSMPEG_MAGIC, WIDTH, HEIGHT), binary=True)
 
 
-def broadcast_thread(server):
-    with open("sock", "rb") as fp:
+def broadcast_thread(converter, websocket_server):
+    try:
         while True:
-            dat = fp.read(64)
-            # print("read", len(dat))
-            if dat:
-                server.manager.broadcast(dat, binary=True)
+            buf = converter.stdout.read1(32768)
+            print("read", len(buf))
+            if buf:
+                websocket_server.manager.broadcast(buf, binary=True)
+            elif converter.poll() is not None:
+                break
+    finally:
+        converter.stdout.close()
 
 
-def main():
+def websocket_server():
     WebSocketWSGIHandler.http_version = '1.1'
     server = make_server(
         '',
@@ -41,11 +45,16 @@ def main():
         )
     )
     server.initialize_websockets_manager()
+    return server
 
-    t0 = threading.Thread(target=server.serve_forever, daemon=True)
+
+def main():
+    ws = websocket_server()
+
+    t0 = threading.Thread(target=ws.serve_forever, daemon=True)
     t0.start()
 
-    t1 = threading.Thread(target=broadcast_thread, args=[server], daemon=True)
+    t1 = threading.Thread(target=broadcast_thread, args=[ws], daemon=True)
     t1.start()
 
     print("Waiting...")
