@@ -1,21 +1,45 @@
+import queue
+import threading
 import time
+from subprocess import Popen, PIPE
 
 import cv2
 import requests
-import threading
-import queue
 
 MIN_AREA = 500 * 4
 NUM_FRAMES = 10
 
 SCALE = 22.5
 
+WIDTH = 640
+HEIGHT = 480
+RATE = 25
+
 q = queue.Queue()
+
+converter = Popen([
+    'ffmpeg',
+    '-f', 'rawvideo',
+    '-pix_fmt', 'bgr24',
+    '-s', '%dx%d' % (WIDTH, HEIGHT),
+    '-r', str(float(RATE)),
+    '-i', '-',
+    '-f', 'mpegts',
+    '-b:v', '800k',
+    '-codec:v', 'mpeg1video',
+    'file.ts',
+],
+    stdin=PIPE,
+    stdout=PIPE,
+    # stderr=io.open(os.devnull, 'wb'),
+    shell=False,
+    close_fds=True,
+)
 
 
 def motion_detect(cap):
-    # cap.set(3, 320)
-    # cap.set(4, 240)
+    cap.set(3, WIDTH)
+    cap.set(4, HEIGHT)
 
     frame_times = []
     avg = None
@@ -30,6 +54,9 @@ def motion_detect(cap):
         fps = 0
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
+
+        converter.stdin.write(frame)
+
         height, width, channels = frame.shape
 
         # Our operations on the frame come here
@@ -114,7 +141,7 @@ def position_head():
     while True:
         pos = q.get()
         requests.get(
-            url="http://192.168.42.30:8080/position/{}?speed=1000".format(pos)
+            url="http://192.168.42.30:8080/position/{}?speed=40".format(pos)
         )
 
 
