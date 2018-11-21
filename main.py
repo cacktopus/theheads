@@ -1,8 +1,9 @@
+import prometheus_client
 from flask import Flask
 from werkzeug.serving import run_simple
 
 from werkzeug.wsgi import DispatcherMiddleware
-from prometheus_client import make_wsgi_app
+from prometheus_client import make_wsgi_app, Summary
 
 import queue
 import threading
@@ -20,6 +21,12 @@ q = queue.Queue()
 
 app = Flask(__name__)
 
+FPS = prometheus_client.Gauge(
+    'fps',
+    "Camera frames per second",
+    ["env"]
+)
+
 
 def motion_detect(cap):
     # cap.set(3, 320)
@@ -36,11 +43,11 @@ def motion_detect(cap):
 
     t0 = None
     while True:
+        # with 0:
         if t0:
             t1 = time.time()
             dt = t1 - t0
             t0 = t1
-            print(1/dt)
         else:
             t0 = time.time()
         fps = 0
@@ -97,6 +104,7 @@ def motion_detect(cap):
         if len(frame_times) > NUM_FRAMES:
             frames = frame_times[-NUM_FRAMES:]
             fps = (len(frames) - 1) / (frames[-1] - frames[0])
+            FPS.labels("dev").set(fps)
 
         text = "FPS: [{:.1f}] Dilate: [{}] Contours: [{}], Pos: [{}], Pos2: [{}], Width: [{}]".format(
             fps,
