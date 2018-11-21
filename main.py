@@ -123,7 +123,7 @@ def motion_detect(cap):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Display the resulting frame
-        cv2.imshow('frame', show)
+        # cv2.imshow('frame', show)
 
         key = cv2.waitKey(1) & 0xFF
         if key in (ord('q'), 27):
@@ -139,7 +139,7 @@ def position_head():
     while True:
         pos = q.get()
         requests.get(
-            url="http://192.168.42.30:8080/position/{}?speed=1000".format(pos)
+            url="http://192.168.42.30:8080/position/{}?speed=25".format(pos)
         )
 
 
