@@ -183,13 +183,19 @@ def position_head():
         )
 
 
-def run_webserver():
-    app_dispatch = DispatcherMiddleware(app, {
-        '/metrics': make_wsgi_app()
-    })
+@app.route('/')
+def hello_world():
+    return 'Hello, World!'
 
-    run_simple('0.0.0.0', 5000, app_dispatch,
-               use_reloader=False, use_debugger=True)
+
+@app.route('/metrics', methods=['GET'])
+def metrics():
+    return prometheus_client.generate_latest(), 200
+
+
+def run_webserver():
+    app.run('0.0.0.0', 5000, app,
+            use_reloader=False, use_debugger=True)
 
 
 def main():
