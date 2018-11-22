@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=${WIDTH}, initial-scale=1"/>
+	<title>jsmpeg streaming</title>
+	<style type="text/css">
+		body {
+			background: ${BGCOLOR};
+			text-align: center;
+			margin-top: 10%;
+		}
+	</style>
+</head>
+<body>
+    <div class="jsmpeg"></div>
+	<script type="text/javascript">
+		var url = 'ws://' + window.location.hostname + ':${WS_PORT}/';
+		var elem = document.getElementsByClassName("jsmpeg")[0];
+		elem.setAttribute("data-url", url);
+	</script>
+	<script type="text/javascript" src="jsmpeg.min.js"></script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+from string import Template
+
 import prometheus_client
 from flask import Flask
 from werkzeug.serving import run_simple
@@ -185,7 +187,23 @@ def position_head():
 
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    COLOR = u'#444'
+    BGCOLOR = u'#333'
+
+    with open("index.html") as fp:
+        tpl = Template(fp.read())
+
+    content = tpl.safe_substitute(dict(
+        WS_PORT=8001, WIDTH=WIDTH, HEIGHT=HEIGHT, COLOR=COLOR,
+        BGCOLOR=BGCOLOR))
+
+    return content, 200
+
+
+@app.route("/jsmpeg.min.js")
+def getjs():
+    with open("jsmpeg.min.js") as fp:
+        return fp.read(), 200
 
 
 @app.route('/metrics', methods=['GET'])
