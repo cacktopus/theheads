@@ -1,5 +1,8 @@
+import asyncio
+
 import prometheus_client
 from aiohttp import web
+import asyncio_redis
 
 
 async def handle(request):
@@ -14,6 +17,17 @@ async def handle_metrics(request):
     return resp
 
 
+async def run_redis():
+    connection = await asyncio_redis.Connection.create(host='127.0.0.1', port=6379)
+    print("Connected")
+    subscriber = await connection.start_subscribe()
+    await subscriber.subscribe(['heads-events'])
+
+    while True:
+        reply = await subscriber.next_published()
+        print('Received: ', repr(reply.value), 'on channel', reply.channel)
+
+
 def main():
     app = web.Application()
 
@@ -23,7 +37,9 @@ def main():
         web.get('/{name}', handle),
     ])
 
-    web.run_app(app)
+    # web.run_app(app)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_redis())
 
 
 if __name__ == '__main__':
