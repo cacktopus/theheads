@@ -7,7 +7,7 @@
 	<script type="text/javascript">
 		var url = 'ws://' + window.location.hostname + ':{WS_PORT}/ws';
 		console.log(url);
-		var ws = new WebSocket("ws://localhost:8080");
+		var ws = new WebSocket(url);
 		console.log(ws);
 	</script>
 </body>
