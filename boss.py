@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from string import Template
 
 import aiohttp
@@ -7,6 +8,7 @@ import prometheus_client
 from aiohttp import web
 
 PORT = 8080
+REDIS = "127.0.0.1"
 
 
 async def handle(request):
@@ -21,15 +23,24 @@ async def handle_metrics(request):
     return resp
 
 
+clients = set()
+
+
 async def run_redis():
-    connection = await asyncio_redis.Connection.create(host='127.0.0.1', port=6379)
-    print("Connected")
+    print("Connecting to redis")
+    connection = await asyncio_redis.Connection.create(host=REDIS, port=6379)
+    print("Connected to redis")
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe(['heads-events'])
 
     while True:
         reply = await subscriber.next_published()
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
+        for client in clients:
+            await client.send_json({
+                "msg": "from-redis",
+                "data": reply.value,
+            })
 
 
 async def websocket_handler(request):
@@ -37,7 +48,9 @@ async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    await ws.send_json(dict(a="b"))
+    clients.add(ws)
+
+    await ws.send_json(dict(time=str(datetime.now())))
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
