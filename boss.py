@@ -1,11 +1,14 @@
 import asyncio
+import json
 import os
 from datetime import datetime
+from glob import glob
 from string import Template
 
 import aiohttp
 import asyncio_redis
 import prometheus_client
+import yaml
 from aiohttp import web
 
 PORT = 8080
@@ -76,16 +79,52 @@ async def html_handler(request):
     return web.Response(text=text, content_type="text/html")
 
 
-async def installation_handler(request):
-    name = request.match_info.get('name')
+def build_installation(name):
     base = os.path.join("etcd", "the-heads", "installations", name)
     if not os.path.exists(base):
         raise web.HTTPNotFound()
-    return web.Response(text="{}", content_type="application/json")
 
+    cameras = {}
+    for path in glob(os.path.join(base, "cameras/*.yaml")):
+        with open(path) as fp:
+            camera = yaml.safe_load(fp)
+            cameras[camera['name']] = camera
+
+    heads = {}
+    for path in glob(os.path.join(base, "heads/*.yaml")):
+        with open(path) as fp:
+            head = yaml.safe_load(fp)
+            heads[head['name']] = head
+
+    stands = {}
+    for path in glob(os.path.join(base, "stands/*.yaml")):
+        with open(path) as fp:
+            stand = yaml.safe_load(fp)
+            stands[stand['name']] = stand
+
+    for stand in stands.values():
+        stand['cameras'] = [cameras[c] for c in stand['cameras']]
+        stand['heads'] = [heads[h] for h in stand['heads']]
+
+    result = dict(
+        name=name,
+        stands=list(stands.values()),
+    )
+
+    return result
+
+
+async def installation_handler(request):
+    name = request.match_info.get('name')
+
+    result = build_installation(name)
+
+    return web.Response(text=json.dumps(result), content_type="application/json")
 
 
 def main():
+    # print(json.dumps(build_installation("living-room"), indent=2))
+    # return
     app = web.Application()
 
     app.add_routes([
