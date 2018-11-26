@@ -1,4 +1,5 @@
 import asyncio
+from string import Template
 
 import aiohttp
 import asyncio_redis
@@ -36,6 +37,8 @@ async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
+    await ws.send_json(dict(a="b"))
+
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
@@ -53,9 +56,9 @@ async def websocket_handler(request):
 async def html_handler(request):
     filename = request.match_info.get('name') + ".html"
     with open(filename) as fp:
-        contents = fp.read()
+        contents = Template(fp.read())
 
-    text = contents.format(WS_PORT=PORT)
+    text = contents.safe_substitute(WS_PORT=PORT)
     return web.Response(text=text, content_type="text/html")
 
 

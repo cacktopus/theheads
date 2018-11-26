@@ -5,10 +5,16 @@
 </head>
 <body>
 	<script type="text/javascript">
-		var url = 'ws://' + window.location.hostname + ':{WS_PORT}/ws';
+		var url = 'ws://' + window.location.hostname + ':${WS_PORT}/ws';
 		console.log(url);
 		var ws = new WebSocket(url);
 		console.log(ws);
+
+		ws.onmessage = function(event) {
+		    var msg = JSON.parse(event.data);
+            console.log("WebSocket message received:", msg);
+            console.log(msg.a);
+        };
 	</script>
 </body>
 </html>
