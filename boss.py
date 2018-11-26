@@ -5,6 +5,8 @@ import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
+PORT = 8080
+
 
 async def handle(request):
     name = request.match_info.get('name', 'anon')
@@ -30,6 +32,7 @@ async def run_redis():
 
 
 async def websocket_handler(request):
+    print("Websocket connect")
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -47,6 +50,15 @@ async def websocket_handler(request):
     return ws
 
 
+async def html_handler(request):
+    filename = request.match_info.get('name') + ".html"
+    with open(filename) as fp:
+        contents = fp.read()
+
+    text = contents.format(WS_PORT=PORT)
+    return web.Response(text=text, content_type="text/html")
+
+
 def main():
     app = web.Application()
 
@@ -54,12 +66,13 @@ def main():
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
         web.get('/ws', websocket_handler),
+        web.get('/{name}.html', html_handler),
     ])
 
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(run_redis(), loop=loop)
 
-    web.run_app(app)
+    web.run_app(app, port=PORT)
 
 
 if __name__ == '__main__':
