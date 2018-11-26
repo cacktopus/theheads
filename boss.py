@@ -1,8 +1,9 @@
 import asyncio
 
+import aiohttp
+import asyncio_redis
 import prometheus_client
 from aiohttp import web
-import asyncio_redis
 
 
 async def handle(request):
@@ -28,18 +29,37 @@ async def run_redis():
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
 
 
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    async for msg in ws:
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                await ws.send_str(msg.data + '/answer')
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  ws.exception())
+
+    print('websocket connection closed')
+    return ws
+
+
 def main():
     app = web.Application()
 
     app.add_routes([
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
-        web.get('/{name}', handle),
+        web.get('/ws', websocket_handler),
     ])
 
-    # web.run_app(app)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_redis())
+    asyncio.ensure_future(run_redis(), loop=loop)
+
+    web.run_app(app)
 
 
 if __name__ == '__main__':
