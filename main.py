@@ -57,6 +57,14 @@ converter = Popen([
     close_fds=True,
 )
 
+frame_queue = queue.Queue()
+
+
+def frame_feeder(q: queue.Queue, conv):
+    while True:
+        frame = q.get()
+        conv.stdin.write(frame)
+
 
 def motion_detect(cap):
     cap.set(3, WIDTH)
@@ -80,8 +88,15 @@ def motion_detect(cap):
     t1 = threading.Thread(target=broadcast_thread, args=[converter, ws], daemon=True)
     t1.start()
 
+    print("running frame feeder")
+    t2 = threading.Thread(target=frame_feeder, args=[frame_queue, converter], daemon=True)
+    t2.start()
+
+    start = time.time()
     t0 = None
+    frame_number = 0
     while True:
+        frame_number += 1
         # with 0:
         if t0:
             t1 = time.time()
@@ -93,7 +108,10 @@ def motion_detect(cap):
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
 
-        converter.stdin.write(frame)
+        # cv2.putText(frame, "{:.2f}".format(time.time() - start), (11, 21),
+        #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+
+        # frame_queue.put(frame)
 
         height, width, channels = frame.shape
 

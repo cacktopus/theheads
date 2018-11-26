@@ -23,7 +23,7 @@ def broadcast_thread(converter, websocket_server):
     try:
         while True:
             buf = converter.stdout.read1(32768)
-            print("read", len(buf))
+            # print("read", len(buf))
             if buf:
                 websocket_server.manager.broadcast(buf, binary=True)
             elif converter.poll() is not None:
