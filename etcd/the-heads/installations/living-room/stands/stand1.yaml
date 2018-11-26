@@ -1,0 +1,9 @@
+name: stand1
+pos:
+  x: 1.5
+  y: 0
+rot: 240
+cameras:
+- camera1
+heads:
+- head1

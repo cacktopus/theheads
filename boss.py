@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import datetime
 from string import Template
 
@@ -75,6 +76,15 @@ async def html_handler(request):
     return web.Response(text=text, content_type="text/html")
 
 
+async def installation_handler(request):
+    name = request.match_info.get('name')
+    base = os.path.join("etcd", "the-heads", "installations", name)
+    if not os.path.exists(base):
+        raise web.HTTPNotFound()
+    return web.Response(text="{}", content_type="application/json")
+
+
+
 def main():
     app = web.Application()
 
@@ -83,6 +93,7 @@ def main():
         web.get('/metrics', handle_metrics),
         web.get('/ws', websocket_handler),
         web.get('/{name}.html', html_handler),
+        web.get('/installations/{name}', installation_handler),
     ])
 
     loop = asyncio.get_event_loop()
