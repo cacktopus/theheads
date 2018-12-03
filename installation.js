@@ -65,7 +65,7 @@ var data = {
 };
 
 
-function draw_stand(parent, w, h, stand) {
+function draw_stand(scene, parent, w, h, stand) {
     var radius = .20;
 
     var head = parent.circle(0).radius(radius);
@@ -98,10 +98,33 @@ function draw_stand(parent, w, h, stand) {
         g2.line([0, 0, fov_x, -fov_y]).stroke({width: 0.020, color: "darkblue"});
 
         g2.move(camera.pos.x, camera.pos.y);
+
+        scene.cameras[camera.name] = g2;
     });
 }
 
-function main() {
+
+function setup_websocket(ws_port, scene) {
+    var url = 'ws://' + window.location.hostname + ":" + ws_port + '/ws';
+    console.log(url);
+    var ws = new WebSocket(url);
+    console.log(ws);
+
+    ws.onmessage = function (event) {
+        var msg = JSON.parse(event.data);
+        console.log("WebSocket message received:", msg);
+        if (msg.msg === "from-redis") {
+            var ray = scene.cameras['camera0'].line(0, 0, 5, 0).stroke({
+                width: 0.020,
+                color: "lightgreen",
+                opacity: 0.40
+            });
+            ray.rotate(msg.data.Position, 0, 0);
+        }
+    };
+}
+
+function main(ws_port) {
     var w = 600;
     var h = 600;
 
@@ -114,14 +137,19 @@ function main() {
     var root = svg.group();
     var scale = 66;
 
-    root.move(w / 2, h / 2);
+    root.move(w / 2, 100);
     root.scale(scale, -scale, 0, 0);
+
+    var scene = {
+        cameras: {}
+    };
 
     data.stands.forEach(function (stand) {
         var parent = root.group();
         parent.dmove(stand.pos.x, stand.pos.y);
         parent.rotate(stand.rot, 0, 0);
-        draw_stand(parent, w, h, stand);
+        draw_stand(scene, parent, w, h, stand);
     });
 
+    setup_websocket(ws_port, scene);
 }
