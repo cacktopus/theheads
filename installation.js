@@ -29,7 +29,7 @@ var data = {
                 "x": -1.5,
                 "y": 0
             },
-            "rot": 300
+            "rot": -85
         },
         {
             "cameras": [
@@ -88,10 +88,17 @@ function draw_stand(svg, w, h, stand) {
 
     var scale = 100;
 
-    group.polygon("0,0 200,50 200,-50 0,0").attr({
+    var fov = 60;
+    var fov_x = 300;
+    var fov_y = fov_x * Math.tan(fov * Math.PI / 180 / 2);
+
+    group.polygon([0, 0, fov_x, fov_y, fov_x, -fov_y]).attr({
         'fill': "lightblue",
         'fill-opacity': 0.5
     });
+
+    group.line([0, 0, fov_x, fov_y]).stroke({width: 1, color: "darkblue"});
+    group.line([0, 0, fov_x, -fov_y]).stroke({width: 1, color: "darkblue"});
 
     group.dmove(w / 2, h / 2);
     group.dmove(stand.pos.x * scale, stand.pos.y * scale);
