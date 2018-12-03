@@ -113,11 +113,14 @@ function main() {
     svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
     svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 
+    var root = svg.group();
+    var scale = 66;
+
+    root.move(w / 2, h / 2);
+    root.scale(scale, scale, 0, 0);
+
     data.stands.forEach(function (stand) {
-        var parent = svg.group();
-        var scale = 100;
-        parent.dmove(w / 2, h / 2);
-        parent.scale(100, 100, 0, 0);
+        var parent = root.group();
         parent.dmove(stand.pos.x, stand.pos.y);
         parent.rotate(-stand.rot, 0, 0);
         draw_stand(parent, w, h, stand);
