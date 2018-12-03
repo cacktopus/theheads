@@ -86,20 +86,20 @@ function draw_stand(svg, w, h, stand) {
         0
     ).stroke({width: 3});
 
-    var scale = 100;
+    stand.cameras.forEach(function (camera) {
+        var fov_x = 300;
+        var fov_y = fov_x * Math.tan(camera.fov * Math.PI / 180 / 2);
 
-    var fov = 60;
-    var fov_x = 300;
-    var fov_y = fov_x * Math.tan(fov * Math.PI / 180 / 2);
+        group.polygon([0, 0, fov_x, fov_y, fov_x, -fov_y]).attr({
+            'fill': "lightblue",
+            'fill-opacity': 0.5
+        });
 
-    group.polygon([0, 0, fov_x, fov_y, fov_x, -fov_y]).attr({
-        'fill': "lightblue",
-        'fill-opacity': 0.5
+        group.line([0, 0, fov_x, fov_y]).stroke({width: 1, color: "darkblue"});
+        group.line([0, 0, fov_x, -fov_y]).stroke({width: 1, color: "darkblue"});
     });
 
-    group.line([0, 0, fov_x, fov_y]).stroke({width: 1, color: "darkblue"});
-    group.line([0, 0, fov_x, -fov_y]).stroke({width: 1, color: "darkblue"});
-
+    var scale = 100;
     group.dmove(w / 2, h / 2);
     group.dmove(stand.pos.x * scale, stand.pos.y * scale);
     group.rotate(-stand.rot, 0, 0);
