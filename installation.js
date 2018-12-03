@@ -65,12 +65,10 @@ var data = {
 };
 
 
-function draw_stand(svg, w, h, stand) {
-    var group = svg.group();
-
+function draw_stand(parent, w, h, stand) {
     var radius = 20;
 
-    var head = group.circle(0).radius(radius);
+    var head = parent.circle(0).radius(radius);
 
     head.attr({
         fill: '#f06',
@@ -79,7 +77,7 @@ function draw_stand(svg, w, h, stand) {
     // head.height(300);
     // console.log(head.radius())
 
-    var line = group.line(
+    var line = parent.line(
         0,
         0,
         radius,
@@ -90,7 +88,7 @@ function draw_stand(svg, w, h, stand) {
         var fov_x = 300;
         var fov_y = fov_x * Math.tan(camera.fov * Math.PI / 180 / 2);
 
-        var g2 = group.group();
+        var g2 = parent.group();
 
         g2.polygon([0, 0, fov_x, fov_y, fov_x, -fov_y]).attr({
             'fill': "lightblue",
@@ -103,10 +101,7 @@ function draw_stand(svg, w, h, stand) {
         g2.dmove(10, 0)
     });
 
-    var scale = 100;
-    group.dmove(w / 2, h / 2);
-    group.dmove(stand.pos.x * scale, stand.pos.y * scale);
-    group.rotate(-stand.rot, 0, 0);
+    parent.rotate(-stand.rot, 0, 0);
 }
 
 function main() {
@@ -118,7 +113,11 @@ function main() {
     svg.rect(600, 600).attr({fill: "sandybrown"});
 
     data.stands.forEach(function (stand) {
-        draw_stand(svg, w, h, stand);
+        var parent = svg.group();
+        var scale = 100;
+        parent.dmove(stand.pos.x * scale, stand.pos.y * scale);
+        parent.dmove(w / 2, h / 2);
+        draw_stand(parent, w, h, stand);
     });
 
     svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
