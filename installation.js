@@ -110,17 +110,17 @@ function main() {
     console.log("here we are");
     var svg = SVG('drawing').size(w, h);
     svg.rect(600, 600).attr({fill: "sandybrown"});
+    svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
+    svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 
     data.stands.forEach(function (stand) {
         var parent = svg.group();
         var scale = 100;
-        parent.dmove(stand.pos.x * scale, stand.pos.y * scale);
         parent.dmove(w / 2, h / 2);
         parent.scale(100, 100, 0, 0);
+        parent.dmove(stand.pos.x, stand.pos.y);
         parent.rotate(-stand.rot, 0, 0);
         draw_stand(parent, w, h, stand);
     });
 
-    svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
-    svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 }
