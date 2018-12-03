@@ -12,7 +12,7 @@ import yaml
 from aiohttp import web
 
 PORT = 8080
-REDIS = "127.0.0.1"
+REDIS = "192.168.42.30"
 
 
 async def handle(request):
@@ -30,21 +30,33 @@ async def handle_metrics(request):
 clients = set()
 
 
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+
 async def run_redis():
     print("Connecting to redis")
     connection = await asyncio_redis.Connection.create(host=REDIS, port=6379)
     print("Connected to redis")
     subscriber = await connection.start_subscribe()
-    await subscriber.subscribe(['heads-events'])
+    await subscriber.subscribe(['the-heads-events'])
 
     while True:
         reply = await subscriber.next_published()
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
+        msg = json.loads(reply.value)
+
         for client in clients:
             await client.send_json({
                 "msg": "from-redis",
-                "data": reply.value,
+                "data": msg,
             })
+
+        async with aiohttp.ClientSession() as session:
+            url = "http://192.168.42.30:8080/position/{}?speed=25".format(msg['Position'])
+            text = await fetch(session, url)
+            print(text)
 
 
 async def websocket_handler(request):
