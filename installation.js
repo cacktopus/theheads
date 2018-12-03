@@ -65,24 +65,12 @@ var data = {
 };
 
 
-function main() {
-    var w = 600;
-    var h = 600;
-
-    console.log("here we are");
-    var svg = SVG('drawing').size(w, h);
-    svg.rect(600, 600).attr({fill: "sandybrown"});
-
+function draw_stand(svg, w, h, x, y) {
     var group = svg.group();
 
     var radius = 20;
 
-    var position = [200, 300];
-
     var head = group.circle(0).radius(radius);
-    // head.width(400);
-    // head.height(300);
-    // head.center(position[0], position[1]);
 
     head.attr({
         fill: '#f06',
@@ -98,10 +86,23 @@ function main() {
         0
     ).stroke({width: 3});
 
-    scale = 100;
+    var scale = 100;
+
+    console.log(data.stands[0].pos.x);
 
     group.dmove(w / 2, h / 2);
-    group.dmove(-1.5 * scale, 0)
+    group.dmove(x * scale, y * scale);
 
     group.rotate(-60);
+}
+
+function main() {
+    var w = 600;
+    var h = 600;
+
+    console.log("here we are");
+    var svg = SVG('drawing').size(w, h);
+    svg.rect(600, 600).attr({fill: "sandybrown"});
+    draw_stand(svg, w, h, -1.5, 0);
+    draw_stand(svg, w, h, 1.5, 0);
 }
