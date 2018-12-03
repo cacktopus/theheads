@@ -101,11 +101,6 @@ function draw_stand(parent, w, h, stand) {
 
         g2.dmove(.010, 0)
     });
-
-    // head.scale(100, 100, 0, 0);
-    // line.scale(100, 100, 0, 0);
-    parent.scale(100, 100, 0, 0);
-    parent.rotate(-stand.rot, 0, 0);
 }
 
 function main() {
@@ -121,6 +116,8 @@ function main() {
         var scale = 100;
         parent.dmove(stand.pos.x * scale, stand.pos.y * scale);
         parent.dmove(w / 2, h / 2);
+        parent.scale(100, 100, 0, 0);
+        parent.rotate(-stand.rot, 0, 0);
         draw_stand(parent, w, h, stand);
     });
 
