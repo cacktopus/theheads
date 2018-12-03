@@ -66,13 +66,14 @@ var data = {
 
 
 function draw_stand(parent, w, h, stand) {
-    var radius = 20;
+    var radius = .20;
 
     var head = parent.circle(0).radius(radius);
 
     head.attr({
         fill: '#f06',
-        stroke: '#000'
+        stroke: '#000',
+        "stroke-width": 0.020
     });
     // head.height(300);
     // console.log(head.radius())
@@ -82,25 +83,28 @@ function draw_stand(parent, w, h, stand) {
         0,
         radius,
         0
-    ).stroke({width: 3});
+    ).stroke({width: 0.020});
 
     stand.cameras.forEach(function (camera) {
-        var fov_x = 300;
+        var fov_x = 3;
         var fov_y = fov_x * Math.tan(camera.fov * Math.PI / 180 / 2);
 
         var g2 = parent.group();
 
         g2.polygon([0, 0, fov_x, fov_y, fov_x, -fov_y]).attr({
             'fill': "lightblue",
-            'fill-opacity': 0.5
+            'fill-opacity': 0.4
         });
 
-        g2.line([0, 0, fov_x, fov_y]).stroke({width: 1, color: "darkblue"});
-        g2.line([0, 0, fov_x, -fov_y]).stroke({width: 1, color: "darkblue"});
+        g2.line([0, 0, fov_x, fov_y]).stroke({width: 0.020, color: "darkblue"});
+        g2.line([0, 0, fov_x, -fov_y]).stroke({width: 0.020, color: "darkblue"});
 
-        g2.dmove(10, 0)
+        g2.dmove(.010, 0)
     });
 
+    // head.scale(100, 100, 0, 0);
+    // line.scale(100, 100, 0, 0);
+    parent.scale(100, 100, 0, 0);
     parent.rotate(-stand.rot, 0, 0);
 }
 
