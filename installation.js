@@ -68,7 +68,7 @@ var data = {
 function main() {
     console.log("here we are");
     var svg = SVG('drawing').size('100%', '100%');
-    var head = svg.circle(50);
+    var head = svg.circle(100);
     // head.width(400);
     // head.height(300);
     head.x(200);
@@ -80,6 +80,10 @@ function main() {
     });
     // head.height(300);
 
-
-    console.log(svg.width());
+    svg.line(
+        head.cx(),
+        head.cy(),
+        head.cx() + head.width() / 2,
+        head.cy(),
+    ).stroke({width: 3});
 }
