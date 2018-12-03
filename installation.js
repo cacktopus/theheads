@@ -95,5 +95,6 @@ function main() {
     ).stroke({width: 3});
 
     group.move(position[0], position[1]);
+    group.rotate(60);
 
 }
