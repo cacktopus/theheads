@@ -1,10 +1,85 @@
+var data = {
+    "name": "living-room",
+    "stands": [
+        {
+            "cameras": [
+                {
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                    "fov": 60,
+                    "name": "camera0",
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head0",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ],
+            "name": "stand0",
+            "pos": {
+                "x": -1.5,
+                "y": 0
+            },
+            "rot": 300
+        },
+        {
+            "cameras": [
+                {
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                    "fov": 60,
+                    "name": "camera1",
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head1",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ],
+            "name": "stand1",
+            "pos": {
+                "x": 1.5,
+                "y": 0
+            },
+            "rot": 240
+        }
+    ]
+}
+
+
 function main() {
     console.log("here we are");
-    var draw = SVG('drawing').size('100%', '100%');
-    var rect = draw.rect(100, 300);
-    rect.width(400);
-    rect.height(300);
-    rect.x(200);
-    rect.y(50);
-    rect.height(300);
+    var svg = SVG('drawing').size('100%', '100%');
+    var head = svg.circle(50);
+    // head.width(400);
+    // head.height(300);
+    head.x(200);
+    head.y(50);
+
+    head.attr({
+        fill: '#f06',
+        stroke: '#000'
+    });
+    // head.height(300);
+
+
+    console.log(svg.width());
 }
