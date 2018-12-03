@@ -98,7 +98,10 @@ function main() {
         0
     ).stroke({width: 3});
 
-    group.move(w/2, h/2);
-    group.rotate(60);
+    scale = 100;
 
+    group.dmove(w / 2, h / 2);
+    group.dmove(-1.5 * scale, 0)
+
+    group.rotate(-60);
 }
