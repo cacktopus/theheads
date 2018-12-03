@@ -65,7 +65,7 @@ var data = {
 };
 
 
-function draw_stand(svg, w, h, x, y, rot) {
+function draw_stand(svg, w, h, stand) {
     var group = svg.group();
 
     var radius = 20;
@@ -88,12 +88,14 @@ function draw_stand(svg, w, h, x, y, rot) {
 
     var scale = 100;
 
-    console.log(data.stands[0].pos.x);
+    group.polygon("0,0 200,50 200,-50 0,0").attr({
+        'fill': "lightblue",
+        'fill-opacity': 0.5
+    });
 
     group.dmove(w / 2, h / 2);
-    group.dmove(x * scale, y * scale);
-
-    group.rotate(-rot);
+    group.dmove(stand.pos.x * scale, stand.pos.y * scale);
+    group.rotate(-stand.rot, 0, 0);
 }
 
 function main() {
@@ -105,6 +107,9 @@ function main() {
     svg.rect(600, 600).attr({fill: "sandybrown"});
 
     data.stands.forEach(function (stand) {
-        draw_stand(svg, w, h, stand.pos.x, stand.pos.y, stand.rot);
+        draw_stand(svg, w, h, stand);
     });
+
+    svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
+    svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 }
