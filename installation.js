@@ -99,7 +99,7 @@ function draw_stand(parent, w, h, stand) {
         g2.line([0, 0, fov_x, fov_y]).stroke({width: 0.020, color: "darkblue"});
         g2.line([0, 0, fov_x, -fov_y]).stroke({width: 0.020, color: "darkblue"});
 
-        g2.dmove(.100, 0)
+        g2.move(camera.pos.x, camera.pos.y);
     });
 }
 
