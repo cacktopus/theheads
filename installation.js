@@ -66,12 +66,16 @@ var data = {
 
 
 function main() {
+    var w = 600;
+    var h = 600;
+
     console.log("here we are");
-    var svg = SVG('drawing').size('100%', '100%');
+    var svg = SVG('drawing').size(w, h);
+    svg.rect(600, 600).attr({fill: "sandybrown"});
 
     var group = svg.group();
 
-    var radius = 100;
+    var radius = 20;
 
     var position = [200, 300];
 
@@ -94,7 +98,7 @@ function main() {
         0
     ).stroke({width: 3});
 
-    group.move(position[0], position[1]);
+    group.move(w/2, h/2);
     group.rotate(60);
 
 }
