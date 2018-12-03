@@ -62,7 +62,7 @@ var data = {
             "rot": 240
         }
     ]
-}
+};
 
 
 function main() {
