@@ -69,14 +69,16 @@ function main() {
     console.log("here we are");
     var svg = SVG('drawing').size('100%', '100%');
 
+    var group = svg.group();
+
     var radius = 100;
 
     var position = [200, 300];
 
-    var head = svg.circle(0).radius(radius);
+    var head = group.circle(0).radius(radius);
     // head.width(400);
     // head.height(300);
-    head.center(position[0], position[1]);
+    // head.center(position[0], position[1]);
 
     head.attr({
         fill: '#f06',
@@ -85,12 +87,13 @@ function main() {
     // head.height(300);
     // console.log(head.radius())
 
-    var line = svg.line(
+    var line = group.line(
         0,
         0,
         radius,
         0
     ).stroke({width: 3});
 
-    line.move(position[0], position[1]);
+    group.move(position[0], position[1]);
+
 }
