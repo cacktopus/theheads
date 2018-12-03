@@ -65,7 +65,7 @@ var data = {
 };
 
 
-function draw_stand(svg, w, h, x, y) {
+function draw_stand(svg, w, h, x, y, rot) {
     var group = svg.group();
 
     var radius = 20;
@@ -93,7 +93,7 @@ function draw_stand(svg, w, h, x, y) {
     group.dmove(w / 2, h / 2);
     group.dmove(x * scale, y * scale);
 
-    group.rotate(-60);
+    group.rotate(-rot);
 }
 
 function main() {
@@ -105,6 +105,6 @@ function main() {
     svg.rect(600, 600).attr({fill: "sandybrown"});
 
     data.stands.forEach(function (stand) {
-        draw_stand(svg, w, h, stand.pos.x, stand.pos.y);
+        draw_stand(svg, w, h, stand.pos.x, stand.pos.y, stand.rot);
     });
 }
