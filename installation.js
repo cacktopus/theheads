@@ -103,6 +103,8 @@ function main() {
     console.log("here we are");
     var svg = SVG('drawing').size(w, h);
     svg.rect(600, 600).attr({fill: "sandybrown"});
-    draw_stand(svg, w, h, -1.5, 0);
-    draw_stand(svg, w, h, 1.5, 0);
+
+    data.stands.forEach(function (stand) {
+        draw_stand(svg, w, h, stand.pos.x, stand.pos.y);
+    });
 }
