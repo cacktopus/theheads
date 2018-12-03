@@ -91,6 +91,21 @@ async def html_handler(request):
     return web.Response(text=text, content_type="text/html")
 
 
+def static_handler(extension):
+    # TODO: make sure .. not allowed in paths, etc.
+    content_type = {
+        "js": "text/javascript"
+    }[extension]
+
+    async def handler(request):
+        filename = request.match_info.get('name') + "." + extension
+        with open(filename) as fp:
+            text = fp.read()
+        return web.Response(text=text, content_type=content_type)
+
+    return handler
+
+
 def build_installation(name):
     base = os.path.join("etcd", "the-heads", "installations", name)
     if not os.path.exists(base):
@@ -143,8 +158,9 @@ def main():
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
         web.get('/ws', websocket_handler),
-        web.get('/{name}.html', html_handler),
         web.get('/installations/{name}', installation_handler),
+        web.get('/{name}.html', html_handler),
+        web.get('/{name}.js', static_handler("js"))
     ])
 
     loop = asyncio.get_event_loop()
