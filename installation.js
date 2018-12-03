@@ -68,22 +68,29 @@ var data = {
 function main() {
     console.log("here we are");
     var svg = SVG('drawing').size('100%', '100%');
-    var head = svg.circle(100);
+
+    var radius = 100;
+
+    var position = [200, 300];
+
+    var head = svg.circle(0).radius(radius);
     // head.width(400);
     // head.height(300);
-    head.x(200);
-    head.y(50);
+    head.center(position[0], position[1]);
 
     head.attr({
         fill: '#f06',
         stroke: '#000'
     });
     // head.height(300);
+    // console.log(head.radius())
 
-    svg.line(
-        head.cx(),
-        head.cy(),
-        head.cx() + head.width() / 2,
-        head.cy(),
+    var line = svg.line(
+        0,
+        0,
+        radius,
+        0
     ).stroke({width: 3});
+
+    line.move(position[0], position[1]);
 }
