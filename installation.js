@@ -75,10 +75,8 @@ function draw_stand(parent, w, h, stand) {
         stroke: '#000',
         "stroke-width": 0.020
     });
-    // head.height(300);
-    // console.log(head.radius())
 
-    var line = parent.line(
+    parent.line(
         0,
         0,
         radius,
@@ -117,12 +115,12 @@ function main() {
     var scale = 66;
 
     root.move(w / 2, h / 2);
-    root.scale(scale, scale, 0, 0);
+    root.scale(scale, -scale, 0, 0);
 
     data.stands.forEach(function (stand) {
         var parent = root.group();
         parent.dmove(stand.pos.x, stand.pos.y);
-        parent.rotate(-stand.rot, 0, 0);
+        parent.rotate(stand.rot, 0, 0);
         draw_stand(parent, w, h, stand);
     });
 
