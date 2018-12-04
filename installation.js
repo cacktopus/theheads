@@ -60,6 +60,26 @@ var data = {
                 "y": 0
             },
             "rot": 240
+        },
+        {
+            "cameras": [
+                {
+                    "description": "iMac built-in",
+                    "fov": 70,
+                    "name": "camera2",
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ],
+            "name": "desk0",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 270
         }
     ]
 };
