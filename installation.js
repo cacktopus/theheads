@@ -114,15 +114,21 @@ function setup_websocket(ws_port, scene) {
         var msg = JSON.parse(event.data);
         console.log("WebSocket message received:", msg);
         if (msg.type === "motion-detected") {
-            var ray = scene.cameras['camera0'].line(0, 0, 5, 0).stroke({
-                width: 0.020,
-                color: "lightgreen",
-                opacity: 0.40
-            });
-            ray.rotate(msg.data.position, 0, 0);
-            setTimeout(function () {
-                ray.remove();
-            }, 5000);
+            var cameraName = msg.data.cameraName;
+            var camera = scene.cameras[cameraName];
+            if (camera === undefined) {
+                console.log("unknown camera: " + cameraName)
+            } else {
+                var ray = camera.line(0, 0, 5, 0).stroke({
+                    width: 0.020,
+                    color: "lightgreen",
+                    opacity: 0.40
+                });
+                ray.rotate(msg.data.position, 0, 0);
+                setTimeout(function () {
+                    ray.remove();
+                }, 5000);
+            }
         }
     };
 }

@@ -48,7 +48,11 @@ async def run_redis():
         msg = json.loads(reply.value)
 
         for client in clients:
-            await client.send_json(msg)
+            try:
+                await client.send_json(msg)
+            except Exception as e:
+                print(e)
+                raise
 
         if msg['type'] == "motion-detected":
             data = msg['data']
