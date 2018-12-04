@@ -2,7 +2,7 @@ name: stand0
 pos:
   x: -1.5
   y: 0
-rot: 300
+rot: -85
 cameras:
 - camera0
 heads:

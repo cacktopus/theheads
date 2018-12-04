@@ -20,12 +20,12 @@ class Mat:
 
     @classmethod
     def translate(cls, x, y, z=0):
-        return np.array([
+        return Mat(np.array([
             [1, 0, 0, x],
             [0, 1, 0, y],
             [0, 0, 1, z],
             [0, 0, 0, 1],
-        ])
+        ]))
 
     @classmethod
     def rotz(cls, thetaDegrees):

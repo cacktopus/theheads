@@ -1,15 +1,14 @@
 import asyncio
 import json
-import os
 from datetime import datetime
-from glob import glob
 from string import Template
 
 import aiohttp
 import asyncio_redis
 import prometheus_client
-import yaml
 from aiohttp import web
+
+from installation import build_installation
 
 PORT = 8080
 REDIS = "192.168.42.30"
@@ -115,41 +114,6 @@ def static_handler(extension):
         return web.Response(text=text, content_type=content_type)
 
     return handler
-
-
-def build_installation(name):
-    base = os.path.join("etcd", "the-heads", "installations", name)
-    if not os.path.exists(base):
-        raise web.HTTPNotFound()
-
-    cameras = {}
-    for path in glob(os.path.join(base, "cameras/*.yaml")):
-        with open(path) as fp:
-            camera = yaml.safe_load(fp)
-            cameras[camera['name']] = camera
-
-    heads = {}
-    for path in glob(os.path.join(base, "heads/*.yaml")):
-        with open(path) as fp:
-            head = yaml.safe_load(fp)
-            heads[head['name']] = head
-
-    stands = {}
-    for path in glob(os.path.join(base, "stands/*.yaml")):
-        with open(path) as fp:
-            stand = yaml.safe_load(fp)
-            stands[stand['name']] = stand
-
-    for stand in stands.values():
-        stand['cameras'] = [cameras[c] for c in stand['cameras']]
-        stand['heads'] = [heads[h] for h in stand['heads']]
-
-    result = dict(
-        name=name,
-        stands=list(stands.values()),
-    )
-
-    return result
 
 
 async def installation_handler(request):
