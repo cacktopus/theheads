@@ -8,7 +8,8 @@ import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
-from installation import build_installation
+from installation import build_installation, Installation
+from transformations import Vec, Mat
 
 PORT = 8080
 REDIS = "192.168.42.30"
@@ -41,20 +42,38 @@ async def run_redis():
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe(['the-heads-events'])
 
+    inst = Installation.unmarshal(build_installation("living-room"))
+
     while True:
         reply = await subscriber.next_published()
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
         for client in clients:
-            try:
-                await client.send_json(msg)
-            except Exception as e:
-                print(e)
-                raise
+            #     try:
+            #         await client.send_json(msg)
+            #     except Exception as e:
+            #         print(e)
+            #         raise
 
-        if msg['type'] == "motion-detected":
-            data = msg['data']
+            if msg['type'] == "motion-detected":
+                data = msg['data']
+
+                cam = inst.cameras[data['cameraName']]
+                p0 = Vec(0, 0)
+                p1 = Mat.rotz(data['position']) * Vec(5, 0)
+
+                p0 = cam.stand.m * cam.m * p0
+                p1 = cam.stand.m * cam.m * p1
+
+                await client.send_json({
+                    "type": "draw",
+                    "data": {
+                        "shape": "line",
+                        "coords": [p0.x, p0.y, p1.x, p1.y],
+                    }
+                })
+
             async with aiohttp.ClientSession() as session:
                 url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
                 text = await fetch(session, url)

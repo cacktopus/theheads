@@ -9,6 +9,14 @@ class Vec:
     def __str__(self):
         return str(self._data)
 
+    @property
+    def x(self):
+        return float(self._data[0])
+
+    @property
+    def y(self):
+        return float(self._data[1])
+
 
 class Mat:
     def __init__(self, data):
