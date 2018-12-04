@@ -71,6 +71,14 @@ async def websocket_handler(request):
 
     await ws.send_json(dict(time=str(datetime.now())))
 
+    await ws.send_json(dict(
+        type="draw",
+        data=dict(
+            shape="line",
+            coords=[-1.5, 1, 1.5, 1],
+        )
+    ))
+
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':

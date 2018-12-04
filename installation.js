@@ -149,6 +149,12 @@ function setup_websocket(ws_port, scene) {
                     ray.remove();
                 }, 5000);
             }
+        } else if (msg.type === "draw") {
+            if (msg.data.shape === "line") {
+                var coords = msg.data.coords;
+                console.log(coords);
+                scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({width: 0.020});
+            }
         }
     };
 }
@@ -159,9 +165,9 @@ function main(ws_port) {
 
     console.log("here we are");
     var svg = SVG('drawing').size(w, h);
-    svg.rect(600, 600).attr({fill: "sandybrown"});
-    svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
-    svg.line(0, h / 2, w, h / 2).stroke({width: 1});
+    svg.rect(w, h).attr({fill: "sandybrown"});
+    // svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
+    // svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 
     var root = svg.group();
     var scale = 66;
@@ -169,8 +175,12 @@ function main(ws_port) {
     root.move(w / 2, 100);
     root.scale(scale, -scale, 0, 0);
 
+    root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
+    root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
+
     var scene = {
-        cameras: {}
+        cameras: {},
+        root: root
     };
 
     data.stands.forEach(function (stand) {
