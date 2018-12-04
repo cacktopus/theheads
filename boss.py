@@ -48,15 +48,14 @@ async def run_redis():
         msg = json.loads(reply.value)
 
         for client in clients:
-            await client.send_json({
-                "msg": "from-redis",
-                "data": msg,
-            })
+            await client.send_json(msg)
 
-        async with aiohttp.ClientSession() as session:
-            url = "http://192.168.42.30:8080/position/{}?speed=25".format(msg['Position'])
-            text = await fetch(session, url)
-            print(text)
+        if msg['type'] == "motion-detected":
+            data = msg['data']
+            async with aiohttp.ClientSession() as session:
+                url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
+                text = await fetch(session, url)
+                print(text)
 
 
 async def websocket_handler(request):

@@ -113,13 +113,16 @@ function setup_websocket(ws_port, scene) {
     ws.onmessage = function (event) {
         var msg = JSON.parse(event.data);
         console.log("WebSocket message received:", msg);
-        if (msg.msg === "from-redis") {
+        if (msg.type === "motion-detected") {
             var ray = scene.cameras['camera0'].line(0, 0, 5, 0).stroke({
                 width: 0.020,
                 color: "lightgreen",
                 opacity: 0.40
             });
-            ray.rotate(msg.data.Position, 0, 0);
+            ray.rotate(msg.data.position, 0, 0);
+            setTimeout(function () {
+                ray.remove();
+            }, 5000);
         }
     };
 }
