@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Vec:
-    def __init__(self, x, y, z=0, w=0):
+    def __init__(self, x, y, z=0, w=1):
         self._data = np.array([x, y, z, w])
 
     def __str__(self):
