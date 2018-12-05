@@ -74,10 +74,10 @@ async def run_redis():
                     }
                 })
 
-            async with aiohttp.ClientSession() as session:
-                url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
-                text = await fetch(session, url)
-                print(text)
+            # async with aiohttp.ClientSession() as session:
+            #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
+            #     text = await fetch(session, url)
+            #     print(text)
 
 
 async def websocket_handler(request):
