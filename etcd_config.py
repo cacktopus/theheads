@@ -71,7 +71,7 @@ async def get_config_str(etcd_endpoint: str, key_template: str, params=None) -> 
         raise MissingKeyError("Missing key for {}".format(key.decode()))
 
     result = value(resp)
-    if value is None:
+    if result is None:
         raise MissingKeyError("Missing key for {}".format(key.decode()))
 
     return result.decode().strip()

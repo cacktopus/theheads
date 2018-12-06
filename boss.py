@@ -7,6 +7,7 @@ import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
+import rpc_util
 import ws
 from etcd_config import get_config_str, lock
 from installation import build_installation, Installation
@@ -147,8 +148,11 @@ def main():
     loop = asyncio.get_event_loop()
     cfg = loop.run_until_complete(get_config(endpoint))
 
-    res = loop.run_until_complete(aquire_lock(cfg))
-    print("obtained lock:", res)
+    lock = loop.run_until_complete(aquire_lock(cfg))
+    lock_key = rpc_util.key(lock).decode()
+
+    # TODO: we may not have the lock here
+    print("obtained lock:", lock_key)
 
     app = web.Application()
 
