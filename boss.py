@@ -129,6 +129,9 @@ async def get_config(endpoint: str):
         rs = d64(a['value']).decode().strip()
         redis_servers.append(rs)
 
+    print("Found {} redis servers".format(len(redis_servers)))
+    assert len(redis_servers) > 0
+
     return dict(
         endpoint=endpoint,
         installation=installation,
