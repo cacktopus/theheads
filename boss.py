@@ -1,13 +1,12 @@
 import asyncio
 import json
-from datetime import datetime
 from string import Template
 
-import aiohttp
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
+import ws
 from installation import build_installation, Installation
 from transformations import Vec, Mat
 
@@ -27,15 +26,12 @@ async def handle_metrics(request):
     return resp
 
 
-clients = set()
-
-
 async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
 
 
-async def run_redis():
+async def run_redis(ws_manager):
     print("Connecting to redis")
     connection = await asyncio_redis.Connection.create(host=REDIS, port=6379)
     print("Connected to redis")
@@ -49,7 +45,7 @@ async def run_redis():
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
-        for client in clients:
+        for client in ws_manager.clients:
             #     try:
             #         await client.send_json(msg)
             #     except Exception as e:
@@ -57,59 +53,12 @@ async def run_redis():
             #         raise
 
             if msg['type'] == "motion-detected":
-                data = msg['data']
-
-                cam = inst.cameras[data['cameraName']]
-                p0 = Vec(0, 0)
-                p1 = Mat.rotz(data['position']) * Vec(5, 0)
-
-                p0 = cam.stand.m * cam.m * p0
-                p1 = cam.stand.m * cam.m * p1
-
-                fut = client.send_json({
-                    "type": "draw",
-                    "data": {
-                        "shape": "line",
-                        "coords": [p0.x, p0.y, p1.x, p1.y],
-                    }
-                })
-                asyncio.ensure_future(fut)
+                await client.motion_detected(inst, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
             #     text = await fetch(session, url)
             #     print(text)
-
-
-async def websocket_handler(request):
-    print("Websocket connect")
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-
-    clients.add(ws)
-
-    await ws.send_json(dict(time=str(datetime.now())))
-
-    await ws.send_json(dict(
-        type="draw",
-        data=dict(
-            shape="line",
-            coords=[-1.5, 1, 1.5, 1],
-        )
-    ))
-
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                await ws.send_str(msg.data + '/answer')
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-
-    print('websocket connection closed')
-    return ws
 
 
 async def html_handler(request):
@@ -149,17 +98,19 @@ def main():
     # return
     app = web.Application()
 
+    ws_manager = ws.WebsocketManager()
+
     app.add_routes([
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
-        web.get('/ws', websocket_handler),
+        web.get('/ws', ws_manager.websocket_handler),
         web.get('/installations/{name}', installation_handler),
         web.get('/{name}.html', html_handler),
         web.get('/{name}.js', static_handler("js"))
     ])
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(run_redis(), loop=loop)
+    asyncio.ensure_future(run_redis(ws_manager), loop=loop)
 
     web.run_app(app, port=PORT)
 
