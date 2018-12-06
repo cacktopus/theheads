@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from datetime import datetime
 from string import Template
 
@@ -144,6 +145,15 @@ async def installation_handler(request):
     return web.Response(text=json.dumps(result), content_type="application/json")
 
 
+async def poll_event_loop():
+    while True:
+        tasks = sorted(asyncio.Task.all_tasks(), key=id)
+        print("tasks:", len(tasks))
+        for task in tasks:
+            print(hex(id(task)), task._state, task)
+        await asyncio.sleep(2.5)
+
+
 def main():
     # print(json.dumps(build_installation("living-room"), indent=2))
     # return
@@ -159,7 +169,8 @@ def main():
     ])
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(run_redis(), loop=loop)
+    asyncio.ensure_future(run_redis(loop), loop=loop)
+    asyncio.ensure_future(poll_event_loop(), loop=loop)
 
     web.run_app(app, port=PORT)
 
