@@ -7,7 +7,9 @@ import prometheus_client
 from aiohttp import web
 
 import ws
+from etcd_config import get_config
 from installation import build_installation, Installation
+from rpc_util import value
 
 PORT = 8080
 REDIS = "127.0.0.1"
@@ -108,6 +110,11 @@ async def task_handler(request):
 def main():
     # print(json.dumps(build_installation("living-room"), indent=2))
     # return
+    loop = asyncio.get_event_loop()
+    fut = get_config()
+    res = loop.run_until_complete(fut)
+    print(value(res).decode())
+
     app = web.Application()
 
     ws_manager = ws.WebsocketManager()
