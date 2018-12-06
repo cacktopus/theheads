@@ -8,12 +8,10 @@ import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import get_config
+from etcd_config import get_config_str
 from installation import build_installation, Installation
-from rpc_util import value
 
 PORT = 8080
-REDIS = "127.0.0.1"
 
 
 async def handle(request):
@@ -33,9 +31,10 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def run_redis(ws_manager):
+async def run_redis(redis_hostport, ws_manager):
+    host, port = redis_hostport.split(":")
     print("Connecting to redis")
-    connection = await asyncio_redis.Connection.create(host=REDIS, port=6379)
+    connection = await asyncio_redis.Connection.create(host=host, port=int(port))
     print("Connected to redis")
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe(['the-heads-events'])
@@ -108,6 +107,24 @@ async def task_handler(request):
     return web.Response(text="\n\n".join(text), content_type="text/plain")
 
 
+async def get_config(endpoint: str):
+    installation = await get_config_str(
+        endpoint,
+        "/the-heads/machines/{hostname}/installation"
+    )
+    params = dict(
+        installation=installation
+    )
+    redis = await get_config_str(
+        endpoint,
+        "/the-heads/installation/{installation}/redis",
+        params=params,
+    )
+    return dict(
+        redis=redis
+    )
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -121,9 +138,7 @@ def main():
     endpoint = args.etcd_endpoints.split(",")[0]
 
     loop = asyncio.get_event_loop()
-    fut = get_config(endpoint, "/the-heads/machines/{hostname}/installation")
-    res = loop.run_until_complete(fut)
-    print(value(res).decode())
+    cfg = loop.run_until_complete(get_config(endpoint))
 
     app = web.Application()
 
@@ -140,7 +155,7 @@ def main():
     ])
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(run_redis(ws_manager), loop=loop)
+    asyncio.ensure_future(run_redis(cfg['redis'], ws_manager), loop=loop)
 
     web.run_app(app, port=PORT)
 

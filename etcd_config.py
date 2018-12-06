@@ -3,17 +3,17 @@ import platform
 
 import aiohttp
 
-from rpc_util import e64
+from rpc_util import e64, value
 
 
-async def get_config(etcd_endpoint: str, key_template: str):
-    hostname = platform.node()
+class MissingKeyError(RuntimeError):
+    pass
 
+
+async def get(etcd_endpoint: str, key: bytes):
     url = etcd_endpoint + "/v3beta/kv/range"
 
-    key = key_template.format(**locals()).encode()
-
-    print(key)
+    print(key.decode())
 
     data = json.dumps({
         "key": e64(key),
@@ -25,7 +25,6 @@ async def get_config(etcd_endpoint: str, key_template: str):
             resp = await response.text()
 
     msg = json.loads(resp)
-    # print(json.dumps(msg, indent="  "))
 
     kvs = msg.get('kvs', [])
 
@@ -37,3 +36,25 @@ async def get_config(etcd_endpoint: str, key_template: str):
 
     else:
         raise RuntimeError("Unexpected number of results")
+
+
+async def get_config_str(etcd_endpoint: str, key_template: str, params=None) -> str:
+    extra_params = params or {}
+
+    hostname = platform.node()
+    params = dict(
+        hostname=hostname,
+    )
+    params.update(extra_params)
+
+    key = key_template.format(**params).encode()
+
+    resp = await get(etcd_endpoint, key)
+    if resp is None:
+        raise MissingKeyError("Missing key for {}".format(key.decode()))
+
+    result = value(resp)
+    if value is None:
+        raise MissingKeyError("Missing key for {}".format(key.decode()))
+
+    return result.decode().strip()
