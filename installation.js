@@ -153,7 +153,15 @@ function setup_websocket(ws_port, scene) {
             if (msg.data.shape === "line") {
                 var coords = msg.data.coords;
                 console.log(coords);
-                scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({width: 0.020});
+                ray = scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({
+                    width: 0.020,
+                    color: "lightgreen",
+                    opacity: 0.40
+                });
+                setTimeout(function () {
+                    ray.remove();
+                }, 1000);
+
             }
         }
     };

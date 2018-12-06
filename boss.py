@@ -66,13 +66,14 @@ async def run_redis():
                 p0 = cam.stand.m * cam.m * p0
                 p1 = cam.stand.m * cam.m * p1
 
-                await client.send_json({
+                fut = client.send_json({
                     "type": "draw",
                     "data": {
                         "shape": "line",
                         "coords": [p0.x, p0.y, p1.x, p1.y],
                     }
                 })
+                asyncio.ensure_future(fut)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
