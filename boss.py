@@ -8,7 +8,6 @@ from aiohttp import web
 
 import ws
 from installation import build_installation, Installation
-from transformations import Vec, Mat
 
 PORT = 8080
 REDIS = "127.0.0.1"
@@ -93,6 +92,19 @@ async def installation_handler(request):
     return web.Response(text=json.dumps(result), content_type="application/json")
 
 
+async def task_handler(request):
+    tasks = list(sorted(asyncio.Task.all_tasks(), key=id))
+    text = ["tasks: {}".format(len(tasks))]
+    for task in tasks:
+        text.append("{} {}\n{}".format(
+            hex(id(task)),
+            task._state,
+            str(task)
+        ))
+
+    return web.Response(text="\n\n".join(text), content_type="text/plain")
+
+
 def main():
     # print(json.dumps(build_installation("living-room"), indent=2))
     # return
@@ -106,7 +118,8 @@ def main():
         web.get('/ws', ws_manager.websocket_handler),
         web.get('/installations/{name}', installation_handler),
         web.get('/{name}.html', html_handler),
-        web.get('/{name}.js', static_handler("js"))
+        web.get('/{name}.js', static_handler("js")),
+        web.get("/tasks", task_handler),
     ])
 
     loop = asyncio.get_event_loop()
