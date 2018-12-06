@@ -1,19 +1,19 @@
+import argparse
 import asyncio
 import json
-import time
-from datetime import datetime
 from string import Template
 
-import aiohttp
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
+import rpc_util
+import ws
+from etcd_config import get_config_str, lock, get_prefix
 from installation import build_installation, Installation
-from transformations import Vec, Mat
+from rpc_util import d64
 
 PORT = 8080
-REDIS = "192.168.42.30"
 
 
 async def handle(request):
@@ -28,18 +28,16 @@ async def handle_metrics(request):
     return resp
 
 
-clients = set()
-
-
 async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
 
 
-async def run_redis():
-    print("Connecting to redis")
-    connection = await asyncio_redis.Connection.create(host=REDIS, port=6379)
-    print("Connected to redis")
+async def run_redis(redis_hostport, ws_manager):
+    print("Connecting to redis:", redis_hostport)
+    host, port = redis_hostport.split(":")
+    connection = await asyncio_redis.Connection.create(host=host, port=int(port))
+    print("Connected to redis", redis_hostport)
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe(['the-heads-events'])
 
@@ -50,7 +48,7 @@ async def run_redis():
         print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
-        for client in clients:
+        for client in ws_manager.clients:
             #     try:
             #         await client.send_json(msg)
             #     except Exception as e:
@@ -58,59 +56,12 @@ async def run_redis():
             #         raise
 
             if msg['type'] == "motion-detected":
-                data = msg['data']
-
-                cam = inst.cameras[data['cameraName']]
-                p0 = Vec(0, 0)
-                p1 = Mat.rotz(data['position']) * Vec(5, 0)
-
-                p0 = cam.stand.m * cam.m * p0
-                p1 = cam.stand.m * cam.m * p1
-
-                fut = client.send_json({
-                    "type": "draw",
-                    "data": {
-                        "shape": "line",
-                        "coords": [p0.x, p0.y, p1.x, p1.y],
-                    }
-                })
-                asyncio.ensure_future(fut)
+                await client.motion_detected(inst, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
             #     text = await fetch(session, url)
             #     print(text)
-
-
-async def websocket_handler(request):
-    print("Websocket connect")
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-
-    clients.add(ws)
-
-    await ws.send_json(dict(time=str(datetime.now())))
-
-    await ws.send_json(dict(
-        type="draw",
-        data=dict(
-            shape="line",
-            coords=[-1.5, 1, 1.5, 1],
-        )
-    ))
-
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                await ws.send_str(msg.data + '/answer')
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-
-    print('websocket connection closed')
-    return ws
 
 
 async def html_handler(request):
@@ -145,32 +96,90 @@ async def installation_handler(request):
     return web.Response(text=json.dumps(result), content_type="application/json")
 
 
-async def poll_event_loop():
-    while True:
-        tasks = sorted(asyncio.Task.all_tasks(), key=id)
-        print("tasks:", len(tasks))
-        for task in tasks:
-            print(hex(id(task)), task._state, task)
-        await asyncio.sleep(2.5)
+async def task_handler(request):
+    tasks = list(sorted(asyncio.Task.all_tasks(), key=id))
+    text = ["tasks: {}".format(len(tasks))]
+    for task in tasks:
+        text.append("{} {}\n{}".format(
+            hex(id(task)),
+            task._state,
+            str(task)
+        ))
+
+    return web.Response(text="\n\n".join(text), content_type="text/plain")
+
+
+async def get_config(endpoint: str):
+    installation = await get_config_str(
+        endpoint,
+        "/the-heads/machines/{hostname}/installation"
+    )
+    params = dict(
+        installation=installation
+    )
+
+    redis_key = "/the-heads/installation/{installation}/redis/".format(**params).encode()
+    kv = await get_prefix(
+        endpoint,
+        redis_key,
+    )
+
+    redis_servers = []
+    for a in kv:
+        rs = d64(a['value']).decode().strip()
+        redis_servers.append(rs)
+
+    return dict(
+        endpoint=endpoint,
+        installation=installation,
+        redis_servers=redis_servers,
+    )
+
+
+async def aquire_lock(cfg):
+    lockname = "/the-heads/installation/{installation}/boss/lock".format(**cfg)
+    return await lock(cfg['endpoint'], lockname)
 
 
 def main():
-    # print(json.dumps(build_installation("living-room"), indent=2))
-    # return
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--etcd-endpoints', type=str,
+                        help="comma-separated list of etcd endpoints")
+
+    args = parser.parse_args()
+
+    assert args.etcd_endpoints
+
+    endpoint = args.etcd_endpoints.split(",")[0]
+
+    loop = asyncio.get_event_loop()
+    cfg = loop.run_until_complete(get_config(endpoint))
+
+    lock = loop.run_until_complete(aquire_lock(cfg))
+    lock_key = rpc_util.key(lock).decode()
+
+    # TODO: we may not have the lock here
+    print("obtained lock:", lock_key)
+
     app = web.Application()
+
+    ws_manager = ws.WebsocketManager()
 
     app.add_routes([
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
-        web.get('/ws', websocket_handler),
+        web.get('/ws', ws_manager.websocket_handler),
         web.get('/installations/{name}', installation_handler),
         web.get('/{name}.html', html_handler),
-        web.get('/{name}.js', static_handler("js"))
+        web.get('/{name}.js', static_handler("js")),
+        web.get("/tasks", task_handler),
     ])
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(run_redis(loop), loop=loop)
-    asyncio.ensure_future(poll_event_loop(), loop=loop)
+
+    for redis in cfg['redis_servers']:
+        asyncio.ensure_future(run_redis(redis, ws_manager), loop=loop)
 
     web.run_app(app, port=PORT)
 

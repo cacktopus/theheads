@@ -1,66 +1,73 @@
-import threading
-import time
-from struct import Struct
-from wsgiref.simple_server import make_server
+import asyncio
+from datetime import datetime
 
-from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler, WebSocketWSGIHandler
-from ws4py.server.wsgiutils import WebSocketWSGIApplication
-from ws4py.websocket import WebSocket
+import aiohttp
+from aiohttp import web
 
-JSMPEG_MAGIC = b'jsmp'
-JSMPEG_HEADER = Struct('>4sHH')
-WIDTH = 1280
-HEIGHT = 720
+from transformations import Vec, Mat
 
 
-class StreamingWebSocket(WebSocket):
-    def opened(self):
-        print("connect")
-        self.send(JSMPEG_HEADER.pack(JSMPEG_MAGIC, WIDTH, HEIGHT), binary=True)
+class WebsocketConnection:
+    def __init__(self):
+        self.ws = None
+
+    async def handle(self, request):
+        print("Websocket connect")
+        self.ws = web.WebSocketResponse()
+
+        await self.ws.prepare(request)
+
+        await self.ws.send_json(dict(time=str(datetime.now())))
+
+        await self.ws.send_json(dict(
+            type="draw",
+            data=dict(
+                shape="line",
+                coords=[-1.5, 1, 1.5, 1],
+            )
+        ))
+
+        async for msg in self.ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                if msg.data == 'close':
+                    await self.ws.close()
+                else:
+                    await self.ws.send_str(msg.data + '/answer')
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                print('ws connection closed with exception %s' %
+                      self.ws.exception())
+
+        print('websocket connection closed')
+        assert self.ws is not None
+        return self.ws
+
+    async def motion_detected(self, inst, msg):
+        data = msg['data']
+
+        cam = inst.cameras[data['cameraName']]
+        p0 = Vec(0, 0)
+        p1 = Mat.rotz(data['position']) * Vec(5, 0)
+
+        p0 = cam.stand.m * cam.m * p0
+        p1 = cam.stand.m * cam.m * p1
+
+        fut = self.ws.send_json({
+            "type": "draw",
+            "data": {
+                "shape": "line",
+                "coords": [p0.x, p0.y, p1.x, p1.y],
+            }
+        })
+        asyncio.ensure_future(fut)
 
 
-def broadcast_thread(converter, websocket_server):
-    try:
-        while True:
-            buf = converter.stdout.read1(32768)
-            # print("read", len(buf))
-            if buf:
-                websocket_server.manager.broadcast(buf, binary=True)
-            elif converter.poll() is not None:
-                break
-    finally:
-        converter.stdout.close()
+class WebsocketManager:
+    def __init__(self):
+        self.clients = set()
 
-
-def websocket_server():
-    WebSocketWSGIHandler.http_version = '1.1'
-    server = make_server(
-        '',
-        8001,
-        server_class=WSGIServer,
-        handler_class=WebSocketWSGIRequestHandler,
-        app=WebSocketWSGIApplication(
-            protocols=['null'],
-            handler_cls=StreamingWebSocket,
-        )
-    )
-    server.initialize_websockets_manager()
-    return server
-
-
-def main():
-    ws = websocket_server()
-
-    t0 = threading.Thread(target=ws.serve_forever, daemon=True)
-    t0.start()
-
-    t1 = threading.Thread(target=broadcast_thread, args=[ws], daemon=True)
-    t1.start()
-
-    print("Waiting...")
-    while True:
-        time.sleep(1)
-
-
-if __name__ == '__main__':
-    main()
+    async def websocket_handler(self, request):
+        conn = WebsocketConnection()
+        self.clients.add(conn)
+        ws = await conn.handle(request)
+        self.clients.remove(conn)
+        return ws
