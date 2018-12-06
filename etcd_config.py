@@ -1,5 +1,6 @@
 import json
 import platform
+from typing import Optional
 
 import aiohttp
 
@@ -36,6 +37,22 @@ async def get(etcd_endpoint: str, key: bytes):
 
     else:
         raise RuntimeError("Unexpected number of results")
+
+
+async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
+    url = etcd_endpoint + "/v3alpha/lock/lock"
+    data = json.dumps({
+        "name": e64(name.encode()),
+        "lease": lease,
+    })
+
+    print("getting lock at", name)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=url, data=data) as response:
+            resp = await response.text()
+
+    return json.loads(resp)
 
 
 async def get_config_str(etcd_endpoint: str, key_template: str, params=None) -> str:

@@ -8,7 +8,7 @@ import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import get_config_str
+from etcd_config import get_config_str, lock
 from installation import build_installation, Installation
 
 PORT = 8080
@@ -121,8 +121,15 @@ async def get_config(endpoint: str):
         params=params,
     )
     return dict(
-        redis=redis
+        endpoint=endpoint,
+        installation=installation,
+        redis=redis,
     )
+
+
+async def aquire_lock(cfg):
+    lockname = "/the-heads/installation/{installation}/boss/lock".format(**cfg)
+    return await lock(cfg['endpoint'], lockname)
 
 
 def main():
@@ -139,6 +146,9 @@ def main():
 
     loop = asyncio.get_event_loop()
     cfg = loop.run_until_complete(get_config(endpoint))
+
+    res = loop.run_until_complete(aquire_lock(cfg))
+    print("obtained lock:", res)
 
     app = web.Application()
 
