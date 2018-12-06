@@ -13,7 +13,7 @@ from etcd_config import get_config_str, lock, get_prefix
 from installation import build_installation, Installation
 from rpc_util import d64
 
-PORT = 8080
+BOSS_PORT = 8081
 
 
 async def handle(request):
@@ -69,7 +69,7 @@ async def html_handler(request):
     with open(filename) as fp:
         contents = Template(fp.read())
 
-    text = contents.safe_substitute(WS_PORT=PORT)
+    text = contents.safe_substitute()
     return web.Response(text=text, content_type="text/html")
 
 
@@ -184,7 +184,7 @@ def main():
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, ws_manager), loop=loop)
 
-    web.run_app(app, port=PORT)
+    web.run_app(app, port=BOSS_PORT)
 
 
 if __name__ == '__main__':
