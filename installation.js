@@ -5,7 +5,7 @@ var data = {
             "cameras": [
                 {
                     "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                    "fov": 60,
+                    "fov": 64.33,
                     "name": "camera0",
                     "pos": {
                         "x": 0.1,
@@ -35,7 +35,7 @@ var data = {
             "cameras": [
                 {
                     "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                    "fov": 60,
+                    "fov": 64.33,
                     "name": "camera1",
                     "pos": {
                         "x": 0.1,
@@ -65,7 +65,7 @@ var data = {
             "cameras": [
                 {
                     "description": "iMac built-in",
-                    "fov": 70,
+                    "fov": 64.33,
                     "name": "camera2",
                     "pos": {
                         "x": 0.1,
