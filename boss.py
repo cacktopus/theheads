@@ -12,7 +12,7 @@ from installation import build_installation, Installation
 from transformations import Vec, Mat
 
 PORT = 8080
-REDIS = "192.168.42.30"
+REDIS = "127.0.0.1"
 
 
 async def handle(request):
