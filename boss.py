@@ -8,8 +8,9 @@ import prometheus_client
 from aiohttp import web
 
 import rpc_util
+from rpc_util import d64
 import ws
-from etcd_config import get_config_str, lock
+from etcd_config import get_config_str, lock, get_prefix
 from installation import build_installation, Installation
 
 PORT = 8080
@@ -33,10 +34,10 @@ async def fetch(session, url):
 
 
 async def run_redis(redis_hostport, ws_manager):
+    print("Connecting to redis:", redis_hostport)
     host, port = redis_hostport.split(":")
-    print("Connecting to redis")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
-    print("Connected to redis")
+    print("Connected to redis", redis_hostport)
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe(['the-heads-events'])
 
@@ -116,15 +117,22 @@ async def get_config(endpoint: str):
     params = dict(
         installation=installation
     )
-    redis = await get_config_str(
+
+    redis_key = "/the-heads/installation/{installation}/redis/".format(**params).encode()
+    kv = await get_prefix(
         endpoint,
-        "/the-heads/installation/{installation}/redis",
-        params=params,
+        redis_key,
     )
+
+    redis_servers = []
+    for a in kv:
+        rs = d64(a['value']).decode().strip()
+        redis_servers.append(rs)
+
     return dict(
         endpoint=endpoint,
         installation=installation,
-        redis=redis,
+        redis_servers=redis_servers,
     )
 
 
@@ -169,7 +177,9 @@ def main():
     ])
 
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(run_redis(cfg['redis'], ws_manager), loop=loop)
+
+    for redis in cfg['redis_servers']:
+        asyncio.ensure_future(run_redis(redis, ws_manager), loop=loop)
 
     web.run_app(app, port=PORT)
 

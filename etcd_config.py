@@ -39,6 +39,26 @@ async def get(etcd_endpoint: str, key: bytes):
         raise RuntimeError("Unexpected number of results")
 
 
+async def get_prefix(etcd_endpoint: str, key: bytes):
+    url = etcd_endpoint + "/v3beta/kv/range"
+
+    print(key.decode())
+
+    end_key = key[:-1] + bytes([key[-1] + 1])  # TODO: handle overflow case
+
+    data = json.dumps({"key": e64(key), "range_end": e64(end_key), })
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=url, data=data) as response:
+            resp = await response.text()
+
+    msg = json.loads(resp)
+
+    kvs = msg.get('kvs', [])
+
+    return kvs
+
+
 async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
     url = etcd_endpoint + "/v3alpha/lock/lock"
     data = json.dumps({
