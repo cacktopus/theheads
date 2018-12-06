@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 from string import Template
@@ -108,10 +109,19 @@ async def task_handler(request):
 
 
 def main():
-    # print(json.dumps(build_installation("living-room"), indent=2))
-    # return
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--etcd-endpoints', type=str,
+                        help="comma-separated list of etcd endpoints")
+
+    args = parser.parse_args()
+
+    assert args.etcd_endpoints
+
+    endpoint = args.etcd_endpoints.split(",")[0]
+
     loop = asyncio.get_event_loop()
-    fut = get_config()
+    fut = get_config(endpoint, "/the-heads/machines/{hostname}/installation")
     res = loop.run_until_complete(fut)
     print(value(res).decode())
 

@@ -3,19 +3,15 @@ import platform
 
 import aiohttp
 
-from config import BASE
 from rpc_util import e64
 
 
-async def get_config():
+async def get_config(etcd_endpoint: str, key_template: str):
     hostname = platform.node()
 
-    url = BASE + "/v3beta/kv/range"
+    url = etcd_endpoint + "/v3beta/kv/range"
 
-    key = ("/the-heads/machines/{hostname}/installation"
-           .format(**locals())
-           .encode()
-           )
+    key = key_template.format(**locals()).encode()
 
     print(key)
 
@@ -41,4 +37,3 @@ async def get_config():
 
     else:
         raise RuntimeError("Unexpected number of results")
-
