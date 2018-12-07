@@ -159,11 +159,11 @@ def main():
     loop = asyncio.get_event_loop()
     cfg = loop.run_until_complete(get_config(endpoint))
 
-    lock = loop.run_until_complete(aquire_lock(cfg))
-    lock_key = rpc_util.key(lock).decode()
-
-    # TODO: we may not have the lock here
-    print("obtained lock:", lock_key)
+    # lock = loop.run_until_complete(aquire_lock(cfg))
+    # lock_key = rpc_util.key(lock).decode()
+    #
+    # # TODO: we may not have the lock here
+    # print("obtained lock:", lock_key)
 
     app = web.Application()
 
