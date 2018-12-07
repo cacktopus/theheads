@@ -154,7 +154,7 @@ function setup_websocket(ws_port, scene) {
                 if (item.shape === "line") {
                     var coords = item.coords;
                     console.log(coords);
-                    ray = scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({
+                    var ray = scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({
                         width: 0.020,
                         color: "lightgreen",
                         opacity: 0.40

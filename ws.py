@@ -10,6 +10,8 @@ from transformations import Vec, Mat
 class WebsocketConnection:
     def __init__(self):
         self.ws = None
+        self.draw_queue = asyncio.Queue()
+        asyncio.ensure_future(self.draw_stuff())
 
     async def handle(self, request):
         print("Websocket connect")
@@ -21,10 +23,10 @@ class WebsocketConnection:
 
         await self.ws.send_json(dict(
             type="draw",
-            data=dict(
+            data=[dict(
                 shape="line",
                 coords=[-1.5, 1, 1.5, 1],
-            )
+            )]  
         ))
 
         async for msg in self.ws:
@@ -51,14 +53,28 @@ class WebsocketConnection:
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
-        fut = self.ws.send_json({
-            "type": "draw",
-            "data": [{
-                "shape": "line",
-                "coords": [p0.x, p0.y, p1.x, p1.y],
-            }],
-        })
-        asyncio.ensure_future(fut)
+        drawCmd = {
+            "shape": "line",
+            "coords": [p0.x, p0.y, p1.x, p1.y],
+        }
+        self.draw_queue.put_nowait(drawCmd)
+
+    async def draw_stuff(self):
+        while True:
+            # Get a "work item" out of the queue.
+            data = []
+            item = await self.draw_queue.get()
+            data.append(item)
+            while not self.draw_queue.empty():
+                item = self.draw_queue.get_nowait()
+                data.append(item)
+
+            fut = self.ws.send_json({
+                "type": "draw",
+                "data": data,
+            })
+
+            await fut  # perhaps do in parallel, or something else
 
 
 class WebsocketManager:
