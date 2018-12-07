@@ -41,7 +41,7 @@ class WebsocketConnection:
         assert self.ws is not None
         return self.ws
 
-    async def motion_detected(self, inst, msg):
+    def motion_detected(self, inst, msg):
         data = msg['data']
 
         cam = inst.cameras[data['cameraName']]
@@ -53,10 +53,10 @@ class WebsocketConnection:
 
         fut = self.ws.send_json({
             "type": "draw",
-            "data": {
+            "data": [{
                 "shape": "line",
                 "coords": [p0.x, p0.y, p1.x, p1.y],
-            }
+            }],
         })
         asyncio.ensure_future(fut)
 

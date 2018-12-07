@@ -45,7 +45,7 @@ async def run_redis(redis_hostport, ws_manager):
 
     while True:
         reply = await subscriber.next_published()
-        print('Received: ', repr(reply.value), 'on channel', reply.channel)
+        # print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
         for client in ws_manager.clients:
@@ -56,7 +56,7 @@ async def run_redis(redis_hostport, ws_manager):
             #         raise
 
             if msg['type'] == "motion-detected":
-                await client.motion_detected(inst, msg)
+                client.motion_detected(inst, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
