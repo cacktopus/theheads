@@ -7,7 +7,6 @@ import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
-import rpc_util
 import ws
 from etcd_config import get_config_str, lock, get_prefix
 from installation import build_installation, Installation
@@ -15,11 +14,10 @@ from rpc_util import d64
 
 BOSS_PORT = 8081
 
-
-MOTION_DETECTED = prometheus_client.Counter(
-    "heads_boss_motion_detect_msg",
-    "motion-detected message received from redis count",
-    ["camera"]
+REDIS_MESSAGE_RECEIVED = prometheus_client.Counter(
+    "heads_boss_redis_message_ingested",
+    "Message ingested from redis",
+    ["channel", "type", "src"],
 )
 
 
@@ -55,6 +53,12 @@ async def run_redis(redis_hostport, ws_manager):
         # print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
+        REDIS_MESSAGE_RECEIVED.labels(
+            reply.channel,
+            msg['type'],
+            msg['data']['cameraName'],
+        ).inc()
+
         for client in ws_manager.clients:
             #     try:
             #         await client.send_json(msg)
@@ -63,7 +67,6 @@ async def run_redis(redis_hostport, ws_manager):
             #         raise
 
             if msg['type'] == "motion-detected":
-                MOTION_DETECTED.labels(msg['cameraName'])
                 client.motion_detected(inst, msg)
 
             # async with aiohttp.ClientSession() as session:
