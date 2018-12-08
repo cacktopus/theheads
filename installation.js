@@ -169,17 +169,17 @@ function setup_websocket(ws_port, scene) {
 }
 
 function main(ws_port) {
-    var w = 600;
-    var h = 600;
+    var w = 1000;
+    var h = 800;
 
     console.log("here we are");
     var svg = SVG('drawing').size(w, h);
-    svg.rect(w, h).attr({fill: "sandybrown"});
+    svg.rect(w, h).attr({fill: "black"});
     // svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
     // svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 
     var root = svg.group();
-    var scale = 66;
+    var scale = 33;
 
     root.move(w / 2, 100);
     root.scale(scale, -scale, 0, 0);
@@ -196,7 +196,7 @@ function main(ws_port) {
     // }
     ////
     // root.rect()
-    root.image("random.png", 20, 20).move(-10, -10).attr({opacity: 0.20});
+    root.image("random.png", 20, 40).move(-10, -20).attr({opacity: 1});
 
     var scene = {
         cameras: {},

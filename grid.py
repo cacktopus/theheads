@@ -2,6 +2,8 @@ import math
 
 import numpy as np
 
+import png
+
 
 class Grid:
     def __init__(self, xmin, ymin, xmax, ymax, x_resolution, y_resolution):
@@ -26,7 +28,9 @@ class Grid:
         if xidx >= self.x_res or yidx >= self.y_res:
             return None
 
-        return xidx, yidx
+        res = yidx, xidx  # Notice swap here
+        print(res)
+        return res
 
     def set(self, x: float, y: float, val: float):
         idx = self.idx(x, y)
@@ -36,6 +40,18 @@ class Grid:
         idx = self.idx(x, y)
         return float(self._grid[idx])
 
+    def to_png(self):
+        buf = np.zeros((self.y_res, self.x_res, 4), dtype=np.uint8)
+
+        channel = (self._grid * 255).round().astype(np.uint8)
+        # channel = np.random.randint(40, 200, size=(self.y_res, self.x_res), dtype=np.uint8)
+        channel = np.flipud(channel)
+
+        buf[..., 1] = channel
+        buf[..., 3] = 255
+
+        return png.write_png(buf.tobytes(), self.x_res, self.y_res)
+
 
 def main():
     g = Grid(-10, -20, 10, 20, 40, 80)
@@ -44,8 +60,8 @@ def main():
     print(g.idx(10, 0))
     print(g.idx(9.9999, 0))
 
-    g.set(0, -2, 0.77)
-    print(g.get(0, -2))
+    g.set(0, 0, 0.98)
+    print(g.get(0, 0))
 
 
 if __name__ == '__main__':

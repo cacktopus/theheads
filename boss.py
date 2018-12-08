@@ -13,6 +13,7 @@ from aiohttp import web
 import png
 import ws
 from etcd_config import get_config_str, lock, get_prefix
+from grid import Grid
 from installation import build_installation, Installation
 from rpc_util import d64
 
@@ -127,21 +128,26 @@ def static_binary_handler(extension):
 
 
 def random_png(request):
-    width, height = 256 * 2, 256 * 2
+    # width, height = 256 * 2, 256 * 2
+    #
+    # t0 = time.time()
+    #
+    # a = np.zeros((height, width, 4), dtype=np.uint8)
+    # a[..., 1] = np.random.randint(50, 200, size=(height, width), dtype=np.uint8)
+    # a[..., 3] = 255
+    #
+    # print(time.time() - t0)
+    #
+    # t0 = time.time()
+    # body = png.write_png(a.tobytes(), width, height)
+    # print(time.time() - t0)
+    #
+    # print(len(body))
+    g = Grid(-10, -20, 10, 20, 400, 800)
+    g.set(2, -2, 0.98)
+    g.set(2.5, -2, 0.98)
+    body = g.to_png()
 
-    t0 = time.time()
-
-    a = np.zeros((height, width, 4), dtype=np.uint8)
-    a[..., 1] = np.random.randint(50, 200, size=(height, width), dtype=np.uint8)
-    a[..., 3] = 255
-
-    print(time.time() - t0)
-
-    t0 = time.time()
-    body = png.write_png(a.tobytes(), width, height)
-    print(time.time() - t0)
-
-    print(len(body))
 
     return web.Response(body=body, content_type="image/png")
 
