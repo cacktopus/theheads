@@ -7,11 +7,15 @@ from aiohttp import web
 from transformations import Vec, Mat
 
 
+class Closed:
+    pass
+
+
 class WebsocketConnection:
     def __init__(self):
         self.ws = None
         self.draw_queue = asyncio.Queue()
-        asyncio.ensure_future(self.draw_stuff())
+        self.draw_stuff_coro = asyncio.ensure_future(self.draw_stuff())
 
     async def handle(self, request):
         print("Websocket connect")
@@ -26,7 +30,7 @@ class WebsocketConnection:
             data=[dict(
                 shape="line",
                 coords=[-1.5, 1, 1.5, 1],
-            )]  
+            )]
         ))
 
         async for msg in self.ws:
@@ -41,7 +45,10 @@ class WebsocketConnection:
 
         print('websocket connection closed')
         assert self.ws is not None
-        return self.ws
+        result = self.ws
+        self.ws = Closed  # release reference
+        self.draw_stuff_coro.cancel()
+        return result
 
     def motion_detected(self, inst, msg):
         data = msg['data']
@@ -60,21 +67,27 @@ class WebsocketConnection:
         self.draw_queue.put_nowait(drawCmd)
 
     async def draw_stuff(self):
-        while True:
-            # Get a "work item" out of the queue.
-            data = []
-            item = await self.draw_queue.get()
-            data.append(item)
-            while not self.draw_queue.empty():
-                item = self.draw_queue.get_nowait()
+        try:
+            while True:
+                # Get a "work item" out of the queue.
+                data = []
+                item = await self.draw_queue.get()
                 data.append(item)
+                while not self.draw_queue.empty():
+                    item = self.draw_queue.get_nowait()
+                    data.append(item)
 
-            fut = self.ws.send_json({
-                "type": "draw",
-                "data": data,
-            })
+                fut = self.ws.send_json({
+                    "type": "draw",
+                    "data": data,
+                })
 
-            await fut  # perhaps do in parallel, or something else
+                if self.ws is Closed:
+                    break
+
+                await fut  # perhaps do in parallel, or something else
+        except asyncio.CancelledError:
+            pass
 
 
 class WebsocketManager:
