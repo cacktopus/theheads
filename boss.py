@@ -20,6 +20,14 @@ REDIS_MESSAGE_RECEIVED = prometheus_client.Counter(
     ["channel", "type", "src"],
 )
 
+TASKS = prometheus_client.Gauge(
+    "heads_boss_tasks",
+    "Number of asyncio tasks",
+    [],
+)
+
+TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
+
 
 async def handle(request):
     name = request.match_info.get('name', 'anon')
