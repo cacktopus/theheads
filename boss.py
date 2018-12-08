@@ -16,6 +16,13 @@ from rpc_util import d64
 BOSS_PORT = 8081
 
 
+MOTION_DETECTED = prometheus_client.Counter(
+    "heads_boss_motion_detect_msg",
+    "motion-detected message received from redis count",
+    ["camera"]
+)
+
+
 async def handle(request):
     name = request.match_info.get('name', 'anon')
     text = "Hello, {}\n".format(name)
@@ -56,6 +63,7 @@ async def run_redis(redis_hostport, ws_manager):
             #         raise
 
             if msg['type'] == "motion-detected":
+                MOTION_DETECTED.labels(msg['cameraName'])
                 client.motion_detected(inst, msg)
 
             # async with aiohttp.ClientSession() as session:
