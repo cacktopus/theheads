@@ -6,6 +6,7 @@ import time
 from string import Template
 
 import asyncio_redis
+import numpy as np
 import prometheus_client
 from aiohttp import web
 
@@ -128,20 +129,16 @@ def static_binary_handler(extension):
 def random_png(request):
     width, height = 256 * 2, 256 * 2
 
-    buf = bytearray(width * height * 4)
-
     t0 = time.time()
-    for y in range(height):
-        for x in range(width):
-            pos = (y * width + x) * 4
-            buf[pos + 0] = 0
-            buf[pos + 1] = random.randint(0, min(y//2, 255))
-            buf[pos + 2] = 0
-            buf[pos + 3] = 255
+
+    a = np.zeros((height, width, 4), dtype=np.uint8)
+    a[..., 1] = np.random.randint(50, 200, size=(height, width), dtype=np.uint8)
+    a[..., 3] = 255
+
     print(time.time() - t0)
 
     t0 = time.time()
-    body = png.write_png(bytes(buf), width, height)
+    body = png.write_png(a.tobytes(), width, height)
     print(time.time() - t0)
 
     print(len(body))
