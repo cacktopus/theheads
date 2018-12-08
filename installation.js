@@ -187,6 +187,17 @@ function main(ws_port) {
     root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
     root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
 
+    // var step = 0.125;
+    // for (var x = -10; x < 10; x += step) {
+    //     for (var y = -10; y < 10; y += step) {
+    //         root.rect(step, step).move(x, y).attr({fill: "red"})
+    //     }
+    //
+    // }
+    ////
+    // root.rect()
+    root.image("random.png", 20, 20).move(-10, -10).attr({opacity: 0.20});
+
     var scene = {
         cameras: {},
         root: root

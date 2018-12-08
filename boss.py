@@ -1,12 +1,15 @@
 import argparse
 import asyncio
 import json
+import random
+import time
 from string import Template
 
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
+import png
 import ws
 from etcd_config import get_config_str, lock, get_prefix
 from installation import build_installation, Installation
@@ -92,10 +95,10 @@ async def html_handler(request):
     return web.Response(text=text, content_type="text/html")
 
 
-def static_handler(extension):
+def static_text_handler(extension):
     # TODO: make sure .. not allowed in paths, etc.
     content_type = {
-        "js": "text/javascript"
+        "js": "text/javascript",
     }[extension]
 
     async def handler(request):
@@ -105,6 +108,45 @@ def static_handler(extension):
         return web.Response(text=text, content_type=content_type)
 
     return handler
+
+
+def static_binary_handler(extension):
+    # TODO: make sure .. not allowed in paths, etc.
+    content_type = {
+        "png": "image/png",
+    }[extension]
+
+    async def handler(request):
+        filename = request.match_info.get('name') + "." + extension
+        with open(filename, "rb") as fp:
+            body = fp.read()
+        return web.Response(body=body, content_type=content_type)
+
+    return handler
+
+
+def random_png(request):
+    width, height = 256 * 2, 256 * 2
+
+    buf = bytearray(width * height * 4)
+
+    t0 = time.time()
+    for y in range(height):
+        for x in range(width):
+            pos = (y * width + x) * 4
+            buf[pos + 0] = 0
+            buf[pos + 1] = random.randint(0, min(y//2, 255))
+            buf[pos + 2] = 0
+            buf[pos + 3] = 255
+    print(time.time() - t0)
+
+    t0 = time.time()
+    body = png.write_png(bytes(buf), width, height)
+    print(time.time() - t0)
+
+    print(len(body))
+
+    return web.Response(body=body, content_type="image/png")
 
 
 async def installation_handler(request):
@@ -194,7 +236,9 @@ def main():
         web.get('/ws', ws_manager.websocket_handler),
         web.get('/installations/{name}', installation_handler),
         web.get('/{name}.html', html_handler),
-        web.get('/{name}.js', static_handler("js")),
+        web.get('/{name}.js', static_text_handler("js")),
+        web.get('/random.png', random_png),
+        web.get('/{name}.png', static_binary_handler("png")),
         web.get("/tasks", task_handler),
     ])
 
