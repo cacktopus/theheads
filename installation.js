@@ -196,7 +196,16 @@ function main(ws_port) {
     // }
     ////
     // root.rect()
-    root.image("random.png", 20, 40).move(-10, -20).attr({opacity: 1});
+    var delay = 100;
+
+    var img = root.image("/abc123/random.png", 20, 40).move(-10, -20).attr({opacity: 1});
+    var reload = function () {
+        var name = Math.random() + "/random.png";
+        img.load(name);
+        console.log("got");
+        setTimeout(reload, 100);
+    };
+    setTimeout(reload, 100);
 
     var scene = {
         cameras: {},

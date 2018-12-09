@@ -13,7 +13,7 @@ from aiohttp import web
 import png
 import ws
 from etcd_config import get_config_str, lock, get_prefix
-from grid import Grid
+from grid import Grid, the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
 
@@ -143,11 +143,7 @@ def random_png(request):
     # print(time.time() - t0)
     #
     # print(len(body))
-    g = Grid(-10, -20, 10, 20, 400, 800)
-    g.set(2, -2, 0.98)
-    g.set(2.5, -2, 0.98)
-    body = g.to_png()
-
+    body = the_grid.to_png()
 
     return web.Response(body=body, content_type="image/png")
 
@@ -233,6 +229,8 @@ def main():
 
     ws_manager = ws.WebsocketManager()
 
+    asyncio.ensure_future(the_grid.decay())
+
     app.add_routes([
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
@@ -240,7 +238,7 @@ def main():
         web.get('/installations/{name}', installation_handler),
         web.get('/{name}.html', html_handler),
         web.get('/{name}.js', static_text_handler("js")),
-        web.get('/random.png', random_png),
+        web.get('/{seed}/random.png', random_png),
         web.get('/{name}.png', static_binary_handler("png")),
         web.get("/tasks", task_handler),
     ])

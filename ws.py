@@ -4,6 +4,7 @@ from datetime import datetime
 import aiohttp
 from aiohttp import web
 
+from grid import the_grid
 from transformations import Vec, Mat
 
 
@@ -64,6 +65,9 @@ class WebsocketConnection:
             "shape": "line",
             "coords": [p0.x, p0.y, p1.x, p1.y],
         }
+        prev_xy = the_grid.get(p1.x, p1.y)
+        the_grid.set(p1.x, p1.y, prev_xy + 0.10)
+
         self.draw_queue.put_nowait(drawCmd)
 
     async def draw_stuff(self):

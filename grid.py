@@ -1,3 +1,4 @@
+import asyncio
 import math
 
 import numpy as np
@@ -29,7 +30,6 @@ class Grid:
             return None
 
         res = yidx, xidx  # Notice swap here
-        print(res)
         return res
 
     def set(self, x: float, y: float, val: float):
@@ -43,7 +43,8 @@ class Grid:
     def to_png(self):
         buf = np.zeros((self.y_res, self.x_res, 4), dtype=np.uint8)
 
-        channel = (self._grid * 255).round().astype(np.uint8)
+        clipped = np.clip(self._grid, 0, 1.0)
+        channel = (clipped * 255).round().astype(np.uint8)
         # channel = np.random.randint(40, 200, size=(self.y_res, self.x_res), dtype=np.uint8)
         channel = np.flipud(channel)
 
@@ -51,6 +52,14 @@ class Grid:
         buf[..., 3] = 255
 
         return png.write_png(buf.tobytes(), self.x_res, self.y_res)
+
+    async def decay(self):
+        while True:
+            await asyncio.sleep(0.25)
+            self._grid = self._grid * 0.90
+
+
+the_grid = Grid(-10, -20, 10, 20, 100, 200)  # TODO: not global!
 
 
 def main():
