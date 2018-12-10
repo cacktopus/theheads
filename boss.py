@@ -1,3 +1,4 @@
+import aiohttp
 import argparse
 import asyncio
 import json
@@ -50,7 +51,7 @@ async def fetch(session, url):
         return await response.text()
 
 
-def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
+async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
     data = msg['data']
 
     cam = inst.cameras[data['cameraName']]
@@ -85,23 +86,30 @@ def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], m
 
     for head in inst.heads.values():
         m = head.stand.m * head.m
-        p = m * Vec(0.0, 0.0)
+        m_inv = m.inv()
+
+        f = m_inv * focus
+        f = f.unit()
+
+        theta = math.atan2(f.y, f.x) * 180 / math.pi
+
+        pos = 200 * theta / 360
+        print(head.name, int(pos))
+
+        p0 = m * Vec(0.0, 0.0)
+        p1 = m * Mat.rotz(theta) * Vec(5, 0, 0.0)
         drawCmd = {
             "shape": "line",
-            "coords": [p.x, p.y, focus.x, focus.y],
+            "coords": [p0.x, p0.y, p1.x, p1.y],
         }
 
         for client in clients:  # TODO: should this be a manager command? Or some kind of callback?
             client.draw_queue.put_nowait(drawCmd)
 
-        zero = (m * Vec(1.0, 0) - p).unit()
-        to = (focus - p).unit()  # TODO handle case when focus is directly on a head
-
-        dot = zero.dot(to)
-        # print(zero, to, zero.abs(), to.abs(), dot)
-        theta = math.acos(dot)
-        pos = 100 * theta / math.pi
-        print(head.name, int(pos))
+        url = head.url + "/position/{:d}".format(int(pos))
+        async with aiohttp.ClientSession() as session:
+            print(theta, pos, url)
+            await fetch(session, url)
 
 
 async def run_redis(redis_hostport, ws_manager):
@@ -126,7 +134,7 @@ async def run_redis(redis_hostport, ws_manager):
         ).inc()
 
         if msg['type'] == "motion-detected":
-            motion_detected(inst, ws_manager.clients, msg)
+            await motion_detected(inst, ws_manager.clients, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])

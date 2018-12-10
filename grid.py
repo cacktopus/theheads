@@ -62,7 +62,7 @@ class Grid:
 
     def combined(self):
         if len(self._grids):
-            return reduce(np.multiply, self._grids.values())
+            return reduce(np.add, self._grids.values())
         else:
             return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
 

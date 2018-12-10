@@ -9,7 +9,7 @@ class Vec:
         self._data = np.array([x, y, z, w])
 
     def __str__(self):
-        return str(self._data)
+        return str("<{:.4f} {:.4f}>".format(self.x, self.y))
 
     @property
     def x(self):
@@ -91,6 +91,9 @@ class Mat:
 
     def __str__(self):
         return str(self._data)
+
+    def inv(self):
+        return Mat(np.linalg.inv(self._data))
 
 
 def main():
