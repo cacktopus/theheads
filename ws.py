@@ -46,62 +46,6 @@ class WebsocketConnection:
         self.draw_stuff_coro.cancel()
         return result
 
-    def motion_detected(self, inst, msg):
-        data = msg['data']
-
-        cam = inst.cameras[data['cameraName']]
-        p0 = Vec(0, 0)
-        p1 = Mat.rotz(data['position']) * Vec(5, 0)
-
-        p0 = cam.stand.m * cam.m * p0
-        p1 = cam.stand.m * cam.m * p1
-
-        drawCmd = {
-            "shape": "line",
-            "coords": [p0.x, p0.y, p1.x, p1.y],
-        }
-
-        step_size = min(the_grid.get_pixel_size()) / 4.0
-
-        to = p1 - p0
-        length = (to).abs()
-        direction = to.scale(1.0 / length)
-
-        dx = to.x / length * step_size
-        dy = to.y / length * step_size
-
-        initial = p0 + direction.scale(0.5)
-        pos_x, pos_y = initial.x, initial.y
-
-        steps = int(length / step_size)
-        for i in range(steps):
-            prev_xy = the_grid.get(cam, pos_x, pos_y)
-            if prev_xy is None:
-                break
-            the_grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
-            pos_x += dx
-            pos_y += dy
-
-        focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-
-        for head in inst.heads.values():
-            m = head.stand.m * head.m
-            p = m * Vec(0.0, 0.0)
-            drawCmd = {
-                "shape": "line",
-                "coords": [p.x, p.y, focus.x, focus.y],
-            }
-            self.draw_queue.put_nowait(drawCmd)
-
-            zero = (m * Vec(1.0, 0) - p).unit()
-            to = (focus - p).unit()  # TODO handle case when focus is directly on a head
-
-            dot = zero.dot(to)
-            # print(zero, to, zero.abs(), to.abs(), dot)
-            theta = math.acos(dot)
-            pos = 100 * theta / math.pi
-            print(head.name, int(pos))
-
     async def draw_stuff(self):
         try:
             while True:

@@ -1,7 +1,9 @@
 import argparse
 import asyncio
 import json
+import math
 from string import Template
+from typing import Dict, List
 
 import asyncio_redis
 import prometheus_client
@@ -12,6 +14,7 @@ from etcd_config import get_config_str, lock, get_prefix
 from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
+from transformations import Mat, Vec
 
 BOSS_PORT = 8081
 
@@ -47,6 +50,60 @@ async def fetch(session, url):
         return await response.text()
 
 
+def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
+    data = msg['data']
+
+    cam = inst.cameras[data['cameraName']]
+    p0 = Vec(0, 0)
+    p1 = Mat.rotz(data['position']) * Vec(5, 0)
+
+    p0 = cam.stand.m * cam.m * p0
+    p1 = cam.stand.m * cam.m * p1
+
+    step_size = min(the_grid.get_pixel_size()) / 4.0
+
+    to = p1 - p0
+    length = (to).abs()
+    direction = to.scale(1.0 / length)
+
+    dx = to.x / length * step_size
+    dy = to.y / length * step_size
+
+    initial = p0 + direction.scale(0.5)
+    pos_x, pos_y = initial.x, initial.y
+
+    steps = int(length / step_size)
+    for i in range(steps):
+        prev_xy = the_grid.get(cam, pos_x, pos_y)
+        if prev_xy is None:
+            break
+        the_grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
+        pos_x += dx
+        pos_y += dy
+
+    focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
+
+    for head in inst.heads.values():
+        m = head.stand.m * head.m
+        p = m * Vec(0.0, 0.0)
+        drawCmd = {
+            "shape": "line",
+            "coords": [p.x, p.y, focus.x, focus.y],
+        }
+
+        for client in clients:  # TODO: should this be a manager command? Or some kind of callback?
+            client.draw_queue.put_nowait(drawCmd)
+
+        zero = (m * Vec(1.0, 0) - p).unit()
+        to = (focus - p).unit()  # TODO handle case when focus is directly on a head
+
+        dot = zero.dot(to)
+        # print(zero, to, zero.abs(), to.abs(), dot)
+        theta = math.acos(dot)
+        pos = 100 * theta / math.pi
+        print(head.name, int(pos))
+
+
 async def run_redis(redis_hostport, ws_manager):
     print("Connecting to redis:", redis_hostport)
     host, port = redis_hostport.split(":")
@@ -68,15 +125,8 @@ async def run_redis(redis_hostport, ws_manager):
             msg['data']['cameraName'],
         ).inc()
 
-        for client in ws_manager.clients:
-            #     try:
-            #         await client.send_json(msg)
-            #     except Exception as e:
-            #         print(e)
-            #         raise
-
-            if msg['type'] == "motion-detected":
-                client.motion_detected(inst, msg)
+        if msg['type'] == "motion-detected":
+            motion_detected(inst, ws_manager.clients, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
