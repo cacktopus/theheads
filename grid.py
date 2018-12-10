@@ -44,15 +44,25 @@ class Grid:
         shape = self._grid.shape
         buf = np.zeros((shape[0], shape[1], 4), dtype=np.uint8)
 
+        focus = self.focus()
+        print(focus)
+
         clipped = np.clip(self._grid, 0, 1.0)
         channel = (clipped * 255).round().astype(np.uint8)
         # channel = np.random.randint(40, 200, size=(self.y_res, self.x_res), dtype=np.uint8)
-        channel = np.flipud(channel)
 
-        buf[..., 1] = channel
+        buf[focus[0], focus[1], 0] = 255
+        buf[focus[0], focus[1], 2] = 255
         buf[..., 3] = 255
+        # buf[..., 1] = channel
 
+        buf = np.flipud(buf)
         return png.write_png(buf.tobytes(), self.img_size_x, self.img_size_y)
+
+    def focus(self):
+        a = self._grid
+        m = np.argmax(a, axis=None)
+        return np.unravel_index(m, a.shape)
 
     def get_pixel_size(self):
         """Returns the size of a grid cell (in meters)"""
