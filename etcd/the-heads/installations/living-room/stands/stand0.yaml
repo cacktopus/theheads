@@ -1,8 +1,8 @@
 name: stand0
 pos:
-  x: -1.5
+  x: -0.75
   y: 0
-rot: -85
+rot: -90
 cameras:
 - camera0
 heads:

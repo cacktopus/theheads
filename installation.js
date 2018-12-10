@@ -100,17 +100,12 @@ function main(ws_port) {
     console.log("here we are");
     var svg = SVG('drawing').size(w, h);
     svg.rect(w, h).attr({fill: "black"});
-    // svg.line(w / 2, 0, w / 2, h).stroke({width: 1});
-    // svg.line(0, h / 2, w, h / 2).stroke({width: 1});
 
     var root = svg.group();
     var scale = 33;
 
     root.move(w / 2, 100);
     root.scale(scale, -scale, 0, 0);
-
-    root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
-    root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
 
     get_json("scene.json", function (data) {
         var delay = 100;
@@ -119,10 +114,12 @@ function main(ws_port) {
         var reload = function () {
             var name = Math.random() + "/random.png";
             img.load(name);
-            console.log("got");
             setTimeout(reload, delay);
         };
         setTimeout(reload, delay);
+
+        root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
+        root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
 
         var scene = {
             cameras: {},
