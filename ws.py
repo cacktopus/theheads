@@ -67,6 +67,7 @@ class WebsocketConnection:
         }
         prev_xy = the_grid.get(p1.x, p1.y)
         the_grid.set(p1.x, p1.y, prev_xy + 0.10)
+        print(the_grid.get_pixel_size())
 
         self.draw_queue.put_nowait(drawCmd)
 
