@@ -38,7 +38,7 @@ class Grid:
 
     def get(self, x: float, y: float) -> float:
         idx = self.idx(x, y)
-        return float(self._grid[idx])
+        return idx and float(self._grid[idx])
 
     def to_png(self):
         shape = self._grid.shape

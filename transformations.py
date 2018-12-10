@@ -1,9 +1,11 @@
+import math
+
 from math import sin, cos, pi
 import numpy as np
 
 
 class Vec:
-    def __init__(self, x, y, z=0, w=1):
+    def __init__(self, x, y, z=0.0, w=1.0):
         self._data = np.array([x, y, z, w])
 
     def __str__(self):
@@ -16,6 +18,29 @@ class Vec:
     @property
     def y(self):
         return float(self._data[1])
+
+    @property
+    def z(self):
+        return float(self._data[2])
+
+    @property
+    def w(self):
+        return float(self._data[3])
+
+    def abs(self):
+        return float(np.linalg.norm(self._data))
+
+    def scale(self, x: float):
+        res = x * self._data
+        return Vec(res[0], res[1], res[2], 1)
+
+    def __sub__(self, other):
+        res = np.subtract(self._data, other._data)
+        return Vec(*res)  # TODO: able to instantiate directly
+
+    def __add__(self, other):
+        res = np.add(self._data, other._data)
+        return Vec(*res)  # TODO: able to instantiate directly
 
 
 class Mat:
