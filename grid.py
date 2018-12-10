@@ -1,6 +1,7 @@
 import asyncio
 import math
 from functools import reduce
+from typing import Tuple
 
 import numpy as np
 
@@ -39,6 +40,16 @@ class Grid:
         res = yidx, xidx  # Notice swap here
         return res
 
+    def idx_to_xy(self, idx: Tuple[int, int]):
+        yidx, xidx = idx  # notice swap here
+
+        x_sz, y_sz = self.get_pixel_size()
+
+        x = self.xmin + x_sz * (xidx + 0.5)
+        y = self.ymin + y_sz * (yidx + 0.5)
+
+        return x, y
+
     def set(self, name: str, x: float, y: float, val: float):
         g = self.get_grid(name)
         idx = self.idx(x, y)
@@ -60,7 +71,7 @@ class Grid:
         buf = np.zeros((shape[0], shape[1], 4), dtype=np.uint8)
 
         focus = self.focus()
-        print(focus)
+        print(self.idx_to_xy(focus))
 
         g = self.combined()
         clipped = np.clip(g, 0, 1.0)
