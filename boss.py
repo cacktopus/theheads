@@ -1,19 +1,15 @@
 import argparse
 import asyncio
 import json
-import random
-import time
 from string import Template
 
 import asyncio_redis
-import numpy as np
 import prometheus_client
 from aiohttp import web
 
-import png
 import ws
 from etcd_config import get_config_str, lock, get_prefix
-from grid import Grid, the_grid
+from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
 

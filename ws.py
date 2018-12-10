@@ -5,6 +5,7 @@ import aiohttp
 from aiohttp import web
 
 from grid import the_grid
+from installation import Installation, build_installation
 from transformations import Vec, Mat
 
 
@@ -17,6 +18,7 @@ class WebsocketConnection:
         self.ws = None
         self.draw_queue = asyncio.Queue()
         self.draw_stuff_coro = asyncio.ensure_future(self.draw_stuff())
+        self.inst = Installation.unmarshal(build_installation("living-room"))
 
     async def handle(self, request):
         print("Websocket connect")
@@ -79,7 +81,15 @@ class WebsocketConnection:
             pos_x += dx
             pos_y += dy
 
-        # self.draw_queue.put_nowait(drawCmd)
+        focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
+
+        for head in inst.heads.values():
+            p = head.stand.m * head.m * Vec(0.0, 0.0)
+            drawCmd = {
+                "shape": "line",
+                "coords": [p.x, p.y, focus.x, focus.y],
+            }
+            self.draw_queue.put_nowait(drawCmd)
 
     async def draw_stuff(self):
         try:

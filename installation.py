@@ -25,25 +25,42 @@ class Camera:
         self.fov = fov
 
 
+class Head:
+    def __init__(self, name: str, m: Mat, stand: "Stand", url: str):
+        self.name = name
+        self.m = m
+        self.stand = stand
+        self.url = url
+
+
 class Stand:
     def __init__(self, name: str, m: Mat):
         self.name = name
         self.m = m
         self.cameras = {}
+        self.heads = {}
 
     def add_camera(self, camera: Camera):
         self.cameras[camera.name] = camera
+
+    def add_head(self, head: Head):
+        self.heads[head.name] = head
 
 
 class Installation:
     def __init__(self):
         self.stands = {}
         self.cameras = {}
+        self.heads = {}
 
     def add_stand(self, stand: Stand):
         self.stands[stand.name] = stand
+
         assert len(set(stand.cameras.keys()) & set(self.cameras.keys())) == 0
         self.cameras.update(stand.cameras)
+
+        assert len(set(stand.heads.keys()) & set(self.heads.keys())) == 0
+        self.heads.update(stand.heads)
 
     @classmethod
     def unmarshal(cls, obj):
@@ -64,6 +81,15 @@ class Installation:
                     camera['fov'],
                 )
                 s.add_camera(c)
+
+            for head in stand['heads']:
+                h = Head(
+                    head['name'],
+                    obj_to_m(head),
+                    s,
+                    head['url'],
+                )
+                s.add_head(h)
 
             inst.add_stand(s)
 

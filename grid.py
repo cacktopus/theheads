@@ -71,7 +71,6 @@ class Grid:
         buf = np.zeros((shape[0], shape[1], 4), dtype=np.uint8)
 
         focus = self.focus()
-        print(self.idx_to_xy(focus))
 
         g = self.combined()
         clipped = np.clip(g, 0, 1.0)
