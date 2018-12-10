@@ -1,90 +1,3 @@
-var data = {
-    "name": "living-room",
-    "stands": [
-        {
-            "cameras": [
-                {
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                    "fov": 64.33,
-                    "name": "camera0",
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "rot": 0
-                }
-            ],
-            "heads": [
-                {
-                    "name": "head0",
-                    "pos": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "rot": 0
-                }
-            ],
-            "name": "stand0",
-            "pos": {
-                "x": -1.5,
-                "y": 0
-            },
-            "rot": -85
-        },
-        {
-            "cameras": [
-                {
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                    "fov": 64.33,
-                    "name": "camera1",
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "rot": 0
-                }
-            ],
-            "heads": [
-                {
-                    "name": "head1",
-                    "pos": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "rot": 0
-                }
-            ],
-            "name": "stand1",
-            "pos": {
-                "x": 1.5,
-                "y": 0
-            },
-            "rot": 240
-        },
-        {
-            "cameras": [
-                {
-                    "description": "iMac built-in",
-                    "fov": 64.33,
-                    "name": "camera2",
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "rot": 0
-                }
-            ],
-            "name": "desk0",
-            "pos": {
-                "x": 0,
-                "y": 0
-            },
-            "rot": 270
-        }
-    ]
-};
-
-
 function draw_stand(scene, parent, w, h, stand) {
     var radius = .20;
 
@@ -168,6 +81,18 @@ function setup_websocket(ws_port, scene) {
     }
 }
 
+function get_json(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            var msg = JSON.parse(xhr.responseText);
+            callback(msg);
+        }
+    };
+    xhr.open('GET', url, true);
+    xhr.send(null);
+}
+
 function main(ws_port) {
     var w = 1000;
     var h = 800;
@@ -187,37 +112,30 @@ function main(ws_port) {
     root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
     root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
 
-    // var step = 0.125;
-    // for (var x = -10; x < 10; x += step) {
-    //     for (var y = -10; y < 10; y += step) {
-    //         root.rect(step, step).move(x, y).attr({fill: "red"})
-    //     }
-    //
-    // }
-    ////
-    // root.rect()
-    var delay = 100;
+    get_json("scene.json", function (data) {
+        var delay = 100;
 
-    var img = root.image("/abc123/random.png", 20, 40).move(-10, -20).attr({opacity: 1});
-    var reload = function () {
-        var name = Math.random() + "/random.png";
-        img.load(name);
-        console.log("got");
-        setTimeout(reload, 100);
-    };
-    setTimeout(reload, 100);
+        var img = root.image("abc123/random.png", 20, 40).move(-10, -20).attr({opacity: 1});
+        var reload = function () {
+            var name = Math.random() + "/random.png";
+            img.load(name);
+            console.log("got");
+            setTimeout(reload, delay);
+        };
+        setTimeout(reload, delay);
 
-    var scene = {
-        cameras: {},
-        root: root
-    };
+        var scene = {
+            cameras: {},
+            root: root
+        };
 
-    data.stands.forEach(function (stand) {
-        var parent = root.group();
-        parent.dmove(stand.pos.x, stand.pos.y);
-        parent.rotate(stand.rot, 0, 0);
-        draw_stand(scene, parent, w, h, stand);
+        data.stands.forEach(function (stand) {
+            var parent = root.group();
+            parent.dmove(stand.pos.x, stand.pos.y);
+            parent.rotate(stand.rot, 0, 0);
+            draw_stand(scene, parent, w, h, stand);
+        });
+
+        setup_websocket(ws_port, scene);
     });
-
-    setup_websocket(ws_port, scene);
 }

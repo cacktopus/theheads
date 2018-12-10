@@ -149,7 +149,7 @@ def random_png(request):
 
 
 async def installation_handler(request):
-    name = request.match_info.get('name')
+    name = request.match_info.get('installation')
 
     result = build_installation(name)
 
@@ -235,11 +235,12 @@ def main():
         web.get('/', handle),
         web.get('/metrics', handle_metrics),
         web.get('/ws', ws_manager.websocket_handler),
-        web.get('/installations/{name}', installation_handler),
-        web.get('/{name}.html', html_handler),
-        web.get('/{name}.js', static_text_handler("js")),
-        web.get('/{seed}/random.png', random_png),
-        web.get('/{name}.png', static_binary_handler("png")),
+        web.get('/installation/{installation}/scene.json', installation_handler),
+        web.get('/installation/{installation}/{name}.html', html_handler),
+        # web.get('/{name}.html', html_handler),
+        web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
+        web.get('/installation/{installation}/{seed}/random.png', random_png),
+        web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
         web.get("/tasks", task_handler),
     ])
 
