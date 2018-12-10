@@ -28,19 +28,27 @@ class Vec:
         return float(self._data[3])
 
     def abs(self):
-        return float(np.linalg.norm(self._data))
+        a = self
+        return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z)
 
-    def scale(self, x: float):
-        res = x * self._data
-        return Vec(res[0], res[1], res[2], 1)
+    def scale(self, c: float):
+        a = self
+        return Vec(a.x * c, a.y * c, a.z * c, 1.0)
 
     def __sub__(self, other):
-        res = np.subtract(self._data, other._data)
-        return Vec(*res)  # TODO: able to instantiate directly
+        a, b = self, other
+        return Vec(a.x - b.x, a.y - b.y, a.z - b.z)
 
     def __add__(self, other):
-        res = np.add(self._data, other._data)
-        return Vec(*res)  # TODO: able to instantiate directly
+        a, b = self, other
+        return Vec(a.x + b.x, a.y + b.y, a.z + b.z)
+
+    def unit(self):
+        return self.scale(1.0 / self.abs())
+
+    def dot(self, other: "Vec") -> float:
+        a, b = self, other
+        return a.x * b.x + a.y * b.y + a.z * b.z
 
 
 class Mat:

@@ -1,4 +1,5 @@
 import asyncio
+import math
 from datetime import datetime
 
 import aiohttp
@@ -84,12 +85,22 @@ class WebsocketConnection:
         focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
 
         for head in inst.heads.values():
-            p = head.stand.m * head.m * Vec(0.0, 0.0)
+            m = head.stand.m * head.m
+            p = m * Vec(0.0, 0.0)
             drawCmd = {
                 "shape": "line",
                 "coords": [p.x, p.y, focus.x, focus.y],
             }
             self.draw_queue.put_nowait(drawCmd)
+
+            zero = (m * Vec(1.0, 0) - p).unit()
+            to = (focus - p).unit()  # TODO handle case when focus is directly on a head
+
+            dot = zero.dot(to)
+            # print(zero, to, zero.abs(), to.abs(), dot)
+            theta = math.acos(dot)
+            pos = 100 * theta / math.pi
+            print(head.name, int(pos))
 
     async def draw_stuff(self):
         try:
