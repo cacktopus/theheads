@@ -72,10 +72,10 @@ class WebsocketConnection:
 
         steps = int(length / step_size)
         for i in range(steps):
-            prev_xy = the_grid.get(pos_x, pos_y)
+            prev_xy = the_grid.get(cam, pos_x, pos_y)
             if prev_xy is None:
                 break
-            the_grid.set(pos_x, pos_y, prev_xy + 0.025)
+            the_grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
             pos_x += dx
             pos_y += dy
 

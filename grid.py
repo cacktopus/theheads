@@ -1,5 +1,6 @@
 import asyncio
 import math
+from functools import reduce
 
 import numpy as np
 
@@ -20,7 +21,13 @@ class Grid:
 
         self.img_size_x, self.img_size_y = img_size
 
-        self._grid = np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)  # note flip of img_size
+        self._grids = {}
+
+    def get_grid(self, name: str):
+        if name not in self._grids:
+            g = np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)  # note flip of img_size
+            self._grids[name] = g
+        return self._grids[name]
 
     def idx(self, x: float, y: float):
         xidx = int(math.floor((x - self.xmin) / (self.xmax - self.xmin) * self.img_size_x))
@@ -32,37 +39,46 @@ class Grid:
         res = yidx, xidx  # Notice swap here
         return res
 
-    def set(self, x: float, y: float, val: float):
+    def set(self, name: str, x: float, y: float, val: float):
+        g = self.get_grid(name)
         idx = self.idx(x, y)
-        self._grid[idx] = val
+        g[idx] = val
 
-    def get(self, x: float, y: float) -> float:
+    def get(self, name: str, x: float, y: float) -> float:
+        g = self.get_grid(name)
         idx = self.idx(x, y)
-        return idx and float(self._grid[idx])
+        return idx and float(g[idx])
+
+    def combined(self):
+        if len(self._grids):
+            return reduce(np.multiply, self._grids.values())
+        else:
+            return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
 
     def to_png(self):
-        shape = self._grid.shape
+        shape = (self.img_size_y, self.img_size_x)
         buf = np.zeros((shape[0], shape[1], 4), dtype=np.uint8)
 
         focus = self.focus()
         print(focus)
 
-        clipped = np.clip(self._grid, 0, 1.0)
+        g = self.combined()
+        clipped = np.clip(g, 0, 1.0)
         channel = (clipped * 255).round().astype(np.uint8)
         # channel = np.random.randint(40, 200, size=(self.y_res, self.x_res), dtype=np.uint8)
 
         buf[focus[0], focus[1], 0] = 255
         buf[focus[0], focus[1], 2] = 255
         buf[..., 3] = 255
-        # buf[..., 1] = channel
+        buf[..., 1] = channel
 
         buf = np.flipud(buf)
         return png.write_png(buf.tobytes(), self.img_size_x, self.img_size_y)
 
     def focus(self):
-        a = self._grid
-        m = np.argmax(a, axis=None)
-        return np.unravel_index(m, a.shape)
+        g = self.combined()
+        m = np.argmax(g, axis=None)
+        return np.unravel_index(m, g.shape)
 
     def get_pixel_size(self):
         """Returns the size of a grid cell (in meters)"""
@@ -74,7 +90,8 @@ class Grid:
     async def decay(self):
         while True:
             await asyncio.sleep(0.25)
-            self._grid = self._grid * 0.90
+            for g in self._grids.values():
+                g *= 0.90
 
 
 the_grid = Grid(-10, -20, 10, 20, (100, 200))  # TODO: not global!
