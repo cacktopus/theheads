@@ -70,7 +70,7 @@ class Stepper:
 
 
 def position(request):
-    stepper: Stepper = request.app['stepper']
+    stepper = request.app['stepper']
     target = int(request.match_info.get('target'))
     speed = request.query.get("speed")
     speed = float(speed) if speed else None
@@ -84,7 +84,7 @@ def position(request):
 
 
 async def zero(request):
-    stepper: Stepper = request.app['stepper']
+    stepper = request.app['stepper']
     stepper.zero()
 
     result = json.dumps({"result": "ok"})
