@@ -126,10 +126,13 @@ async def run_redis(redis_hostport, ws_manager):
         # print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
+        data = msg['data']
+        src = data.get('cameraName') or data['headName']
+
         REDIS_MESSAGE_RECEIVED.labels(
             reply.channel,
             msg['type'],
-            msg['data']['cameraName'],
+            src,
         ).inc()
 
         if msg['type'] == "motion-detected":
