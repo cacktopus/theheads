@@ -6,7 +6,7 @@ from typing import Optional
 
 import aiohttp
 
-from rpc_util import e64, value
+from rpc_util import e64, value, d64
 
 
 class MissingKeyError(RuntimeError):
@@ -126,3 +126,14 @@ async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
             resp = await response.text()
 
     return json.loads(resp)
+
+
+async def get_redis(cfg):
+    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
+    redis_servers = []
+    for a in kv:
+        rs = d64(a['value']).decode().strip()
+        redis_servers.append(rs)
+    print("Found {} redis servers".format(len(redis_servers)))
+    assert len(redis_servers) > 0
+    return redis_servers

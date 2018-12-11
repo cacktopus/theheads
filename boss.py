@@ -10,7 +10,7 @@ import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import lock, EtcdConfig, get_endpoints
+from etcd_config import lock, EtcdConfig, get_endpoints, get_redis
 from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
@@ -225,15 +225,7 @@ async def task_handler(request):
 async def get_config(endpoint: str):
     cfg = await EtcdConfig(endpoint).setup()
 
-    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
-
-    redis_servers = []
-    for a in kv:
-        rs = d64(a['value']).decode().strip()
-        redis_servers.append(rs)
-
-    print("Found {} redis servers".format(len(redis_servers)))
-    assert len(redis_servers) > 0
+    redis_servers = await get_redis(cfg)
 
     return dict(
         endpoint=endpoint,
@@ -248,8 +240,8 @@ async def aquire_lock(cfg):
 
 
 def main():
-    endpoint = get_endpoints()[0]
     loop = asyncio.get_event_loop()
+    endpoint = get_endpoints()[0]
     cfg = loop.run_until_complete(get_config(endpoint))
 
     # lock = loop.run_until_complete(aquire_lock(cfg))

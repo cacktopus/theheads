@@ -6,7 +6,7 @@ import time
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
-from etcd_config import EtcdConfig
+from etcd_config import EtcdConfig, get_endpoints, get_redis
 from motors import setup
 from rpc_util import d64
 
@@ -95,22 +95,16 @@ def console_fun():
 async def get_config(endpoint: str):
     cfg = await EtcdConfig(endpoint).setup()
 
-    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
+    redis_servers = await get_redis(cfg)
 
-    redis_servers = []
-    for a in kv:
-        rs = d64(a['value']).decode().strip()
-        redis_servers.append(rs)
-
-    print("Found {} redis servers".format(len(redis_servers)))
-    assert len(redis_servers) > 0
+    head = await cfg.get_config_str("/the-heads/installation/{installation}/heads/{hostname}")
 
     return dict(
         endpoint=endpoint,
         installation=cfg.installation,
         redis_servers=redis_servers,
+        head=head,
     )
-
 
 
 def main():
@@ -118,7 +112,8 @@ def main():
 
     loop = asyncio.get_event_loop()
 
-    cfg = loop.run_until_complete(get_config())
+    cfg = loop.run_until_complete(get_config(get_endpoints()[0]))
+    print("head:", cfg['head'])
 
     app.add_routes([
         web.get("/position/{target}", position),
