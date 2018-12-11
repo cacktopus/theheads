@@ -1,17 +1,16 @@
-import aiohttp
-import argparse
 import asyncio
 import json
 import math
 from string import Template
 from typing import Dict, List
 
+import aiohttp
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import lock, EtcdConfig
+from etcd_config import lock, EtcdConfig, get_endpoints
 from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
@@ -249,17 +248,7 @@ async def aquire_lock(cfg):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--etcd-endpoints', type=str,
-                        help="comma-separated list of etcd endpoints")
-
-    args = parser.parse_args()
-
-    assert args.etcd_endpoints
-
-    endpoint = args.etcd_endpoints.split(",")[0]
-
+    endpoint = get_endpoints()[0]
     loop = asyncio.get_event_loop()
     cfg = loop.run_until_complete(get_config(endpoint))
 

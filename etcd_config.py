@@ -1,4 +1,6 @@
+import argparse
 import json
+import os
 import platform
 from typing import Optional
 
@@ -9,6 +11,29 @@ from rpc_util import e64, value
 
 class MissingKeyError(RuntimeError):
     pass
+
+
+ENDPOINTS_FILE = "/etc/etcd/endpoints"
+
+
+def get_endpoints():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--etcd-endpoints', type=str,
+                        help="comma-separated list of etcd endpoints")
+
+    args = parser.parse_args()
+
+    endpoints = args.etcd_endpoints and args.etcd_endpoints.split(",")
+
+    if not endpoints:
+        if os.path.exists(ENDPOINTS_FILE):
+            with open(ENDPOINTS_FILE) as fp:
+                endpoints = fp.read().split()
+
+    assert endpoints
+
+    return endpoints
 
 
 class EtcdConfig:

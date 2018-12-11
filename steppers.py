@@ -6,7 +6,9 @@ import time
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
+from etcd_config import EtcdConfig
 from motors import setup
+from rpc_util import d64
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -90,10 +92,33 @@ def console_fun():
             time.sleep(0.01)
 
 
+async def get_config(endpoint: str):
+    cfg = await EtcdConfig(endpoint).setup()
+
+    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
+
+    redis_servers = []
+    for a in kv:
+        rs = d64(a['value']).decode().strip()
+        redis_servers.append(rs)
+
+    print("Found {} redis servers".format(len(redis_servers)))
+    assert len(redis_servers) > 0
+
+    return dict(
+        endpoint=endpoint,
+        installation=cfg.installation,
+        redis_servers=redis_servers,
+    )
+
+
+
 def main():
     app = web.Application()
 
     loop = asyncio.get_event_loop()
+
+    cfg = loop.run_until_complete(get_config())
 
     app.add_routes([
         web.get("/position/{target}", position),
