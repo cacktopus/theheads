@@ -21,7 +21,7 @@ class Stepper:
         self._target = 0
         self._motor = motors.setup()
         self._speed = DEFAULT_SPEED
-        self.queue = asyncio.Queue
+        self.queue = asyncio.Queue()
         self.cfg = cfg
 
     def zero(self):
@@ -46,6 +46,7 @@ class Stepper:
             if steps > 0:
                 self._pos += direction
                 self._pos %= NUM_STEPS
+                self.queue.put_nowait(self._pos)
                 self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
 
             await asyncio.sleep(1.0 / self._speed)
@@ -61,6 +62,7 @@ class Stepper:
                     "position": pos,
                 }
             }
+            print(msg)
 
 
 def position(request):
@@ -124,6 +126,8 @@ async def setup(app: web.Application, loop):
     print("head:", cfg['head'])
 
     stepper = Stepper(cfg)
+    asyncio.ensure_future(stepper.redis_publisher())
+
     app['stepper'] = stepper
 
     asyncio.ensure_future(stepper.seek(), loop=loop)
