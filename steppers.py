@@ -6,9 +6,8 @@ import time
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
+import motors
 from etcd_config import EtcdConfig, get_endpoints, get_redis
-from motors import setup
-from rpc_util import d64
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -17,11 +16,13 @@ directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
 
 
 class Stepper:
-    def __init__(self):
+    def __init__(self, cfg):
         self._pos = 0
         self._target = 0
-        self._motor = setup()
+        self._motor = motors.setup()
         self._speed = DEFAULT_SPEED
+        self.queue = asyncio.Queue
+        self.cfg = cfg
 
     def zero(self):
         self._pos = 0
@@ -49,11 +50,21 @@ class Stepper:
 
             await asyncio.sleep(1.0 / self._speed)
 
-
-stepper = Stepper()
+    async def redis_publisher(self):
+        while True:
+            pos = await self.queue.get()
+            msg = {
+                "type": "head-positioned",
+                "installation": self.cfg['installation'],
+                "data": {
+                    "headName": self.cfg['head'],
+                    "position": pos,
+                }
+            }
 
 
 def position(request):
+    stepper: Stepper = request.app['stepper']
     target = int(request.match_info.get('target'))
     speed = request.query.get("speed")
     speed = float(speed) if speed else None
@@ -67,6 +78,7 @@ def position(request):
 
 
 async def zero(request):
+    stepper: Stepper = request.app['stepper']
     stepper.zero()
 
     result = json.dumps({"result": "ok"})
@@ -74,7 +86,7 @@ async def zero(request):
 
 
 def console_fun():
-    stepper = setup()
+    stepper = motors.setup()
     steps = int(sys.argv[1])
 
     direction = MotorHAT.FORWARD if steps >= 0 else MotorHAT.BACKWARD
@@ -107,21 +119,25 @@ async def get_config(endpoint: str):
     )
 
 
-def main():
-    app = web.Application()
-
-    loop = asyncio.get_event_loop()
-
-    cfg = loop.run_until_complete(get_config(get_endpoints()[0]))
+async def setup(app: web.Application, loop):
+    cfg = await get_config(get_endpoints()[0])
     print("head:", cfg['head'])
+
+    stepper = Stepper(cfg)
+    app['stepper'] = stepper
+
+    asyncio.ensure_future(stepper.seek(), loop=loop)
+
+
+def main():
+    loop = asyncio.get_event_loop()
+    app = web.Application()
+    loop.run_until_complete(setup(app, loop))
 
     app.add_routes([
         web.get("/position/{target}", position),
         web.get("/zero", zero),
     ])
-
-    asyncio.ensure_future(stepper.seek(), loop=loop)
-
     web.run_app(app, port=STEPPERS_PORT)
 
 
