@@ -14,6 +14,7 @@ class MissingKeyError(RuntimeError):
 
 
 ENDPOINTS_FILE = "/etc/etcd/endpoints"
+THE_HEADS_EVENTS = 'the-heads-events'
 
 
 def get_endpoints():

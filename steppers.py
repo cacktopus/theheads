@@ -3,26 +3,30 @@ import json
 import sys
 import time
 
+import asyncio_redis
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
 import motors
-from etcd_config import EtcdConfig, get_endpoints, get_redis
+from etcd_config import EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
 DEFAULT_SPEED = 50
 directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
 
+REDIS_HOST, REDIS_PORT = "127.0.0.1", 6379
+
 
 class Stepper:
-    def __init__(self, cfg):
+    def __init__(self, cfg, redis: asyncio_redis.Connection):
         self._pos = 0
         self._target = 0
         self._motor = motors.setup()
         self._speed = DEFAULT_SPEED
         self.queue = asyncio.Queue()
         self.cfg = cfg
+        self.redis = redis
 
     def zero(self):
         self._pos = 0
@@ -62,7 +66,7 @@ class Stepper:
                     "position": pos,
                 }
             }
-            print(msg)
+            await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
 
 
 def position(request):
@@ -125,7 +129,9 @@ async def setup(app: web.Application, loop):
     cfg = await get_config(get_endpoints()[0])
     print("head:", cfg['head'])
 
-    stepper = Stepper(cfg)
+    redis_connection = await asyncio_redis.Connection.create(host=REDIS_HOST, port=int(REDIS_PORT))
+
+    stepper = Stepper(cfg, redis_connection)
     asyncio.ensure_future(stepper.redis_publisher())
 
     app['stepper'] = stepper

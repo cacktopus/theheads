@@ -10,7 +10,7 @@ import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import lock, EtcdConfig, get_endpoints, get_redis
+from etcd_config import lock, EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
 from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
@@ -117,7 +117,7 @@ async def run_redis(redis_hostport, ws_manager):
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
     print("Connected to redis", redis_hostport)
     subscriber = await connection.start_subscribe()
-    await subscriber.subscribe(['the-heads-events'])
+    await subscriber.subscribe([THE_HEADS_EVENTS])
 
     inst = Installation.unmarshal(build_installation("living-room"))
 
