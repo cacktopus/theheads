@@ -11,7 +11,7 @@ import prometheus_client
 from aiohttp import web
 
 import ws
-from etcd_config import get_config_str, lock, get_prefix
+from etcd_config import lock, EtcdConfig
 from grid import the_grid
 from installation import build_installation, Installation
 from rpc_util import d64
@@ -224,19 +224,9 @@ async def task_handler(request):
 
 
 async def get_config(endpoint: str):
-    installation = await get_config_str(
-        endpoint,
-        "/the-heads/machines/{hostname}/installation"
-    )
-    params = dict(
-        installation=installation
-    )
+    cfg = await EtcdConfig(endpoint).setup()
 
-    redis_key = "/the-heads/installation/{installation}/redis/".format(**params).encode()
-    kv = await get_prefix(
-        endpoint,
-        redis_key,
-    )
+    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
 
     redis_servers = []
     for a in kv:
@@ -248,7 +238,7 @@ async def get_config(endpoint: str):
 
     return dict(
         endpoint=endpoint,
-        installation=installation,
+        installation=cfg.installation,
         redis_servers=redis_servers,
     )
 
