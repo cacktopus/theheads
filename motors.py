@@ -27,4 +27,4 @@ class FakeStepper:
         print("Not implemented")
 
 
-setup = _setup() if platform.machine().startswith("arm") else lambda: FakeStepper()
+setup = _setup if platform.machine().startswith("arm") else FakeStepper
