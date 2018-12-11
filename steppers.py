@@ -1,14 +1,14 @@
+import asyncio
+import json
 import sys
 import time
 
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
-from bottle import run, template, Bottle, request
+from aiohttp import web
 
 from motors import setup
-from threading import Thread
 
-app = Bottle()
-
+STEPPERS_PORT = 8080
 NUM_STEPS = 200
 DEFAULT_SPEED = 50
 directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
@@ -31,7 +31,7 @@ class Stepper:
     def set_speed(self, speed: float):
         self._speed = speed
 
-    def seek(self):
+    async def seek(self):
         while True:
             options = [
                 ((self._target - self._pos) % NUM_STEPS, 1),
@@ -45,30 +45,30 @@ class Stepper:
                 self._pos %= NUM_STEPS
                 self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
 
-            time.sleep(1.0 / self._speed)
+            await asyncio.sleep(1.0 / self._speed)
 
 
 stepper = Stepper()
 
 
-@app.route('/position/<target>')
-def index(target):
-    target = int(target)
-    speed = request.params.get("speed")
+def position(request):
+    target = int(request.match_info.get('target'))
+    speed = request.query.get("speed")
     speed = float(speed) if speed else None
 
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
 
-    return template('OK\n')
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json")
 
 
-@app.route('/zero')
-def index():
+async def zero(request):
     stepper.zero()
 
-    return template('OK\n')
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json")
 
 
 def console_fun():
@@ -91,10 +91,18 @@ def console_fun():
 
 
 def main():
-    t = Thread(target=stepper.seek, daemon=True)
-    t.start()
+    app = web.Application()
 
-    run(app, host='0.0.0.0', port=8080, reloader=True)
+    loop = asyncio.get_event_loop()
+
+    app.add_routes([
+        web.get("/position/{target}", position),
+        web.get("/zero", zero),
+    ])
+
+    asyncio.ensure_future(stepper.seek(), loop=loop)
+
+    web.run_app(app, port=STEPPERS_PORT)
 
 
 if __name__ == '__main__':

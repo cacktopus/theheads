@@ -117,7 +117,8 @@ def build_installation(name):
     for path in glob(os.path.join(base, "stands/*.yaml")):
         with open(path) as fp:
             stand = yaml.safe_load(fp)
-            stands[stand['name']] = stand
+            if stand.get("enabled", True):
+                stands[stand['name']] = stand
 
     for stand in stands.values():
         stand['cameras'] = [cameras[c] for c in stand['cameras']]
