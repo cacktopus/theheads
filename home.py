@@ -1,11 +1,10 @@
+import argparse
 import json
 from typing import Tuple, Dict
 
 import aiohttp
-import argparse
-import asyncio
-
 from aiohttp import web
+from jinja2 import Environment, PackageLoader, select_autoescape, FileSystemLoader
 
 CONSUL_PORT = 8500
 
@@ -34,7 +33,7 @@ async def get_services(consul_host: str):
 
     print(url)
 
-    result = {}
+    result = []
 
     status, resp = await get(url)
     for name, tags in resp.items():
@@ -42,18 +41,24 @@ async def get_services(consul_host: str):
         nodes = await get_nodes_for_service(consul_host, name)
         for node in nodes:
             print("{ID}, {Node}, {Address}, {ServiceName}:{ServicePort}".format(**node))
-        result[name] = dict(
+        result.append(dict(
+            name=name,
             tags=tags,
             nodes=nodes,
-        )
+        ))
     return result
 
 
 async def handle(request):
+    jinja_env = request.app['jinja_env']
+    template = jinja_env.get_template('home.html')
+
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
-    text = json.dumps(services, indent=4)
-    return web.Response(text=text)
+
+    result = template.render(services=services)
+
+    return web.Response(text=result, content_type="text/html")
 
 
 def main():
@@ -67,6 +72,13 @@ def main():
     app = web.Application()
 
     app['consul_host'] = args.consul
+
+    jinja_env = Environment(
+        loader=FileSystemLoader('templates'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+
+    app['jinja_env'] = jinja_env
 
     app.add_routes([
         web.get('/', handle),

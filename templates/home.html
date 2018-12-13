@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<h1>Home</h1>
+<ul id="navigation">
+    {% for service in services %}
+    <h2>{{service.name}}</h2>
+    {% for node in service.nodes %}
+    <li><a href="http://{{ node.Address }}:{{ node.ServicePort}}">
+        http://{{ node.Address }}:{{ node.ServicePort}}
+    </a></li>
+    {% endfor %}
+    {% endfor %}
+</ul>
+</body>
+</html>
