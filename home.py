@@ -67,6 +67,9 @@ def main():
     parser.add_argument('--consul', type=str, default="127.0.0.1",
                         help="ip of consul agent")
 
+    parser.add_argument('--port', type=int, default=80,
+                        help="port to run on")
+
     args = parser.parse_args()
 
     app = web.Application()
@@ -84,7 +87,7 @@ def main():
         web.get('/', handle),
     ])
 
-    web.run_app(app, port=8082)
+    web.run_app(app, port=args.port)
 
 
 if __name__ == '__main__':
