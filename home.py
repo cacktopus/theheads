@@ -26,26 +26,20 @@ async def get_nodes_for_service(consul_host: str, service: str):
 
 
 async def get_services(consul_host: str):
-    print(consul_host)
-
     path = "/v1/catalog/services"
     url = "http://{}:{}{}".format(consul_host, CONSUL_PORT, path)
-
-    print(url)
 
     result = []
 
     status, resp = await get(url)
     for name, tags in resp.items():
-        print(name, tags)
         nodes = await get_nodes_for_service(consul_host, name)
-        for node in nodes:
-            print("{ID}, {Node}, {Address}, {ServiceName}:{ServicePort}".format(**node))
         result.append(dict(
             name=name,
             tags=tags,
             nodes=nodes,
         ))
+    result = sorted(result, key=lambda x: x['name'])
     return result
 
 
