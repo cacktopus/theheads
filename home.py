@@ -4,7 +4,7 @@ from typing import Tuple, Dict
 
 import aiohttp
 from aiohttp import web
-from jinja2 import Environment, PackageLoader, select_autoescape, FileSystemLoader
+from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 CONSUL_PORT = 8500
 
