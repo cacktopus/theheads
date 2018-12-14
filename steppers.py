@@ -8,7 +8,8 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
 import motors
-from etcd_config import EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
+from consul_config import ConsulBackend
+from etcd_config import get_endpoints, get_redis, THE_HEADS_EVENTS, Config
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -111,7 +112,7 @@ def console_fun():
 
 
 async def get_config(endpoint: str):
-    cfg = await EtcdConfig(endpoint).setup()
+    cfg = await Config(ConsulBackend("http://127.0.0.1:8500")).setup()
 
     redis_servers = await get_redis(cfg)
 
