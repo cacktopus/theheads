@@ -37,6 +37,13 @@ def get_endpoints():
     return endpoints
 
 
+async def post(url, data):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=url, data=data) as response:
+            text = await response.text()
+            return response, text
+
+
 class EtcdConfig:
     def __init__(self, etcd_endpoint):
         self.etcd_endpoint = etcd_endpoint
@@ -64,10 +71,7 @@ class EtcdConfig:
             "range_end": e64(key + b"\x00"),
         })
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url=url, data=data) as response:
-                resp = await response.text()
-
+        _, resp = await post(url, data)
         msg = json.loads(resp)
 
         kvs = msg.get('kvs', [])
@@ -85,14 +89,13 @@ class EtcdConfig:
         url = self.etcd_endpoint + "/v3beta/kv/range"
         key = key_template.format(**self._params).encode()
 
+        print("--prefix", key.decode())
+
         end_key = key[:-1] + bytes([key[-1] + 1])  # TODO: handle overflow case
 
         data = json.dumps({"key": e64(key), "range_end": e64(end_key), })
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url=url, data=data) as response:
-                resp = await response.text()
-
+        _, resp = await post(url, data)
         msg = json.loads(resp)
 
         kvs = msg.get('kvs', [])
@@ -122,9 +125,7 @@ async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
 
     print("getting lock at", name)
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url=url, data=data) as response:
-            resp = await response.text()
+    _, resp = await post(url, data)
 
     return json.loads(resp)
 
