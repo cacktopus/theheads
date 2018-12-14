@@ -29,6 +29,10 @@ class Stepper:
         self.cfg = cfg
         self.redis = redis
 
+    @property
+    def pos(self) -> int:
+        return self._pos
+
     def zero(self):
         self._pos = 0
         self._target = 0
@@ -138,14 +142,25 @@ async def setup(app: web.Application, loop):
     app['stepper'] = stepper
 
     asyncio.ensure_future(stepper.seek(), loop=loop)
+    return cfg
+
+
+async def home(request):
+    cfg = request.app['cfg']
+    stepper = request.app['stepper']
+    result = 'This is head "{}"\nPosition is {}'.format(cfg['head'], stepper.pos)
+    return web.Response(text=result)
 
 
 def main():
     loop = asyncio.get_event_loop()
     app = web.Application()
-    loop.run_until_complete(setup(app, loop))
+    cfg = loop.run_until_complete(setup(app, loop))
+
+    app['cfg'] = cfg
 
     app.add_routes([
+        web.get("/", home),
         web.get("/position/{target}", position),
         web.get("/zero", zero),
     ])
