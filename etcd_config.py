@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import platform
-from typing import Optional
+from typing import Optional, Dict
 
 import aiohttp
 
@@ -79,7 +79,7 @@ class EtcdBackend:
         else:
             raise RuntimeError("Unexpected number of results")
 
-    async def get_prefix(self, key: bytes):
+    async def get_prefix(self, key: bytes) -> Dict[bytes, bytes]:
         url = self.etcd_endpoint + "/v3beta/kv/range"
 
         end_key = key[:-1] + bytes([key[-1] + 1])  # TODO: handle overflow case
@@ -91,7 +91,13 @@ class EtcdBackend:
 
         kvs = msg.get('kvs', [])
 
-        return kvs
+        result = {}
+        for a in kvs:
+            key = d64(a['key'])
+            val = d64(a['value'])
+            result[key] = val
+
+        return result
 
     async def get_config_str(self, key: bytes) -> bytes:
         resp = await self.get(key)
@@ -153,11 +159,13 @@ async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
 
 
 async def get_redis(cfg):
-    kv = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
+    result = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
     redis_servers = []
-    for a in kv:
-        rs = d64(a['value']).decode().strip()
+    for k, v in sorted(result.items()):
+        print(k.decode())
+        rs = v.decode().strip()
         redis_servers.append(rs)
+
     print("Found {} redis servers".format(len(redis_servers)))
     assert len(redis_servers) > 0
     return redis_servers
