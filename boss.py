@@ -8,6 +8,7 @@ import aiohttp
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
 from etcd_config import lock, EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
@@ -32,10 +33,14 @@ TASKS = prometheus_client.Gauge(
 TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
 
 
-async def handle(request):
-    name = request.match_info.get('name', 'anon')
-    text = "Hello, {}\n".format(name)
-    return web.Response(text=text)
+async def home(request):
+    jinja_env = request.app['jinja_env']
+
+    template = jinja_env.get_template('boss.html')
+
+    result = template.render()
+
+    return web.Response(text=result, content_type="text/html")
 
 
 async def handle_metrics(request):
@@ -254,12 +259,19 @@ def main():
 
     app = web.Application()
 
+    jinja_env = Environment(
+        loader=FileSystemLoader('templates'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+
+    app['jinja_env'] = jinja_env
+
     ws_manager = ws.WebsocketManager()
 
     asyncio.ensure_future(the_grid.decay())
 
     app.add_routes([
-        web.get('/', handle),
+        web.get('/', home),
         web.get('/metrics', handle_metrics),
         web.get('/ws', ws_manager.websocket_handler),
         web.get('/installation/{installation}/scene.json', installation_handler),
