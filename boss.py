@@ -12,6 +12,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
 # from etcd_config import lock, EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
+from consul_config import ConsulBackend
 from etcd_config import THE_HEADS_EVENTS, lock, get_endpoints, Config, EtcdBackend, get_redis
 from grid import the_grid
 from installation import build_installation, Installation
@@ -231,7 +232,8 @@ async def task_handler(request):
 
 
 async def get_config(endpoint: str):
-    cfg = await Config(EtcdBackend(endpoint)).setup()
+    # cfg = await Config(EtcdBackend(endpoint)).setup()
+    cfg = await Config(ConsulBackend("http://127.0.0.1:8500")).setup()
 
     redis_servers = await get_redis(cfg)
 

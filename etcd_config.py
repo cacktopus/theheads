@@ -44,6 +44,13 @@ async def post(url, data):
             return response, text
 
 
+async def get(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=url) as response:
+            text = await response.text()
+            return response, text
+
+
 class EtcdBackend:
     def __init__(self, etcd_endpoint):
         self.etcd_endpoint = etcd_endpoint
@@ -86,6 +93,18 @@ class EtcdBackend:
 
         return kvs
 
+    async def get_config_str(self, key: bytes) -> bytes:
+        resp = await self.get(key)
+
+        if resp is None:
+            raise MissingKeyError("Missing key for {}".format(key.decode()))
+
+        result = value(resp)
+        if result is None:
+            raise MissingKeyError("Missing key for {}".format(key.decode()))
+
+        return result
+
 
 class Config:
     def __init__(self, backend):
@@ -103,13 +122,7 @@ class Config:
     async def get_config_str(self, key_template: str) -> str:
         key = key_template.format(**self._params).encode()
 
-        resp = await self._backend.get(key)
-        if resp is None:
-            raise MissingKeyError("Missing key for {}".format(key.decode()))
-
-        result = value(resp)
-        if result is None:
-            raise MissingKeyError("Missing key for {}".format(key.decode()))
+        result = await self._backend.get_config_str(key)
 
         return result.decode().strip()
 
