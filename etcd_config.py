@@ -44,22 +44,9 @@ async def post(url, data):
             return response, text
 
 
-class EtcdConfig:
+class EtcdBackend:
     def __init__(self, etcd_endpoint):
         self.etcd_endpoint = etcd_endpoint
-        self._params = {}
-
-    async def setup(self):
-        hostname = platform.node()
-        self._params['hostname'] = hostname
-        self._params['installation'] = await self.get_config_str(
-            "/the-heads/machines/{hostname}/installation"
-        )
-        return self
-
-    @property
-    def installation(self):
-        return self._params['installation']
 
     async def get(self, key: bytes):
         url = self.etcd_endpoint + "/v3beta/kv/range"
@@ -85,11 +72,8 @@ class EtcdConfig:
         else:
             raise RuntimeError("Unexpected number of results")
 
-    async def get_prefix(self, key_template: str):
+    async def get_prefix(self, key: bytes):
         url = self.etcd_endpoint + "/v3beta/kv/range"
-        key = key_template.format(**self._params).encode()
-
-        print("--prefix", key.decode())
 
         end_key = key[:-1] + bytes([key[-1] + 1])  # TODO: handle overflow case
 
@@ -102,10 +86,24 @@ class EtcdConfig:
 
         return kvs
 
+
+class Config:
+    def __init__(self, backend):
+        self._backend = backend
+        self._params = {}
+
+    async def setup(self):
+        hostname = platform.node()
+        self._params['hostname'] = hostname
+        self._params['installation'] = await self.get_config_str(
+            "/the-heads/machines/{hostname}/installation"
+        )
+        return self
+
     async def get_config_str(self, key_template: str) -> str:
         key = key_template.format(**self._params).encode()
 
-        resp = await self.get(key)
+        resp = await self._backend.get(key)
         if resp is None:
             raise MissingKeyError("Missing key for {}".format(key.decode()))
 
@@ -114,6 +112,17 @@ class EtcdConfig:
             raise MissingKeyError("Missing key for {}".format(key.decode()))
 
         return result.decode().strip()
+
+    async def get_prefix(self, key_template: str):
+        key = key_template.format(**self._params).encode()
+
+        print("--prefix", key.decode())
+
+        return await self._backend.get_prefix(key)
+
+    @property
+    def installation(self):
+        return self._params['installation']
 
 
 async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
