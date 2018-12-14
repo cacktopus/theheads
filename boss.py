@@ -13,7 +13,6 @@ import ws
 from etcd_config import lock, EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
 from grid import the_grid
 from installation import build_installation, Installation
-from rpc_util import d64
 from transformations import Mat, Vec
 
 BOSS_PORT = 8081
