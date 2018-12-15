@@ -13,7 +13,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
 from consul_config import ConsulBackend
-from etcd_config import THE_HEADS_EVENTS, lock, get_endpoints, Config, get_redis
+from etcd_config import THE_HEADS_EVENTS, lock, Config, get_redis, get_args
 from grid import the_grid
 from installation import build_installation, Installation
 from transformations import Mat, Vec
@@ -230,18 +230,16 @@ async def task_handler(request):
     return web.Response(text="\n\n".join(text), content_type="text/plain")
 
 
-async def get_config(endpoint: str):
-    # cfg = await Config(EtcdBackend(endpoint)).setup()
-    cfg = await Config(ConsulBackend("http://127.0.0.1:8500")).setup()
+async def get_config(args):
+    cfg = await Config(ConsulBackend(args.config_endpoint)).setup(
+        installation_override=args.installation
+    )
 
     redis_servers = await get_redis(cfg)
+    result = dict(endpoint=args.config_endpoint, installation=cfg.installation, redis_servers=redis_servers, cfg=cfg, )
 
-    return dict(
-        endpoint=endpoint,
-        installation=cfg.installation,
-        redis_servers=redis_servers,
-        cfg=cfg,
-    )
+    print("Using installation:", result['installation'])
+    return result
 
 
 async def aquire_lock(cfg):
@@ -280,8 +278,8 @@ def frontend_handler(*path_prefix):
 
 def main():
     loop = asyncio.get_event_loop()
-    endpoint = get_endpoints()[0]
-    cfg = loop.run_until_complete(get_config(endpoint))
+    args = get_args()
+    cfg = loop.run_until_complete(get_config(args))
 
     # lock = loop.run_until_complete(aquire_lock(cfg))
     # lock_key = rpc_util.key(lock).decode()

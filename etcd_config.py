@@ -1,6 +1,5 @@
 import argparse
 import json
-import os
 import platform
 from typing import Optional, Dict
 
@@ -17,24 +16,17 @@ ENDPOINTS_FILE = "/etc/etcd/endpoints"
 THE_HEADS_EVENTS = 'the-heads-events'
 
 
-def get_endpoints():
+def get_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--etcd-endpoints', type=str,
-                        help="comma-separated list of etcd endpoints")
+    parser.add_argument('--config-endpoint', type=str, default="http://127.0.0.1:8500",
+                        help="URL for config service (e.g., consul)")
+
+    parser.add_argument('--installation', type=str,
+                        help="Override installation name")
 
     args = parser.parse_args()
-
-    endpoints = args.etcd_endpoints and args.etcd_endpoints.split(",")
-
-    if not endpoints:
-        if os.path.exists(ENDPOINTS_FILE):
-            with open(ENDPOINTS_FILE) as fp:
-                endpoints = fp.read().split()
-
-    assert endpoints
-
-    return endpoints
+    return args
 
 
 async def post(url, data):
@@ -64,8 +56,6 @@ class EtcdBackend:
 
     async def get(self, key: bytes):
         url = self.etcd_endpoint + "/v3beta/kv/range"
-
-        print(key.decode())
 
         data = json.dumps({
             "key": e64(key),
@@ -124,16 +114,18 @@ class Config:
         self._backend = backend
         self._params = {}
 
-    async def setup(self):
+    async def setup(self, installation_override=None):
         hostname = platform.node()
         self._params['hostname'] = hostname
-        self._params['installation'] = await self.get_config_str(
+        self._params['installation'] = installation_override or await self.get_config_str(
             "/the-heads/machines/{hostname}/installation"
         )
         return self
 
     async def get_config_str(self, key_template: str) -> str:
         key = key_template.format(**self._params).encode()
+
+        print("config get", key.decode())
 
         result = await self._backend.get_config_str(key)
 
@@ -142,7 +134,7 @@ class Config:
     async def get_prefix(self, key_template: str):
         key = key_template.format(**self._params).encode()
 
-        print("--prefix", key.decode())
+        print("config get --prefix", key.decode())
 
         return await self._backend.get_prefix(key)
 
@@ -169,7 +161,6 @@ async def get_redis(cfg):
     result = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
     redis_servers = []
     for k, v in sorted(result.items()):
-        print(k.decode())
         rs = v.decode().strip()
         redis_servers.append(rs)
 

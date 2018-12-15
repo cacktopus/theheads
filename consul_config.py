@@ -13,20 +13,15 @@ class ConsulBackend:
         assert key.startswith(b"/")
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
 
-        print(url)
-
         resp, body = await get(url)
         assert resp.status == 200
         result = json.loads(body)
         return result
-        # print(result)
 
     async def get_config_str(self, key: bytes) -> bytes:
         result = await self.get(key)
 
         assert len(result) == 1
-
-        print(result[0])
 
         return d64(result[0]['Value'])
 
@@ -34,7 +29,6 @@ class ConsulBackend:
         assert key.startswith(b"/")
 
         url = self._consul_endpoint + "/v1/kv{}?recurse=true".format(key.decode())
-        print(url)
 
         resp, body = await get(url)
         assert resp.status == 200
