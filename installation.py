@@ -107,21 +107,24 @@ async def build_installation(inst_name: str, cfg: Config):
     for name, body in (await cfg.get_prefix(
             "/the-heads/installation/{installation}/cameras/"
     )).items():
-        camera = yaml.safe_load(body)
-        cameras[camera['name']] = camera
+        if name.endswith(b".yaml"):
+            camera = yaml.safe_load(body)
+            cameras[camera['name']] = camera
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/installation/{installation}/heads/"
     )).items():
-        head = yaml.safe_load(body)
-        heads[head['name']] = head
+        if name.endswith(b".yaml"):
+            head = yaml.safe_load(body)
+            heads[head['name']] = head
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/installation/{installation}/stands/"
     )).items():
-        stand = yaml.safe_load(body)
-        if stand.get("enabled", True):
-            stands[stand['name']] = stand
+        if name.endswith(b".yaml"):
+            stand = yaml.safe_load(body)
+            if stand.get("enabled", True):
+                stands[stand['name']] = stand
 
     for stand in stands.values():
         stand['cameras'] = [cameras[c] for c in stand['cameras']]

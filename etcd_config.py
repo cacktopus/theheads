@@ -131,7 +131,7 @@ class Config:
 
         return result.decode().strip()
 
-    async def get_prefix(self, key_template: str):
+    async def get_prefix(self, key_template: str) -> Dict[bytes, bytes]:
         key = key_template.format(**self._params).encode()
 
         print("config get --prefix", key.decode())
