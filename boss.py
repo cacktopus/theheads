@@ -6,14 +6,14 @@ from typing import Dict, List
 
 import aiohttp
 import asyncio_redis
+import os
 import prometheus_client
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
-# from etcd_config import lock, EtcdConfig, get_endpoints, get_redis, THE_HEADS_EVENTS
 from consul_config import ConsulBackend
-from etcd_config import THE_HEADS_EVENTS, lock, get_endpoints, Config, EtcdBackend, get_redis
+from etcd_config import THE_HEADS_EVENTS, lock, get_endpoints, Config, get_redis
 from grid import the_grid
 from installation import build_installation, Installation
 from transformations import Mat, Vec
@@ -249,6 +249,35 @@ async def aquire_lock(cfg):
     return await lock(cfg['endpoint'], lockname)
 
 
+def frontend_handler(*path_prefix):
+    async def handler(request):
+        filename = request.match_info.get('filename')
+        path = os.path.join(*path_prefix, filename)
+
+        ext = os.path.splitext(path)[-1]
+
+        mode = {".png": "rb"}.get(ext, "r")
+
+        print(path)
+        with open(path, mode) as fp:
+            content = fp.read()
+
+        content_type = {
+            ".css": "text/css",
+            ".js": "text/javascript",
+            ".map": "application/octet-stream",
+            ".png": "image/png",
+            ".html": "text/html",
+        }[ext]
+
+        if mode == "rb":
+            return web.Response(body=content, content_type=content_type)
+        else:
+            return web.Response(text=content, content_type=content_type)
+
+    return handler
+
+
 def main():
     loop = asyncio.get_event_loop()
     endpoint = get_endpoints()[0]
@@ -279,11 +308,16 @@ def main():
         web.get('/ws', ws_manager.websocket_handler),
         web.get('/installation/{installation}/scene.json', installation_handler),
         web.get('/installation/{installation}/{name}.html', html_handler),
-        # web.get('/{name}.html', html_handler),
         web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
         web.get('/installation/{installation}/{seed}/random.png', random_png),
         web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
         web.get("/tasks", task_handler),
+
+        # Jenkins' frontend
+        web.get("/build/{filename}", frontend_handler("build")),
+        web.get("/build/media/{filename}", frontend_handler("build/media")),
+        web.get("/static/js/{filename}", frontend_handler("build/static/js")),
+        web.get("/static/css/{filename}", frontend_handler("build/static/css")),
     ])
 
     loop = asyncio.get_event_loop()
