@@ -314,10 +314,10 @@ def main():
         web.get("/tasks", task_handler),
 
         # Jenkins' frontend
-        web.get("/build/{filename}", frontend_handler("build")),
-        web.get("/build/media/{filename}", frontend_handler("build/media")),
-        web.get("/static/js/{filename}", frontend_handler("build/static/js")),
-        web.get("/static/css/{filename}", frontend_handler("build/static/css")),
+        web.get("/build/{filename}", frontend_handler("boss-ui/build")),
+        web.get("/build/media/{filename}", frontend_handler("boss-ui/build/media")),
+        web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
+        web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
     ])
 
     loop = asyncio.get_event_loop()
