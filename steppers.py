@@ -9,7 +9,7 @@ from aiohttp import web
 
 import motors
 from consul_config import ConsulBackend
-from etcd_config import get_endpoints, get_redis, THE_HEADS_EVENTS, Config
+from config import THE_HEADS_EVENTS, Config, get_redis
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200

@@ -13,7 +13,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
 from consul_config import ConsulBackend
-from etcd_config import THE_HEADS_EVENTS, lock, Config, get_redis, get_args, BOSS_PORT
+from etcd_config import lock
+from config import THE_HEADS_EVENTS, BOSS_PORT, get_args, Config, get_redis
 from grid import the_grid
 from installation import build_installation, Installation
 from transformations import Mat, Vec
@@ -34,11 +35,17 @@ TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
 
 
 async def home(request):
+    cfg = request.app['cfg']['cfg']
+
+    keys = await cfg.get_keys("/the-heads/installation/")
+
+    installations = set(k.split("/")[2] for k in keys)
+
     jinja_env = request.app['jinja_env']
 
     template = jinja_env.get_template('boss.html')
 
-    result = template.render()
+    result = template.render(installations=installations)
 
     return web.Response(text=result, content_type="text/html")
 

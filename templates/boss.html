@@ -7,17 +7,19 @@
 <h1>The Heads' Boss</h1>
 
 <h2>New UI</h2>
-<ul id="navigation">
+<ul>
     <li><a href="build/index.html">
         index.html
     </a></li>
 </ul>
 
 <h2>Installations</h2>
-<ul id="navigation">
-    <li><a href="installation/office/installation.html">
-        office
+<ul>
+    {% for inst in installations %}
+    <li><a href="installation/{{inst}}/installation.html">
+        {{inst}}
     </a></li>
+    {% endfor %}
 </ul>
 
 </body>

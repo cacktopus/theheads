@@ -1,7 +1,7 @@
 import json
-from typing import Dict
+from typing import Dict, List
 
-from etcd_config import get, put
+from config import get, put
 from rpc_util import d64
 
 
@@ -41,6 +41,15 @@ class ConsulBackend:
             result[key] = val
 
         return result
+
+    async def get_keys(self, key_prefix: str) -> List[str]:
+        assert key_prefix.startswith("/")
+
+        url = self._consul_endpoint + "/v1/kv{}?keys=true".format(key_prefix)
+        resp, body = await get(url)
+        assert resp.status == 200
+
+        return json.loads(body)
 
     async def put(self, key: bytes, value: bytes):
         assert key.startswith(b"/")

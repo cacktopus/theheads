@@ -1,10 +1,7 @@
-import argparse
 import json
-import platform
 from typing import Optional, Dict
 
-import aiohttp
-
+from config import post
 from rpc_util import e64, value, d64
 
 
@@ -13,46 +10,6 @@ class MissingKeyError(RuntimeError):
 
 
 ENDPOINTS_FILE = "/etc/etcd/endpoints"
-THE_HEADS_EVENTS = 'the-heads-events'
-
-BOSS_PORT = 8081
-
-
-def get_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--config-endpoint', type=str, default="http://127.0.0.1:8500",
-                        help="URL for config service (e.g., consul)")
-
-    parser.add_argument('--installation', type=str,
-                        help="Override installation name")
-
-    parser.add_argument('--port', type=int, default=BOSS_PORT,
-                        help="Port override")
-
-    args = parser.parse_args()
-    return args
-
-
-async def post(url, data):
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url=url, data=data) as response:
-            text = await response.text()
-            return response, text
-
-
-async def get(url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url=url) as response:
-            text = await response.text()
-            return response, text
-
-
-async def put(url, data):
-    async with aiohttp.ClientSession() as session:
-        async with session.put(url=url, data=data) as response:
-            text = await response.text()
-            return response, text
 
 
 class EtcdBackend:
@@ -114,40 +71,6 @@ class EtcdBackend:
         return result
 
 
-class Config:
-    def __init__(self, backend):
-        self._backend = backend
-        self._params = {}
-
-    async def setup(self, installation_override=None):
-        hostname = platform.node()
-        self._params['hostname'] = hostname
-        self._params['installation'] = installation_override or await self.get_config_str(
-            "/the-heads/machines/{hostname}/installation"
-        )
-        return self
-
-    async def get_config_str(self, key_template: str) -> str:
-        key = key_template.format(**self._params).encode()
-
-        print("config get", key.decode())
-
-        result = await self._backend.get_config_str(key)
-
-        return result.decode().strip()
-
-    async def get_prefix(self, key_template: str) -> Dict[bytes, bytes]:
-        key = key_template.format(**self._params).encode()
-
-        print("config get --prefix", key.decode())
-
-        return await self._backend.get_prefix(key)
-
-    @property
-    def installation(self):
-        return self._params['installation']
-
-
 async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
     url = etcd_endpoint + "/v3alpha/lock/lock"
     data = json.dumps({
@@ -160,15 +83,3 @@ async def lock(etcd_endpoint: str, name: str, lease: Optional[int] = 0):
     _, resp = await post(url, data)
 
     return json.loads(resp)
-
-
-async def get_redis(cfg):
-    result = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
-    redis_servers = []
-    for k, v in sorted(result.items()):
-        rs = v.decode().strip()
-        redis_servers.append(rs)
-
-    print("Found {} redis servers".format(len(redis_servers)))
-    assert len(redis_servers) > 0
-    return redis_servers

@@ -6,7 +6,7 @@ import yaml
 from aiohttp import web
 
 from consul_config import ConsulBackend
-from etcd_config import Config
+from config import Config
 from transformations import Mat, Vec
 
 
