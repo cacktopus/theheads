@@ -36,9 +36,9 @@ In another window, run:
 Download consul from https://www.consul.io/downloads.html, verify the checksums, and unzip.
 In another window:
 
-    ./consul agent -dev -ui
+    ./consul agent -server -ui -data-dir consul-data -bootstrap=1
     
-You can browse the ui at http://localhost:8500. No data is saved.
+You can browse the ui at http://localhost:8500.
 
 ### Seed data
 
