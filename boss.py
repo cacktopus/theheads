@@ -320,6 +320,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     inst = loop.run_until_complete(build_installation(cfg['installation'], cfg['cfg']))
+    app['inst'] = inst
 
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, ws_manager, inst), loop=loop)

@@ -15,11 +15,11 @@ class Closed:
 
 
 class WebsocketConnection:
-    def __init__(self):
+    def __init__(self, inst: Installation):
         self.ws = None
         self.draw_queue = asyncio.Queue()
         self.draw_stuff_coro = asyncio.ensure_future(self.draw_stuff())
-        self.inst = Installation.unmarshal(build_installation("living-room"))
+        self.inst = inst
 
     async def handle(self, request):
         print("Websocket connect")
@@ -75,7 +75,7 @@ class WebsocketManager:
         self.clients = set()
 
     async def websocket_handler(self, request):
-        conn = WebsocketConnection()
+        conn = WebsocketConnection(request.app['inst'])
         self.clients.add(conn)
         ws = await conn.handle(request)
         self.clients.remove(conn)
