@@ -13,12 +13,10 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
 from consul_config import ConsulBackend
-from etcd_config import THE_HEADS_EVENTS, lock, Config, get_redis, get_args
+from etcd_config import THE_HEADS_EVENTS, lock, Config, get_redis, get_args, BOSS_PORT
 from grid import the_grid
 from installation import build_installation, Installation
 from transformations import Mat, Vec
-
-BOSS_PORT = 8081
 
 REDIS_MESSAGE_RECEIVED = prometheus_client.Counter(
     "heads_boss_redis_message_ingested",
@@ -326,7 +324,7 @@ def main():
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, ws_manager, inst), loop=loop)
 
-    web.run_app(app, port=BOSS_PORT)
+    web.run_app(app, port=args.port)
 
 
 if __name__ == '__main__':

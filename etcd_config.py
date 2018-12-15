@@ -15,6 +15,8 @@ class MissingKeyError(RuntimeError):
 ENDPOINTS_FILE = "/etc/etcd/endpoints"
 THE_HEADS_EVENTS = 'the-heads-events'
 
+BOSS_PORT = 8081
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -24,6 +26,9 @@ def get_args():
 
     parser.add_argument('--installation', type=str,
                         help="Override installation name")
+
+    parser.add_argument('--port', type=int, default=BOSS_PORT,
+                        help="Port override")
 
     args = parser.parse_args()
     return args
