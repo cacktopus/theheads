@@ -50,6 +50,8 @@ async def handle(request):
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
 
+    services = [s for s in services if "frontend" in s['tags']]
+
     result = template.render(services=services)
 
     return web.Response(text=result, content_type="text/html")
