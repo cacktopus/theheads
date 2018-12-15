@@ -1,0 +1,246 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  animation: App-logo-spin infinite 20s linear;
+  height: 40vmin;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Menu */
+.Menu {
+  background: #EEE;
+  padding-bottom: 10px;
+  border-bottom: 1px solid black;
+  padding: 10px;
+}
+
+.Menu label,
+.Menu-form-label {
+  /* display: block; */
+  margin-right: 10px;
+}
+
+.Menu-section {
+  float: left;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.Menu-addStandButton {
+  display: inline-block;
+  padding: 20px;
+  border: 1px solid black;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+.Menu-form-posType-X,
+.Menu-form-posType-Y {
+  width: 60px;
+}
+
+/* Stand */
+.Stand {
+  position: absolute;
+  /* width: 100px;
+  height: 100px;
+  transform: translate(0px,0px);
+  border: 1px solid black;
+  background : grey; */
+}
+
+.Stand--selected {
+  z-index: 10;
+}
+
+/* Same height / width of Stand-container */
+.Stand-rotateContainer {
+  width: 100px;
+  height: 100px;
+}
+
+.Stand-container {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  transform: translate(0px,0px);
+  border: 5px solid #444;
+  background: #999;
+  border-right: 5px solid blue;
+}
+
+.Stand-name {
+  position: absolute;
+  top: -20px;
+}
+
+.Stand-remove {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  cursor: pointer;
+  border: 1px solid black;
+}
+/* .Stand-select {
+  position: absolute;
+  right: 0;
+  top: 0;
+  cursor: pointer;
+  border: 1px solid black;
+} */
+
+.Stand-move {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  cursor: move;
+  border: 1px solid black;
+}
+
+.Stand-rotate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+/* .Stand-rotate-offset {
+  position: absolute;
+  left: -120px;
+  bottom: -20px;
+  background-color: blue;
+  width: 10px;
+  height: 10px;
+} */
+
+.Stand-rotate-handle {
+  width: 40px;
+  height: 40px;
+  background-color: blue;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  /* transform: translate(-10px, -10px); */
+  border: 1px solid black;
+  cursor: alias;
+  margin-left: -45px;
+  margin-top: -20px;
+  /* top: -100px; */
+  left: 100px;
+
+  /* width: 40px;
+  height: 40px;
+  background-color: blue;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: alias; */
+}
+
+/* HEADS */
+.Head {
+  width: 80px;
+  position: absolute;
+  top: 15px;
+  height: 68px;
+  left: 50%;
+  margin-left: -40px;
+}
+
+.Head-rotateContainer {
+  border-radius: 50%;
+  border: 1px solid #840d00;
+}
+
+.Head-rotateContainer,
+.Head-container {
+  width: 100%;
+  height: 100%;
+}
+
+
+.Head-img {
+  width: 100%;
+  height: 100%;
+}
+
+.Head-rotate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+/* .Stand-rotate-offset {
+  position: absolute;
+  left: -120px;
+  bottom: -20px;
+  background-color: blue;
+  width: 10px;
+  height: 10px;
+} */
+
+.Head-rotate-handle {
+  width: 40px;
+  height: 40px;
+  background-color: #840d00;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  /* transform: translate(-10px, -10px); */
+  border: 1px solid black;
+  cursor: alias;
+  margin-left: -5px;
+  margin-top: -20px;
+  /* top: -100px; */
+  left: 100px;
+
+  /* width: 40px;
+  height: 40px;
+  background-color: blue;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: alias; */
+}
+
+
+/* UTILS */
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+      -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}

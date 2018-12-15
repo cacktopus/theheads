@@ -1,0 +1,35 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "body-scroll-lock": "^2.6.1",
+    "classnames": "^2.2.6",
+    "immutable": "^4.0.0-rc.12",
+    "lodash": "^4.17.11",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-draggable": "^3.0.5",
+    "react-redux": "^5.1.1",
+    "react-resizable-rotatable-draggable": "^0.1.8-dev.1",
+    "react-rnd-rotate": "0.0.19",
+    "react-rotatable": "^1.0.2",
+    "react-scripts": "2.1.1",
+    "redux": "^4.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
