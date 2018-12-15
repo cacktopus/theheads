@@ -51,6 +51,13 @@ async def get(url):
             return response, text
 
 
+async def put(url, data):
+    async with aiohttp.ClientSession() as session:
+        async with session.put(url=url, data=data) as response:
+            text = await response.text()
+            return response, text
+
+
 class EtcdBackend:
     def __init__(self, etcd_endpoint):
         self.etcd_endpoint = etcd_endpoint

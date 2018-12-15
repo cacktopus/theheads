@@ -1,7 +1,7 @@
 import json
 from typing import Dict
 
-from etcd_config import get
+from etcd_config import get, put
 from rpc_util import d64
 
 
@@ -47,3 +47,8 @@ class ConsulBackend:
             result[key] = val
 
         return result
+
+    async def put(self, key: bytes, value: bytes):
+        assert key.startswith(b"/")
+        url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
+        return await put(url, value)
