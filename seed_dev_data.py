@@ -4,48 +4,51 @@ import platform
 from consul_config import ConsulBackend
 import yaml
 
+INSTALLATION = "dev"
 
-async def main():
+
+async def main(inst_name: str):
     hostname = platform.node()
     be = ConsulBackend("http://127.0.0.1:8500")
 
     async def put(key: str, value: bytes):
+        print(key, value)
         resp, _ = await be.put(key.encode(), value)
         assert resp.status == 200
 
     await put(
         "/the-heads/machines/{}/installation".format(hostname),
-        b"dev"
+        inst_name.encode()
     )
 
     await put(
-        "/the-heads/installation/dev/redis/{}".format(hostname),
+        "/the-heads/installation/{}/redis/{}".format(inst_name, hostname),
         b"127.0.0.1:6379"
     )
 
-    with open('seed_data/dev.yaml', "r") as fp:
-        inst = yaml.safe_load(fp)
+    with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
+        inst_data = yaml.safe_load(fp)
 
-    for stand in inst['stands']:
+    for stand in inst_data['stands']:
         for camera in stand['cameras']:
             await put(
-                "/the-heads/installation/dev/cameras/{}.yaml".format(camera['name']),
+                "/the-heads/installation/{}/cameras/{}.yaml".format(inst_name, camera['name']),
                 yaml.dump(camera, encoding='utf-8'),
             )
 
         for head in stand['heads']:
             await put(
-                "/the-heads/installation/dev/heads/{}.yaml".format(head['name']),
+                "/the-heads/installation/{}/heads/{}.yaml".format(inst_name, head['name']),
                 yaml.dump(head, encoding='utf-8'),
             )
 
         stand['cameras'] = [x['name'] for x in stand['cameras']]
         stand['heads'] = [x['name'] for x in stand['heads']]
-        key = "/the-heads/installation/dev/stands/{}.yaml".format(stand['name'])
+        key = "/the-heads/installation/{}/stands/{}.yaml".format(inst_name, stand['name'])
         value = yaml.dump(stand, encoding='utf-8')
         await put(key, value)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.run_until_complete(main(INSTALLATION))
