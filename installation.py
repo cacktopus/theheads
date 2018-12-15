@@ -1,9 +1,12 @@
+import asyncio
 import os
 from glob import glob
 
 import yaml
 from aiohttp import web
 
+from consul_config import ConsulBackend
+from etcd_config import Config
 from transformations import Mat, Vec
 
 
@@ -96,7 +99,44 @@ class Installation:
         return inst
 
 
-def build_installation(name):
+async def build_installation(inst_name: str, cfg: Config):
+    cameras = {}
+    heads = {}
+    stands = {}
+
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/installation/{installation}/cameras/"
+    )).items():
+        camera = yaml.safe_load(body)
+        cameras[camera['name']] = camera
+
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/installation/{installation}/heads/"
+    )).items():
+        head = yaml.safe_load(body)
+        heads[head['name']] = head
+
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/installation/{installation}/stands/"
+    )).items():
+        stand = yaml.safe_load(body)
+        if stand.get("enabled", True):
+            stands[stand['name']] = stand
+
+    for stand in stands.values():
+        stand['cameras'] = [cameras[c] for c in stand['cameras']]
+        stand['heads'] = [heads[h] for h in stand['heads']]
+
+    result = dict(
+        name=inst_name,
+        stands=list(stands.values()),
+    )
+
+    return result
+
+
+def build_installation_from_filesystem(name):
+    """deprecated"""
     base = os.path.join("etcd", "the-heads", "installations", name)
     if not os.path.exists(base):
         raise web.HTTPNotFound()
@@ -133,7 +173,11 @@ def build_installation(name):
 
 
 def main():
-    inst = Installation.unmarshal(build_installation("living-room"))
+    loop = asyncio.get_event_loop()
+
+    cfg = loop.run_until_complete(Config(ConsulBackend("http://127.0.0.1:8500")).setup())
+    result = loop.run_until_complete(build_installation("living-room", cfg))
+    inst = Installation.unmarshal(result)
 
     c0 = inst.cameras['camera0']
     pos0 = c0.stand.m * c0.m * Vec(0, 0)

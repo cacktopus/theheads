@@ -117,15 +117,13 @@ async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnecti
             await fetch(session, url)
 
 
-async def run_redis(redis_hostport, ws_manager):
+async def run_redis(redis_hostport, ws_manager, inst: Installation):
     print("Connecting to redis:", redis_hostport)
     host, port = redis_hostport.split(":")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
     print("Connected to redis", redis_hostport)
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe([THE_HEADS_EVENTS])
-
-    inst = Installation.unmarshal(build_installation("living-room"))
 
     while True:
         reply = await subscriber.next_published()
@@ -212,8 +210,9 @@ def random_png(request):
 
 async def installation_handler(request):
     name = request.match_info.get('installation')
+    cfg = request.app['cfg']
 
-    result = build_installation(name)
+    result = await build_installation(name, cfg['cfg'])
 
     return web.Response(text=json.dumps(result), content_type="application/json")
 
@@ -241,6 +240,7 @@ async def get_config(endpoint: str):
         endpoint=endpoint,
         installation=cfg.installation,
         redis_servers=redis_servers,
+        cfg=cfg,
     )
 
 
@@ -290,6 +290,7 @@ def main():
     # print("obtained lock:", lock_key)
 
     app = web.Application()
+    app['cfg'] = cfg
 
     jinja_env = Environment(
         loader=FileSystemLoader('templates'),
@@ -322,8 +323,10 @@ def main():
 
     loop = asyncio.get_event_loop()
 
+    inst = loop.run_until_complete(build_installation(cfg['installation'], cfg['cfg']))
+
     for redis in cfg['redis_servers']:
-        asyncio.ensure_future(run_redis(redis, ws_manager), loop=loop)
+        asyncio.ensure_future(run_redis(redis, ws_manager, inst), loop=loop)
 
     web.run_app(app, port=BOSS_PORT)
 

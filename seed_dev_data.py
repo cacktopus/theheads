@@ -9,11 +9,11 @@ INSTALLATION = "dev"
 
 async def main(inst_name: str):
     hostname = platform.node()
-    be = ConsulBackend("http://127.0.0.1:8500")
+    consul_backend = ConsulBackend("http://127.0.0.1:8500")
 
     async def put(key: str, value: bytes):
         print(key, value)
-        resp, _ = await be.put(key.encode(), value)
+        resp, _ = await consul_backend.put(key.encode(), value)
         assert resp.status == 200
 
     await put(
