@@ -28,15 +28,14 @@ async def run_journalctl(stdout_cb, stderr_cb):
     return await process.wait()
 
 
-def on_line(name):
-    def f(line):
-        print("hi")
-        msg = json.loads(line.decode())
-        print(name, "got line", msg, flush=True)
-    return f
-
-
 def main():
+    def on_line(name):
+        def f(line):
+            msg = json.loads(line.decode())
+            print(name, "got line", msg, flush=True)
+
+        return f
+
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run_journalctl(
         on_line("stdout"),

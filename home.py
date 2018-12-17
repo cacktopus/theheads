@@ -9,6 +9,7 @@ from aiohttp import web
 from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 import util
+from journald_tail import run_journalctl
 from metrics import handle_metrics
 from voltage_monitor import monitor_voltage
 
@@ -93,6 +94,18 @@ def main():
         )
 
         asyncio.ensure_future(monitor_voltage(lambda x: low_voltage_observed.set(x)))
+
+    if util.is_rpi3():
+        journald_logged = prometheus_client.Counter(
+            "journald_logged",
+            "Message was logged to journald",
+            []
+        )
+
+        asyncio.ensure_future(run_journalctl(
+            lambda x: journald_logged.inc(),
+            lambda x: None,
+        ))
 
     app.add_routes([
         web.get('/', handle),
