@@ -14,9 +14,10 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import ws
 from consul_config import ConsulBackend
 from etcd_config import lock
-from config import THE_HEADS_EVENTS, BOSS_PORT, get_args, Config, get_redis
+from config import THE_HEADS_EVENTS, get_args, Config, get_redis
 from grid import the_grid
 from installation import build_installation, Installation
+from metrics import handle_metrics
 from transformations import Mat, Vec
 
 REDIS_MESSAGE_RECEIVED = prometheus_client.Counter(
@@ -48,12 +49,6 @@ async def home(request):
     result = template.render(installations=installations)
 
     return web.Response(text=result, content_type="text/html")
-
-
-async def handle_metrics(request):
-    resp = web.Response(body=prometheus_client.generate_latest())
-    resp.content_type = prometheus_client.CONTENT_TYPE_LATEST
-    return resp
 
 
 async def fetch(session, url):

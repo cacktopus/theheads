@@ -1,10 +1,16 @@
 import argparse
+import asyncio
 import json
 from typing import Tuple, Dict
 
 import aiohttp
+import prometheus_client
 from aiohttp import web
 from jinja2 import Environment, select_autoescape, FileSystemLoader
+
+import util
+from metrics import handle_metrics
+from voltage_monitor import monitor_voltage
 
 CONSUL_PORT = 8500
 
@@ -79,8 +85,18 @@ def main():
 
     app['jinja_env'] = jinja_env
 
+    if util.is_rpi3():
+        low_voltage_observed = prometheus_client.Gauge(
+            "rpi_low_voltage_observed",
+            "Raspberry PI low voltage observed over observation window",
+            []
+        )
+
+        asyncio.ensure_future(monitor_voltage(lambda x: low_voltage_observed.set(x)))
+
     app.add_routes([
         web.get('/', handle),
+        web.get('/metrics', handle_metrics),
     ])
 
     web.run_app(app, port=args.port)
