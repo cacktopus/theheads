@@ -5,7 +5,7 @@ from collections import deque
 from typing import Callable
 
 ROOT = "/sys/class/gpio"
-LED = "/sys/devices/platform/leds/leds/led1"
+LED = "/sys/devices/platform/leds/leds/led1/brightness"
 DELAY = 1 / 25
 ACCUMULATION_WINDOW = 60  # s
 
