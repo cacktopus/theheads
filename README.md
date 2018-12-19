@@ -5,11 +5,12 @@
 
 ### Get the source
     git clone git2@git01:git/heads
+    cd heads
     
     brew install python3
     pip3 install virtualenv
     
-    virtualenv -p python3 env
+    python3 -m virtualenv -p python3 env
     source env/bin/activate
     pip install -r requirements.txt
     
@@ -42,9 +43,12 @@ You can browse the ui at http://localhost:8500.
 
 ### Seed data
 
-Coming soon!
+    python seed_dev_data.py
 
 ### Run boss
+
+    # get javascript library 
+    curl -O https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.js
 
     python boss.py
     
