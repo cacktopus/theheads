@@ -321,7 +321,8 @@ def main():
 
     loop = asyncio.get_event_loop()
 
-    inst = loop.run_until_complete(build_installation(cfg['installation'], cfg['cfg']))
+    json_inst = loop.run_until_complete(build_installation(cfg['installation'], cfg['cfg']))
+    inst = Installation.unmarshal(json_inst)
     app['inst'] = inst
 
     for redis in cfg['redis_servers']:
