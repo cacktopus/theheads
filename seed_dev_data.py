@@ -48,6 +48,8 @@ async def main(inst_name: str):
         value = yaml.dump(stand, encoding='utf-8')
         await put(key, value)
 
+    await consul_backend.register_service_with_agent("redis", 6379)
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

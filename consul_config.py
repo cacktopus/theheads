@@ -55,3 +55,11 @@ class ConsulBackend:
         assert key.startswith(b"/")
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
         return await put(url, value)
+
+    async def register_service_with_agent(self, name: str, port: int):
+        url = self._consul_endpoint + "/v1/agent/service/register"
+        data = json.dumps({
+            "Name": name,
+            "Port": port,
+        })
+        return await put(url, data)
