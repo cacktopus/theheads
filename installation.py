@@ -29,11 +29,10 @@ class Camera:
 
 
 class Head:
-    def __init__(self, name: str, m: Mat, stand: "Stand", url: str):
+    def __init__(self, name: str, m: Mat, stand: "Stand"):
         self.name = name
         self.m = m
         self.stand = stand
-        self.url = url
 
 
 class Stand:
@@ -90,7 +89,6 @@ class Installation:
                     head['name'],
                     obj_to_m(head),
                     s,
-                    head['url'],
                 )
                 s.add_head(h)
 

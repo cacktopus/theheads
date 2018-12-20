@@ -111,10 +111,23 @@ async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnecti
         for client in clients:  # TODO: should this be a manager command? Or some kind of callback?
             client.draw_queue.put_nowait(drawCmd)
 
-        url = head.url + "/position/{:d}".format(int(pos))
-        async with aiohttp.ClientSession() as session:
-            print(theta, pos, url)
-            await fetch(session, url)
+        consul = ConsulBackend()
+        resp, text = await consul.get_nodes_for_service("heads", tags=[head.name])
+        assert resp.status == 200
+        msg = json.loads(text)
+
+        if len(msg) == 0:
+            print("Could not find service registered for {}".format(head.name))
+
+        elif len(msg) > 1:
+            print("Found more than one service registered for {}".format(head.name))
+
+        else:
+            base_url = "http://{}:{}".format(msg[0]['Address'], msg[0]['ServicePort'])
+            url = base_url + "/position/{:d}".format(int(pos))
+            async with aiohttp.ClientSession() as session:
+                print(theta, pos, url)
+                await fetch(session, url)
 
 
 async def run_redis(redis_hostport, ws_manager, inst: Installation):

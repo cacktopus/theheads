@@ -6,7 +6,7 @@ from rpc_util import d64
 
 
 class ConsulBackend:
-    def __init__(self, consul_endpoint: str):
+    def __init__(self, consul_endpoint: str = "http://127.0.0.1:8500"):
         self._consul_endpoint = consul_endpoint
 
     async def get(self, key: bytes):
@@ -64,6 +64,18 @@ class ConsulBackend:
         })
         return await put(url, data)
 
-    async def get_nodes_for_service(self, service_name):
-        url = self._consul_endpoint + "/v1/catalog/service/" + service_name
+    async def get_nodes_for_service(self, service_name, tags=None):
+        tags = tags or []
+
+        query_string = "&".join("tag={}".format(t) for t in tags)
+
+        url = "{}{}{}?{}".format(
+            self._consul_endpoint,
+            "/v1/catalog/service/",
+            service_name,
+            query_string,
+        )
+
+        print(url)
+
         return await get(url)
