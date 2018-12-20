@@ -35,6 +35,10 @@ TASKS = prometheus_client.Gauge(
 TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
 
 
+async def health_check(request):
+    return web.Response(text="ok")
+
+
 async def home(request):
     cfg = request.app['cfg']['cfg']
 
@@ -324,6 +328,7 @@ def main():
 
     app.add_routes([
         web.get('/', home),
+        web.get('/health', health_check),
         web.get('/metrics', handle_metrics),
         web.get('/ws', ws_manager.websocket_handler),
         web.get('/installation/{installation}/scene.json', installation_handler),
