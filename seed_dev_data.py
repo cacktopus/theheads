@@ -21,11 +21,6 @@ async def main(inst_name: str):
         inst_name.encode()
     )
 
-    await put(
-        "/the-heads/installation/{}/redis/{}".format(inst_name, hostname),
-        b"127.0.0.1:6379"
-    )
-
     with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
         inst_data = yaml.safe_load(fp)
 
