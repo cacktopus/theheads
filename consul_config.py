@@ -63,3 +63,7 @@ class ConsulBackend:
             "Port": port,
         })
         return await put(url, data)
+
+    async def get_nodes_for_service(self, service_name):
+        url = self._consul_endpoint + "/v1/catalog/service/" + service_name
+        return await get(url)

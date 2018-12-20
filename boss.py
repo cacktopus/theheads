@@ -231,11 +231,19 @@ async def task_handler(request):
 
 
 async def get_config(args):
-    cfg = await Config(ConsulBackend(args.config_endpoint)).setup(
+    endpoint = ConsulBackend(args.config_endpoint)
+    cfg = await Config(endpoint).setup(
         installation_override=args.installation
     )
 
-    redis_servers = await get_redis(cfg)
+    resp, text = await endpoint.get_nodes_for_service("redis")
+    assert resp.status == 200
+    msg = json.loads(text)
+
+    redis_servers = ["{}:{}".format(r['Address'], r['ServicePort']) for r in msg]
+
+    assert len(redis_servers) > 0, "Need at least one redis server, for now"
+
     result = dict(endpoint=args.config_endpoint, installation=cfg.installation, redis_servers=redis_servers, cfg=cfg, )
 
     print("Using installation:", result['installation'])
