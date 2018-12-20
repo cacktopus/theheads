@@ -56,12 +56,17 @@ class ConsulBackend:
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
         return await put(url, value)
 
-    async def register_service_with_agent(self, name: str, port: int):
+    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None):
         url = self._consul_endpoint + "/v1/agent/service/register"
-        data = json.dumps({
-            "Name": name,
-            "Port": port,
-        })
+        payload = {"Name": name, "Port": port}
+
+        if ID is not None:
+            payload["ID"] = ID
+
+        if tags is not None:
+            payload["Tags"] = tags
+
+        data = json.dumps(payload)
         return await put(url, data)
 
     async def get_nodes_for_service(self, service_name, tags=None):
