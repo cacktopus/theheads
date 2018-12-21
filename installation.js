@@ -1,20 +1,26 @@
 function draw_stand(scene, parent, w, h, stand) {
     var radius = .20;
 
-    var head = parent.circle(0).radius(radius);
+    stand.heads.forEach(function (head) {
+        var g2 = parent.group();
+        
+        var circle = g2.circle(0).radius(radius);
 
-    head.attr({
-        fill: '#f06',
-        stroke: '#000',
-        "stroke-width": 0.020
+        circle.attr({
+            fill: '#f06',
+            stroke: '#000',
+            "stroke-width": 0.020
+        });
+
+        g2.line(
+            0,
+            0,
+            radius,
+            0
+        ).stroke({width: 0.020});
+
+        scene.heads[head.name] = g2;
     });
-
-    parent.line(
-        0,
-        0,
-        radius,
-        0
-    ).stroke({width: 0.020});
 
     stand.cameras.forEach(function (camera) {
         var fov_x = 3;
@@ -126,6 +132,7 @@ function main(ws_port) {
 
         var scene = {
             cameras: {},
+            heads: {},
             root: root
         };
 
