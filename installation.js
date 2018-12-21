@@ -83,7 +83,11 @@ function setup_websocket(ws_port, scene) {
                     }, 1000);
                 } else if (item.shape === "raw-event") {
                     console.log("Raw event");
-                    console.log(item.data.data);
+                    var msg = item.data.data;
+                    console.log(msg);
+                    var pos = msg.position;
+                    var head = scene.heads[msg.headName];
+                    head.rotate(pos / 200 * 360);
                 }
             });
         }
