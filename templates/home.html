@@ -25,8 +25,7 @@
     <li>
         <span class="{{ service.status[node.Node] }}">
         <a href="http://{{ node.Node }}.node.consul:{{ node.ServicePort}}">
-            {{ node.Node }}
-        </a>
+            {{ node.Node }}</a>
         </span>
         <span class="smaller">
             {{ node.ServicePort }} {{node.ServiceTags | join(", ")}}
