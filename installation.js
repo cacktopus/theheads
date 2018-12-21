@@ -75,6 +75,9 @@ function setup_websocket(ws_port, scene) {
                     setTimeout(function () {
                         ray.remove();
                     }, 1000);
+                } else if (item.shape === "raw-event") {
+                    console.log("Raw event");
+                    console.log(item.data.data);
                 }
             });
         }

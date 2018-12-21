@@ -57,6 +57,15 @@ async def fetch(session, url):
         return await response.text()
 
 
+async def head_positioned(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
+    print(msg)
+    for client in clients:
+        client.draw_queue.put_nowait({
+            "shape": "raw-event",
+            "data": msg,
+        })
+
+
 async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
     data = msg['data']
 
@@ -155,6 +164,9 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation):
 
         if msg['type'] == "motion-detected":
             await motion_detected(inst, ws_manager.clients, msg)
+
+        if msg['type'] == "head-positioned":
+            await head_positioned(inst, ws_manager.clients, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
