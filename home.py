@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import platform
 from typing import Tuple, Dict
 
 import aiohttp
@@ -32,6 +33,15 @@ async def get_nodes_for_service(consul_host: str, service: str):
     return resp
 
 
+async def get_health_checks_for_service(consul_host: str, service: str):
+    path = "/v1/health/checks/{}".format(service)
+    url = "http://{}:{}{}".format(consul_host, CONSUL_PORT, path)
+
+    status, resp = await get(url)
+    assert status == 200
+    return resp
+
+
 async def get_services(consul_host: str):
     path = "/v1/catalog/services"
     url = "http://{}:{}{}".format(consul_host, CONSUL_PORT, path)
@@ -40,11 +50,16 @@ async def get_services(consul_host: str):
 
     status, resp = await get(url)
     for name, tags in resp.items():
+        checks = await get_health_checks_for_service(consul_host, name)
+        status = {c['Node']: c['Status'] for c in checks}
+        print(status)
+
         nodes = await get_nodes_for_service(consul_host, name)
         result.append(dict(
             name=name,
             tags=tags,
             nodes=nodes,
+            status=status,
         ))
     result = sorted(result, key=lambda x: x['name'])
     return result
@@ -59,7 +74,8 @@ async def handle(request):
 
     services = [s for s in services if "frontend" in s['tags']]
 
-    result = template.render(services=services)
+    hostname = platform.node()
+    result = template.render(services=services, hostname=hostname)
 
     return web.Response(text=result, content_type="text/html")
 

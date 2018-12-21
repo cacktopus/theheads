@@ -2,16 +2,36 @@
 <html lang="en">
 <head>
     <title>Home</title>
+    <style>
+        .smaller {
+            font-size: smaller;
+        }
+        .critical {
+            text-decoration: line-through;
+        }
+        .center-div {
+             margin: 0 auto;
+             <!--width: 800px;-->
+        }
+    </style>
 </head>
 <body>
+<div class="smaller center-div">(running on {{hostname}})</div>
 <h1>Home</h1>
 <ul>
     {% for service in services %}
     <h2>{{service.name}}</h2>
     {% for node in service.nodes %}
-    <li><a href="http://{{ node.Address }}:{{ node.ServicePort}}">
-        http://{{ node.Address }}:{{ node.ServicePort}}
-    </a></li>
+    <li>
+        <span class="{{ service.status[node.Node] }}">
+        <a href="http://{{ node.Node }}.node.consul:{{ node.ServicePort}}">
+            {{ node.Node }}
+        </a>
+        </span>
+        <span class="smaller">
+            {{ node.ServicePort }} {{node.ServiceTags | join(", ")}}
+        </span>
+    </li>
     {% endfor %}
     {% endfor %}
 </ul>
