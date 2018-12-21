@@ -9,6 +9,7 @@ import prometheus_client
 from aiohttp import web
 from jinja2 import Environment, select_autoescape, FileSystemLoader
 
+import health
 import util
 from journald_tail import run_journalctl
 from metrics import handle_metrics
@@ -125,6 +126,7 @@ def main():
 
     app.add_routes([
         web.get('/', handle),
+        web.get('/health', health.health_check),
         web.get('/metrics', handle_metrics),
     ])
 

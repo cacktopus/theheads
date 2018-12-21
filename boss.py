@@ -14,8 +14,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import ws
 from consul_config import ConsulBackend
 from etcd_config import lock
-from config import THE_HEADS_EVENTS, get_args, Config, get_redis
+from config import THE_HEADS_EVENTS, get_args, Config
 from grid import the_grid
+from health import health_check
 from installation import build_installation, Installation
 from metrics import handle_metrics
 from transformations import Mat, Vec
@@ -33,10 +34,6 @@ TASKS = prometheus_client.Gauge(
 )
 
 TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
-
-
-async def health_check(request):
-    return web.Response(text="ok")
 
 
 async def home(request):
