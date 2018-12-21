@@ -3,7 +3,7 @@ function draw_stand(scene, parent, w, h, stand) {
 
     stand.heads.forEach(function (head) {
         var g2 = parent.group();
-        
+
         var circle = g2.circle(0).radius(radius);
 
         circle.attr({
@@ -50,29 +50,33 @@ function setup_websocket(ws_port, scene) {
     console.log(ws);
 
     ws.onmessage = function (event) {
-        var msg = JSON.parse(event.data);
-        console.log("WebSocket message received:", msg);
-        if (msg.type === "motion-detected") {
-            var cameraName = item.cameraName;
-            var camera = scene.cameras[cameraName];
-            if (camera === undefined) {
-                console.log("unknown camera: " + cameraName)
-            } else {
-                var ray = camera.line(0, 0, 5, 0).stroke({
-                    width: 0.020,
-                    color: "lightgreen",
-                    opacity: 0.40
-                });
-                ray.rotate(item.position, 0, 0);
-                setTimeout(function () {
-                    ray.remove();
-                }, 5000);
-            }
-        } else if (msg.type === "draw") {
-            msg.data.forEach(function (item) {
-                if (item.shape === "line") {
-                    var coords = item.coords;
-                    console.log(coords);
+        var msgs = JSON.parse(event.data);
+        var info = msgs.map(function (msg) {
+            return msg.type;
+        }).join(", ");
+
+        console.log("WebSocket message received:", info);
+
+        msgs.forEach(function (msg) {
+            if (msg.type === "motion-detected") {
+                var cameraName = msg.data.cameraName;
+                var camera = scene.cameras[cameraName];
+                if (camera === undefined) {
+                    console.log("unknown camera: " + cameraName)
+                } else {
+                    var ray = camera.line(0, 0, 5, 0).stroke({
+                        width: 0.020,
+                        color: "lightgreen",
+                        opacity: 0.40
+                    });
+                    ray.rotate(msg.data.position, 0, 0);
+                    setTimeout(function () {
+                        ray.remove();
+                    }, 5000);
+                }
+            } else if (msg.type === "draw") {
+                if (msg.data.shape === "line") {
+                    var coords = msg.data.coords;
                     var ray = scene.root.line(coords[0], coords[1], coords[2], coords[3]).stroke({
                         width: 0.020,
                         color: "lightgreen",
@@ -81,16 +85,15 @@ function setup_websocket(ws_port, scene) {
                     setTimeout(function () {
                         ray.remove();
                     }, 1000);
-                } else if (item.shape === "raw-event") {
-                    console.log("Raw event");
-                    var msg = item.data.data;
-                    console.log(msg);
-                    var pos = msg.position;
-                    var head = scene.heads[msg.headName];
-                    head.rotate(pos / 200 * 360);
                 }
-            });
-        }
+            } else if (msg.type === "head-positioned") {
+                var data = msg.data;
+                console.log(data);
+                var pos = data.position;
+                var head = scene.heads[data.headName];
+                head.rotate(pos / 200 * 360);
+            }
+        });
     }
 }
 

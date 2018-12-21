@@ -57,16 +57,12 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def head_positioned(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
+async def head_positioned(inst: Installation, ws_manager: ws.WebsocketManager, msg: Dict):
     print(msg)
-    for client in clients:
-        client.draw_queue.put_nowait({
-            "shape": "raw-event",
-            "data": msg,
-        })
+    ws_manager.send(msg)
 
 
-async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnection], msg: Dict):
+async def motion_detected(inst: Installation, ws_manager: ws.WebsocketManager, msg: Dict):
     data = msg['data']
 
     cam = inst.cameras[data['cameraName']]
@@ -113,13 +109,14 @@ async def motion_detected(inst: Installation, clients: List[ws.WebsocketConnecti
 
         p0 = m * Vec(0.0, 0.0)
         p1 = m * Mat.rotz(theta) * Vec(5, 0, 0.0)
-        drawCmd = {
-            "shape": "line",
-            "coords": [p0.x, p0.y, p1.x, p1.y],
-        }
 
-        for client in clients:  # TODO: should this be a manager command? Or some kind of callback?
-            client.draw_queue.put_nowait(drawCmd)
+        ws_manager.send({
+            "type": "draw",
+            "data": {
+                "shape": "line",
+                "coords": [p0.x, p0.y, p1.x, p1.y],
+            }
+        })
 
         consul = ConsulBackend()
         resp, text = await consul.get_nodes_for_service("heads", tags=[head.name])
@@ -163,10 +160,10 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation):
         ).inc()
 
         if msg['type'] == "motion-detected":
-            await motion_detected(inst, ws_manager.clients, msg)
+            await motion_detected(inst, ws_manager, msg)
 
         if msg['type'] == "head-positioned":
-            await head_positioned(inst, ws_manager.clients, msg)
+            await head_positioned(inst, ws_manager, msg)
 
             # async with aiohttp.ClientSession() as session:
             #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
