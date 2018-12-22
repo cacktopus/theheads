@@ -2,6 +2,7 @@ import asyncio
 import platform
 
 from consul_config import ConsulBackend
+from const import DEFAULT_CONSUL_ENDPOINT
 import yaml
 
 INSTALLATION = "dev"
@@ -9,7 +10,7 @@ INSTALLATION = "dev"
 
 async def main(inst_name: str):
     hostname = platform.node()
-    consul_backend = ConsulBackend("http://127.0.0.1:8500")
+    consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
 
     async def put(key: str, value: bytes):
         print(key, value)
@@ -45,6 +46,8 @@ async def main(inst_name: str):
 
     await consul_backend.register_service_with_agent("redis", 6379)
     await consul_backend.register_service_with_agent("heads", 8080, ID="head0", tags=["head0"])
+
+
 
 
 if __name__ == '__main__':

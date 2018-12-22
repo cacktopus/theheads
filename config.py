@@ -4,6 +4,8 @@ from typing import Dict, List
 
 import aiohttp
 
+from const import DEFAULT_CONSUL_ENDPOINT
+
 BASE = "http://127.0.0.1:2379"
 THE_HEADS_EVENTS = 'the-heads-events'
 BOSS_PORT = 8081
@@ -12,7 +14,7 @@ BOSS_PORT = 8081
 def get_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--config-endpoint', type=str, default="http://127.0.0.1:8500",
+    parser.add_argument('--config-endpoint', type=str, default=DEFAULT_CONSUL_ENDPOINT,
                         help="URL for config service (e.g., consul)")
 
     parser.add_argument('--installation', type=str,

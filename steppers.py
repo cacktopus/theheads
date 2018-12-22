@@ -8,6 +8,7 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
 import motors
+from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend
 from config import THE_HEADS_EVENTS, Config, get_redis
 
@@ -15,8 +16,7 @@ STEPPERS_PORT = 8080
 NUM_STEPS = 200
 DEFAULT_SPEED = 50
 directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
-
-REDIS_HOST, REDIS_PORT = "127.0.0.1", 6379
+_DEFAULT_REDIS = "127.0.0.1:6379"
 
 
 class Stepper:
@@ -116,25 +116,27 @@ def console_fun():
 
 
 async def get_config(endpoint: str):
-    cfg = await Config(ConsulBackend("http://127.0.0.1:8500")).setup()
+    cfg = await Config(ConsulBackend(endpoint)).setup()
 
-    redis_servers = await get_redis(cfg)
+    redis_server = _DEFAULT_REDIS  # TODO
 
     head = await cfg.get_config_str("/the-heads/installation/{installation}/heads/{hostname}")
 
     return dict(
         endpoint=endpoint,
         installation=cfg.installation,
-        redis_servers=redis_servers,
+        redis_server=redis_server,
         head=head,
     )
 
 
 async def setup(app: web.Application, loop):
-    cfg = await get_config(get_endpoints()[0])
-    print("head:", cfg['head'])
+    cfg = await get_config(DEFAULT_CONSUL_ENDPOINT)
 
-    redis_connection = await asyncio_redis.Connection.create(host=REDIS_HOST, port=int(REDIS_PORT))
+    redis_host, redis_port_str = cfg['redis_server'].split(":")
+    redis_port = int(redis_port_str)
+
+    redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
 
     stepper = Stepper(cfg, redis_connection)
     asyncio.ensure_future(stepper.redis_publisher())

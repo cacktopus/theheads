@@ -6,6 +6,7 @@ import yaml
 from aiohttp import web
 
 from consul_config import ConsulBackend
+from const import DEFAULT_CONSUL_ENDPOINT
 from config import Config
 from transformations import Mat, Vec
 
@@ -176,7 +177,7 @@ def build_installation_from_filesystem(name):
 def main():
     loop = asyncio.get_event_loop()
 
-    cfg = loop.run_until_complete(Config(ConsulBackend("http://127.0.0.1:8500")).setup())
+    cfg = loop.run_until_complete(Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
     result = loop.run_until_complete(build_installation("living-room", cfg))
     inst = Installation.unmarshal(result)
 

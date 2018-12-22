@@ -2,11 +2,12 @@ import json
 from typing import Dict, List
 
 from config import get, put
+from const import DEFAULT_CONSUL_ENDPOINT
 from rpc_util import d64
 
 
 class ConsulBackend:
-    def __init__(self, consul_endpoint: str = "http://127.0.0.1:8500"):
+    def __init__(self, consul_endpoint: str = DEFAULT_CONSUL_ENDPOINT):
         self._consul_endpoint = consul_endpoint
 
     async def get(self, key: bytes):
