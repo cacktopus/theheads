@@ -1,22 +1,22 @@
 import asyncio
 import json
 import math
+import os
 import platform
 from string import Template
-from typing import Dict, List
+from typing import Dict
 
-import aiohttp
 import asyncio_redis
-import os
 import prometheus_client
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import ws
+from config import THE_HEADS_EVENTS, get_args, Config
 from consul_config import ConsulBackend
 from etcd_config import lock
-from config import THE_HEADS_EVENTS, get_args, Config
 from grid import the_grid
+from head_manager import HeadManager
 from health import health_check
 from installation import build_installation, Installation
 from metrics import handle_metrics
@@ -59,12 +59,22 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def head_positioned(inst: Installation, ws_manager: ws.WebsocketManager, msg: Dict):
+async def head_positioned(
+        inst: Installation,
+        ws_manager: ws.WebsocketManager,
+        head_manager: HeadManager,
+        msg: Dict
+):
     print(msg)
     ws_manager.send(msg)
 
 
-async def motion_detected(inst: Installation, ws_manager: ws.WebsocketManager, msg: Dict):
+async def motion_detected(
+        inst: Installation,
+        ws_manager: ws.WebsocketManager,
+        head_manager: HeadManager,
+        msg: Dict
+):
     data = msg['data']
 
     cam = inst.cameras[data['cameraName']]
@@ -120,26 +130,10 @@ async def motion_detected(inst: Installation, ws_manager: ws.WebsocketManager, m
             }
         })
 
-        consul = ConsulBackend()
-        resp, text = await consul.get_nodes_for_service("heads", tags=[head.name])
-        assert resp.status == 200
-        msg = json.loads(text)
-
-        if len(msg) == 0:
-            print("Could not find service registered for {}".format(head.name))
-
-        elif len(msg) > 1:
-            print("Found more than one service registered for {}".format(head.name))
-
-        else:
-            base_url = "http://{}:{}".format(msg[0]['Address'], msg[0]['ServicePort'])
-            url = base_url + "/position/{:d}".format(int(pos))
-            async with aiohttp.ClientSession() as session:
-                print(theta, pos, url)
-                await fetch(session, url)
+        head_manager.send(head.name, pos)
 
 
-async def run_redis(redis_hostport, ws_manager, inst: Installation):
+async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadManager):
     print("Connecting to redis:", redis_hostport)
     host, port = redis_hostport.split(":")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
@@ -149,7 +143,6 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation):
 
     while True:
         reply = await subscriber.next_published()
-        # print('Received: ', repr(reply.value), 'on channel', reply.channel)
         msg = json.loads(reply.value)
 
         data = msg['data']
@@ -162,15 +155,10 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation):
         ).inc()
 
         if msg['type'] == "motion-detected":
-            await motion_detected(inst, ws_manager, msg)
+            await motion_detected(inst, ws_manager, hm, msg)
 
         if msg['type'] == "head-positioned":
-            await head_positioned(inst, ws_manager, msg)
-
-            # async with aiohttp.ClientSession() as session:
-            #     url = "http://192.168.42.30:8080/position/{}?speed=25".format(data['position'])
-            #     text = await fetch(session, url)
-            #     print(text)
+            await head_positioned(inst, ws_manager, hm, msg)
 
 
 async def html_handler(request):
@@ -359,8 +347,10 @@ def main():
     inst = Installation.unmarshal(json_inst)
     app['inst'] = inst
 
+    hm = HeadManager()
+
     for redis in cfg['redis_servers']:
-        asyncio.ensure_future(run_redis(redis, ws_manager, inst), loop=loop)
+        asyncio.ensure_future(run_redis(redis, ws_manager, inst, hm), loop=loop)
 
     web.run_app(app, port=args.port)
 
