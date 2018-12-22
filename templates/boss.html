@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
     <title>The Heads' Boss</title>
+    <style>
+        .smaller {
+            font-size: smaller;
+        }
+        .critical {
+            text-decoration: line-through;
+        }
+    </style>
 </head>
 <body>
+<div class="smaller">(running on {{hostname}})</div>
 <h1>The Heads' Boss</h1>
 
 <h2>New UI</h2>
@@ -20,6 +29,11 @@
         {{inst}}
     </a></li>
     {% endfor %}
+</ul>
+
+<h2>Misc</h2>
+<ul>
+    <li><a href="tasks">task list</a></li>
 </ul>
 
 </body>

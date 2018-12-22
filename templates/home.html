@@ -9,14 +9,10 @@
         .critical {
             text-decoration: line-through;
         }
-        .center-div {
-             margin: 0 auto;
-             <!--width: 800px;-->
-        }
     </style>
 </head>
 <body>
-<div class="smaller center-div">(running on {{hostname}})</div>
+<div class="smaller">(running on {{hostname}})</div>
 <h1>Home</h1>
 <ul>
     {% for service in services %}

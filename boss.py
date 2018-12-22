@@ -1,6 +1,7 @@
 import asyncio
 import json
 import math
+import platform
 from string import Template
 from typing import Dict, List
 
@@ -47,7 +48,8 @@ async def home(request):
 
     template = jinja_env.get_template('boss.html')
 
-    result = template.render(installations=installations)
+    hostname = platform.node()
+    result = template.render(installations=installations, hostname=hostname)
 
     return web.Response(text=result, content_type="text/html")
 
