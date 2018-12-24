@@ -61,4 +61,6 @@ Open http://localhost:8081 in your browser window.
     ssh-add -t 72000 $HOME/.ssh/ajcom
     ssh -J tunnel@192.241.228.33 127.0.0.1 -p 2212 -l jenkins -D 1080
 
+    Then can visit in firefox: boss.service.consul:8081
+
     redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'

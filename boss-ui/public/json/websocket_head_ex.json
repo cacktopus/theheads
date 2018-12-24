@@ -1,0 +1,10 @@
+[
+    {
+    data: {
+    headName: "head0",
+    position: 7
+        },
+    installation: "office",
+    type: "head-positioned"
+    }
+]
