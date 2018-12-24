@@ -4,19 +4,68 @@
 import React from 'react'
 // import { fromJS } from 'immutable';
 
+let exportSceneMsgTimeout;
+
 export default class Menu extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-
+            sceneUrl : "/build/json/temp.json"
+            // sceneUrl : "/json/temp.json"
+            // sceneUrl : "/json/temp2.json"
         };
 
         this.addStand = this.addStand.bind(this);
+        this.setLoadSceneUrl = this.setLoadSceneUrl.bind(this);
+        this.loadScene = this.loadScene.bind(this);
+        this.addNewCamera = this.addNewCamera.bind(this);
+        this.removeCurrentCamera = this.removeCurrentCamera.bind(this);
+        this.exportSceneToJSON = this.exportSceneToJSON.bind(this);
+        this.setScale = e => { props.setScale(e.target.value) };
+        this.setTranslateX = e => { props.setTranslateX(e.target.value) };
+        this.setTranslateY = e => { props.setTranslateY(e.target.value) };
     }
 
     addStand() {
         this.props.addStand({})
+    }
+
+    setLoadSceneUrl(e) {
+        const sceneUrl = e.target.value;
+        this.setState({sceneUrl});
+    }
+
+    exportSceneToJSON() {
+        var stands = this.props.stands.toJS();
+
+        var scene = JSON.stringify({ name: "export", stands });
+
+        // document.create
+        var el = document.getElementById("clipboard-input");
+        el.value = scene;
+        el.select();
+        document.execCommand("copy");
+
+        const msg = document.getElementById("clipboard-msg");
+        msg.innerText = "Copied";
+        clearTimeout(exportSceneMsgTimeout);
+
+        exportSceneMsgTimeout = setTimeout(() => {
+            msg.innerText = "";
+        }, 1000);
+    }
+
+    loadScene() {
+        this.props.loadSceneFromUrl(this.state.sceneUrl);
+    }
+
+    addNewCamera() {
+        this.props.cameraAddNew(this.props.selectedStandIndex);
+    }
+
+    removeCurrentCamera() {
+        this.props.cameraRemove(this.props.selectedStandIndex, this.props.selectedCameraIndex);
     }
 
     render() {
@@ -52,7 +101,6 @@ export default class Menu extends React.Component {
         //     ]
         // }"
 
-
         const standSchema = {
             "name": { type: "text" },
             "pos": {
@@ -65,22 +113,35 @@ export default class Menu extends React.Component {
             },
             "rot": { type: "number", min: -1 * Math.PI, max: Math.PI },
         };
-        /*
+
         const cameraSchema = {
-            "name" : {type: "text"},
+            "name": { type: "text" },
             "pos": {
                 type: "pos"
                 // type: "obj",
-                // obj: {
-                //     "x": { type: "number" },
-                //     "y": { type: "number" }
+                // obj : { 
+                //     x: {type: 'number'},
+                //     y: {type: 'number'}
                 // }
             },
             "rot": { type: "number", min: -1 * Math.PI, max: Math.PI },
             "fov": { type: "number" },
             "description": { type: "text" }
+
+            // "name" : {type: "text"},
+            // "pos": {
+            //     type: "pos"
+            //     // type: "obj",
+            //     // obj: {
+            //     //     "x": { type: "number" },
+            //     //     "y": { type: "number" }
+            //     // }
+            // },
+            // "rot": { type: "number", min: -1 * Math.PI, max: Math.PI },
+            // "fov": { type: "number" },
+            // "description": { type: "text" }
         };
-        */
+
         const headSchema = {
             "name": { type: "text" },
             "pos": {
@@ -99,7 +160,7 @@ export default class Menu extends React.Component {
             
             return (e) => {
                 const value = e.target.value;
-                console.log(fieldNames, value);
+
                 this.props.standSetInFields(this.props.selectedStandIndex, fieldNames, value);
                 // this.props.standSetField(this.props.selectedStandIndex, fieldName, value);
             }
@@ -147,7 +208,7 @@ export default class Menu extends React.Component {
                 <div className="Menu-form-posType">
                     <label htmlFor={fieldNameX}>X</label>
                     <input className="Menu-form-posType-X" name={fieldNameX} type="number" onChange={posHandler(fieldNames, "x")} value={x} />
-                    <label htmlFor={fieldNameY}>Y</label>
+                    <label htmlFor={fieldNameY} style={{minWidth: 0}}>Y</label>
                     <input className="Menu-form-posType-Y" name={fieldNameY} type="number" onChange={posHandler(fieldNames, "y")} value={y} />
                 </div>
             );
@@ -231,13 +292,14 @@ export default class Menu extends React.Component {
         //     }
         // };
 
-        window.c_sdfas = this;
-
         const stands = this.props.stands;
         const menu = this.props.menu;
         const selectedStandIndex = this.props.selectedStandIndex;
         const selectedHeadIndex = menu.get("selectedHeadIndex");
-        // const selectedCameraIndex = menu.get("selectedCameraIndex");
+        const selectedCameraIndex = menu.get("selectedCameraIndex");
+        const scale = menu.get("scale");
+        const translateX = menu.getIn(["translate", "x"]);
+        const translateY = menu.getIn(["translate", "y"]);
 
         const getStandInfo = () => {
             if (stands.size > 0 && stands.get) {
@@ -258,59 +320,18 @@ export default class Menu extends React.Component {
             };
         }
 
-        // const getCameraInfo = (cameras) => {
-        //     if (cameras.size > 0 && cameras.get) {
-        //         const camera = cameras.get(selectedCameraIndex);
-        //         if (stand) {
-        //             return {
-        //                 cameraName : stand.get("name"),
-        //                 cameraPosX : stand.getIn(["pos","x"]),
-        //                 cameraPosY : stand.getIn(["pos","y"]),
-        //                 cameraRot : stand.get("rot"),
-        //                 cameraFov : stand.get("fov"),
-        //                 cameraDescription : stand.get("description"),
-        //             }
-        //         } 
-        //     }
-
-        //     return {};
-        // }
-
-        // const getHeadInfo = (heads) => {
-        //     if (heads.size > 0 && heads.get) {
-        //         const head = heads.get(selectedHeadIndex);
-        //         if (stand) {
-        //             return {
-        //                 headName : stand.get("name"),
-        //                 headPosX : stand.getIn(["pos","x"]),
-        //                 headPosY : stand.getIn(["pos","y"]),
-        //                 headRot : stand.get("rot"),
-        //             }
-        //         } 
-        //     }
-
-        //     return {};
-        // }
-
-
         const { selectedStand, cameras, heads } = getStandInfo();
-        window.c_23432 = { selectedStand, cameras, heads };
-        // const { cameraName, cameraPos, cameraRot, cameraFov, cameraDescription } = getCameraInfo(cameras);
-        // const { headName, cameraPos, cameraRot, cameraFov, cameraDescription } = getCameraInfo(cameras);
-
-        // const cameras = stands.size > 0 && selectedStand >= 0 ? stands.get(selectedStand).get("cameras") : [];
-        // const heads = stands.size > 0 && selectedStand >= 0 ? stands.get(selectedStand).get("heads") : [];
 
         const standOptions = stands.map((stand, i) => {
             return <option key={i} value={i}>{i} - {stand.get("name")}</option>
         });
 
         const cameraOptions = cameras.map((camera, i) => {
-            return <option key={i} value={i}>{i} - {camera.getIn(["name"])}</option>
+            return <option key={i} value={i}>{i} - {camera.get("name")}</option>
         });
 
         const headOptions = heads.map((head, i) => {
-            return <option key={i} value={i}>{i} - {head.getIn(["name"])}</option>
+            return <option key={i} value={i}>{i} - {head.get("name")}</option>
         });
 
         const getStandForm = () => {
@@ -325,49 +346,102 @@ export default class Menu extends React.Component {
                 return undefined;
             }
         }
+        
+        const getCameraForm = () => {
+            const selectedCamera = cameras && cameras.get ? cameras.get(selectedCameraIndex) : undefined;
+            if (selectedCamera !== undefined) {
+                return getInputsBySchema({ schema: cameraSchema, immutableObj: selectedCamera, parentFieldNames: ["cameras", selectedCameraIndex] });
+            } else {
+                return undefined;
+            }
+        }
 
         const standInputs = getStandForm();
-        // window.c_oo2 = {standInputs, selectedStandIndex, cameras, heads, standSchema, selectedStand};
 
         const headInputs = getHeadForm();
 
+        const cameraInputs = getCameraForm();
+
+        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+
+        const transformLabelStyles = {width: 120};
+
         return (
             <div className="Menu">
-                <div className="Menu-section">
-                    <div className="Menu-addStandButton" onClick={this.addStand}>Add Stand</div>
-                </div>
-                <div className="Menu-section">
-                    <div>
-                        <label className="Menu-form-label">Stand</label><br />
-                        <select value={selectedStandIndex} onChange={(e) => this.props.selectStand(e.target.value)}>
-                            {standOptions}
-                        </select>
+                <div>
+                    <div className="Menu-section">
+                        <div className="Menu-addStandButton" onClick={this.addStand}>Add Stand</div>
                     </div>
-                </div>
-                <div className="Menu-section" >
-                    {standInputs}
-                </div>
-                <div className="Menu-section" style={{ paddingLeft: "20px", float: "left" }}>
-                    <div>
-                        <label className="Menu-form-label">Camera</label><br />
-                        <select value={this.props.menu.get("selectedCameraIndex")} onChange={(e) => this.props.selectCamera(e.target.value)}>
-                            {cameraOptions}
-                        </select>
+                    <div className="Menu-section Menu-section--stand">
+                        <div>
+                            <label className="Menu-form-label">Stand</label><br />
+                            <select value={selectedStandIndex} onChange={(e) => this.props.selectStand(e.target.value)}>
+                                {standOptions}
+                            </select>
+                        </div>
                     </div>
-                </div>
+                    <div className="Menu-section Menu-section--standInputs" >
+                        {standInputs}
+                    </div>
+                    <div className="Menu-section Menu-section--camera" style={{ paddingLeft: "20px", float: "left" }}>
+                        <div>
+                            <label className="Menu-form-label">Camera</label><br />
+                            <select value={selectedCameraIndex} onChange={(e) => this.props.selectCamera(e.target.value)}>
+                                {cameraOptions}
+                            </select>
+                        </div>
+                        <div>
+                            <button onClick={this.addNewCamera}>Add New</button><br/><br/>
+                        </div>
+                        <div>
+                            <button onClick={this.removeCurrentCamera}>Remove Current</button>
+                        </div>
+                    </div>
+                    <div className="Menu-section Menu-section--cameraInputs" >
+                        {cameraInputs}
+                    </div>
 
-                <div className="Menu-section" style={{ paddingLeft: "20px", float: "left" }}>
-                    <div>
-                        <label className="Menu-form-label">Head</label><br />
-                        <select value={this.props.menu.get("selectedHeadIndex")} onChange={(e) => this.props.selectHead(e.target.value)}>
-                            {headOptions}
-                        </select>
+                    <div className="Menu-section Menu-section--head" style={{ paddingLeft: "20px", float: "left" }}>
+                        <div>
+                            <label className="Menu-form-label">Head</label><br />
+                            <select value={this.props.menu.get("selectedHeadIndex")} onChange={(e) => this.props.selectHead(e.target.value)}>
+                                {headOptions}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="Menu-section Menu-section--headInputs" >
+                        {headInputs}
+                    </div>
+                    <div style={{ clear: "both" }}></div>
+                </div>
+                <div style={{marginTop: 15}}>
+                    <div style={{display: "inline-block"}}>
+                        <div className="Menu-loadScene">
+                            <label>Import Scene:</label>
+                            <input style={{width: 300}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <button onClick={this.loadScene}>Load</button>
+                        </div><div className="Menu-getScene">
+                            <label>Export Scene:</label>
+                            <input id="clipboard-input" style={{width: 300}} placeholder="This will be populated on 'Copy to clipboard'." onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <button onClick={this.exportSceneToJSON}>Copy to clipboard</button>
+                            <span id="clipboard-msg"></span>
+                        </div>
+                    </div>
+                    <div style={{display: "inline-block"}}>
+                        <div className="Menu-loadScene">
+                            <label style={transformLabelStyles}>Scale Scene:</label>
+                            <input type="number" style={{width: 100}} placeholder="Scale" value={scale} onChange={this.setScale}/>&nbsp;
+                        </div><div className="Menu-getScene">
+                            <label style={transformLabelStyles}>Translate Scene:</label>
+                            <input type="number" style={{width: 45}} placeholder="x" value={translateX} onChange={this.setTranslateX}/>&nbsp;
+                            <input type="number" style={{width: 45}} placeholder="y" value={translateY} onChange={this.setTranslateY}/>&nbsp;
+                        </div>
                     </div>
                 </div>
-                <div className="Menu-section" >
-                    {headInputs}
+                <div>
+                    <button onClick={this.props.menuToggleHideRotates}>{areRotatesHidden ? "Show" : "Hide"} Rotates</button>
+                    {/* <button>Toggle visuals</button> */}
                 </div>
-                <div style={{ clear: "both" }}></div>
             </div>
         )
     }

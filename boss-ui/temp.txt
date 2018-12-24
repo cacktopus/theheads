@@ -1,0 +1,101 @@
+1704  ALL_PROXY=socks5h://127.0.0.1:1080 curl 192.168.42.30
+ 1705  heads
+ 1706  ls
+ 1707  cd heads
+ 1708  ls
+ 1709  vsc ./
+ 1710  git pull origin master
+ 1711  ssh -J tunnel@192.241.228.33 127.0.0.1 -p 2212 -l jenkins -D 1080
+ 1712  ls
+ 1713  exit
+ 1714  ls
+ 1715  pwd
+ 1716  pip3 install virtualenv
+ 1717  virtualenv -p python3 env
+ 1718  python -m virtualenv -p python3 env
+ 1719  python3 -m virtualenv -p python3 env
+ 1720  source env/bin/activate
+ 1721  pip install -r requirements.txt
+ 1722  exit
+ 1723  python3 -m virtualenv -p python3 env
+ 1724  source env/bin/activate
+ 1725  pip install -r requirements.txt
+ 1726  cd boss-ui
+ 1727  npm install && npm run build
+ 1728  brew install redis
+ 1729  heads
+ 1730  ls
+ 1731  open ./
+ 1732  ls
+ 1733  ./consul agent -server -ui -data-dir consul-data -bootstrap=1
+ 1734  redis-server
+ 1735  cd ..
+ 1736  python boss.py
+ 1737  ls
+ 1738  python boss.py
+ 1739  pip install -r requirements.txt
+ 1740  python boss.py
+ 1741  python seed_dev_data.py
+ 1742  python boss.py
+ 1743  heads
+ 1744  ls
+ 1745  cd heads
+ 1746  ls
+ 1747  cat ./post_build.sh
+ 1748  \ncurl -O https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.js
+ 1749  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1750  git add --all
+ 1751  git commit -m 'updated readme'
+ 1752  git status
+ 1753  git reset --soft HEAD~1
+ 1754  ls
+ 1755  git status
+ 1756  git diff ./requirements.txt
+ 1757  git status
+ 1758  git diff ./README.md
+ 1759  ls
+ 1760  git status
+ 1761  git remove __pycache__/config.cpython-37.pyc
+ 1762  git status
+ 1763  git reset HEAD __pycache__/*.*
+ 1764  git status
+ 1765  git reset HEAD svg.js
+ 1766  git status
+ 1767  git add --all
+ 1768  git status
+ 1769  git commit -m 'updated readme'
+ 1770  git pull origin master
+ 1771  git status
+ 1772  git push origin master
+ 1773* python boss.py
+ 1774  history
+ 1775  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1776* python boss.py
+ 1777  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1778* python boss.py
+ 1779  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1780* python boss.py
+ 1781  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1782* python boss.py
+ 1783  redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+ 1784* ssh -J tunnel@192.241.228.33 127.0.0.1 -p 2212 -l jenkins -D 1080
+ 1785* ./consul agent -server -ui -data-dir consul-data -bootstrap=1
+ 1786* exit
+ 1787  ls
+ 1788  pwwd
+ 1789  pwd
+ 1790  git pull origin master
+ 1791  git status
+ 1792  git diff ./installation.js
+ 1793  git diff
+ 1794  git pull origin master
+ 1795  git checkout -b ui-updates
+ 1796  open ./
+ 1797  ls
+ 1798  history
+ 1799  python boss.py
+ 1800  python -v
+ 1801  python -V
+ 1802  ls
+ 1803  python3 boss.py
+ 1804  python3 -V

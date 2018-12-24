@@ -1,46 +1,64 @@
-// let nextTodoId = 0
-// export const addTodo = text => ({
-//     type: 'ADD_TODO',
-//     id: nextTodoId++,
-//     text
-// })
-
-// export const setVisibilityFilter = filter => ({
-//     type: 'SET_VISIBILITY_FILTER',
-//     filter
-// })
-
-// export const toggleTodo = id => ({
-//     type: 'TOGGLE_TODO',
-//     id
-// })
-
-// export const StandsActions = {
-//     SHOW_ALL: 'SHOW_ALL',
-//     SHOW_COMPLETED: 'SHOW_COMPLETED',
-//     SHOW_ACTIVE: 'SHOW_ACTIVE'
-// }
-
-// Menu 
+// MENU
 
 export const menuSelectStand = index => ({
     type: 'MENU_SELECT_STAND',
     index
 })
 
-export const menuSelectCamera = (standIndex, cameraIndex) => ({
-    type: 'MENU_SELECT_CAMERA',
-    standIndex, 
-    cameraIndex
-})
+export const menuSelectCamera = ({ standIndex, cameraIndex }) => {
+    return ({
+        type: 'MENU_SELECT_CAMERA',
+        standIndex,
+        cameraIndex
+    })
+}
+// export const menuSelectCamera = ({standIndex, cameraIndex}) => ({
+//     type: 'MENU_SELECT_CAMERA',
+//     standIndex,
+//     cameraIndex
+// })
 
-export const menuSelectHead = (standIndex, headIndex) => ({
+export const menuSelectHead = ({ standIndex, headIndex }) => ({
     type: 'MENU_SELECT_HEAD',
-    standIndex, 
+    standIndex,
     headIndex
 })
 
-// Stands
+export const menuToggleHideRotates = () => ({
+    type: 'MENU_TOGGLE_HIDE_ROTATES'
+})
+
+export function sceneFetchFromUrl(sceneUrl) {
+    return dispatch => {
+        // dispatch(requestPosts(subreddit))
+        console.log('fetching');
+        return fetch(sceneUrl)
+            .then(response => response.json())
+            .then(json => dispatch(standSetScene(json)))
+    }
+}
+
+export const standSetScene = (sceneData) => ({
+    type: 'STAND_SET_SCENE',
+    sceneData
+});
+
+export const menuSetScale = (scale) => ({
+    type: 'MENU_SET_SCALE',
+    scale
+});
+
+export const menuSetTranslateX = (x) => ({
+    type: 'MENU_SET_TRANSLATE_X',
+    x
+});
+
+export const menuSetTranslateY = (y) => ({
+    type: 'MENU_SET_TRANSLATE_Y',
+    y
+});
+
+// STAND
 
 export const standAdd = options => ({
     type: 'STAND_ADD',
@@ -49,21 +67,21 @@ export const standAdd = options => ({
 
 export const standSetFieldByIndex = (standIndex, fieldName, value) => ({
     type: 'STAND_SET_FIELD_BY_INDEX',
-    index : standIndex,
+    index: standIndex,
     fieldName,
     value
 });
 
 export const standSetInFieldsByIndex = (standIndex, fieldNames, value) => ({
     type: 'STAND_SETIN_FIELDS_BY_INDEX',
-    index : standIndex,
+    index: standIndex,
     fieldNames,
     value
 });
 
 export const standMoveByIndex = (standIndex, pos) => ({
     type: 'STAND_MOVE_BY_INDEX',
-    index : standIndex,
+    index: standIndex,
     pos
 })
 export const standRotateByIndex = (standIndex, rot) => ({
@@ -77,31 +95,11 @@ export const standRemoveByIndex = index => ({
     index
 })
 
-// Heads
-
-// export const standAdd = options => ({
-//     type: 'STAND_ADD',
-//     options
-// })
-
-// export const standSetFieldByIndex = (standIndex, fieldName, value) => ({
-//     type: 'STAND_SET_FIELD_BY_INDEX',
-//     index : standIndex,
-//     fieldName,
-//     value
-// });
-
-// export const standSetInFieldsByIndex = (standIndex, fieldNames, value) => ({
-//     type: 'STAND_SETIN_FIELDS_BY_INDEX',
-//     index : standIndex,
-//     fieldNames,
-//     value
-// });
-
+// HEAD
 export const headMoveByIndex = (standIndex, headIndex, pos) => ({
     type: 'HEAD_MOVE_BY_INDEX',
-    standIndex : standIndex,
-    headIndex : headIndex,
+    standIndex: standIndex,
+    headIndex: headIndex,
     pos
 })
 
@@ -110,6 +108,32 @@ export const headRotateByIndex = (standIndex, headIndex, rot) => ({
     standIndex,
     headIndex,
     rot
+})
+
+// CAMERA
+export const cameraMoveByIndex = (standIndex, cameraIndex, pos) => ({
+    type: 'CAMERA_MOVE_BY_INDEX',
+    standIndex: standIndex,
+    cameraIndex: cameraIndex,
+    pos
+})
+
+export const cameraRotateByIndex = (standIndex, cameraIndex, rot) => ({
+    type: 'CAMERA_ROTATE_BY_INDEX',
+    standIndex,
+    cameraIndex,
+    rot
+})
+
+export const cameraAddNew = (standIndex, cameraIndex, rot) => ({
+    type: 'CAMERA_ADD_NEW',
+    standIndex
+})
+
+export const cameraRemoveByIndex = (standIndex, cameraIndex, rot) => ({
+    type: 'CAMERA_REMOVE',
+    standIndex,
+    cameraIndex
 })
 
 // export const standRemoveByIndex = index => ({

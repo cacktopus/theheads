@@ -283,6 +283,7 @@ def frontend_handler(*path_prefix):
 
         content_type = {
             ".css": "text/css",
+            ".json": "application/json",
             ".js": "text/javascript",
             ".map": "application/octet-stream",
             ".png": "image/png",
@@ -336,6 +337,7 @@ def main():
 
         # Jenkins' frontend
         web.get("/build/{filename}", frontend_handler("boss-ui/build")),
+        web.get("/build/json/{filename}", frontend_handler("boss-ui/build/json")),
         web.get("/build/media/{filename}", frontend_handler("boss-ui/build/media")),
         web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
         web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),

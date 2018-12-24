@@ -1,0 +1,65 @@
+{
+    "name": "living-room",
+    "stands": [
+        {
+            "name": "stand0",
+            "pos": {
+                "x": -1.5,
+                "y": 0
+            },
+            "rot": 300,
+            "cameras": [
+                {
+                    "name": "camera0",
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "rot": 0,
+                    "fov": 60,
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head0",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ]
+        },
+        {
+            "name": "stand1",
+            "pos": {
+                "x": 1.5,
+                "y": 0
+            },
+            "rot": 240,
+            "cameras": [
+                {
+                    "name": "camera1",
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "rot": 0,
+                    "fov": 60,
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head1",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ]
+        }
+    ]
+}
