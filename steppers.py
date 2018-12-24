@@ -1,16 +1,14 @@
 import asyncio
 import json
-import sys
-import time
 
 import asyncio_redis
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
 import motors
+from config import THE_HEADS_EVENTS, Config
 from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend
-from config import THE_HEADS_EVENTS, Config, get_redis
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -43,6 +41,9 @@ class Stepper:
     def set_speed(self, speed: float):
         self._speed = speed
 
+    def current_rotation(self) -> float:
+        return self._pos / NUM_STEPS * 360.0
+
     async def seek(self):
         while True:
             options = [
@@ -68,24 +69,37 @@ class Stepper:
                 "installation": self.cfg['installation'],
                 "data": {
                     "headName": self.cfg['head'],
-                    "position": pos,
+                    "stepPosition": pos,
+                    "rotation": self.current_rotation(),
                 }
             }
             await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
 
 
-def position(request):
-    stepper = request.app['stepper']
-    target = int(request.match_info.get('target'))
-    speed = request.query.get("speed")
+def adjust_position(request, speed, target):
     speed = float(speed) if speed else None
-
+    stepper = request.app['stepper']
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
-
     result = json.dumps({"result": "ok"})
     return web.Response(text=result + "\n", content_type="application/json")
+
+
+def position(request):
+    target = int(request.match_info.get('target'))
+    speed = request.query.get("speed")
+
+    return adjust_position(request, speed, target)
+
+
+def rotation(request):
+    theta = float(request.match_info.get('theta'))
+    speed = request.query.get("speed")
+
+    target = int(round(theta / 360.0 * NUM_STEPS))
+
+    return adjust_position(request, speed, target)
 
 
 async def zero(request):
@@ -94,25 +108,6 @@ async def zero(request):
 
     result = json.dumps({"result": "ok"})
     return web.Response(text=result + "\n", content_type="application/json")
-
-
-def console_fun():
-    stepper = motors.setup()
-    steps = int(sys.argv[1])
-
-    direction = MotorHAT.FORWARD if steps >= 0 else MotorHAT.BACKWARD
-    steps = abs(steps)
-
-    while True:
-        for i in range(steps):
-            stepper.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
-            # stepper.oneStep(MotorHAT.BACKWARD, MotorHAT.SINGLE)
-            time.sleep(0.01)
-
-        for i in range(steps):
-            stepper.oneStep(MotorHAT.BACKWARD, MotorHAT.DOUBLE)
-            # stepper.oneStep(MotorHAT.BACKWARD, MotorHAT.SINGLE)
-            time.sleep(0.01)
 
 
 async def get_config(endpoint: str):
@@ -136,7 +131,9 @@ async def setup(app: web.Application, loop):
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
+    print("connecting to redis")
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
+    print("connected to redis")
 
     stepper = Stepper(cfg, redis_connection)
     asyncio.ensure_future(stepper.redis_publisher())
@@ -164,6 +161,7 @@ def main():
     app.add_routes([
         web.get("/", home),
         web.get("/position/{target}", position),
+        web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
     ])
     web.run_app(app, port=STEPPERS_PORT)

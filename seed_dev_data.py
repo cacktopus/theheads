@@ -44,10 +44,18 @@ async def main(inst_name: str):
         value = yaml.dump(stand, encoding='utf-8')
         await put(key, value)
 
-    await consul_backend.register_service_with_agent("redis", 6379)
+    # heads
     await consul_backend.register_service_with_agent("heads", 8080, ID="head0", tags=["head0"])
+    await put(
+        "/the-heads/installation/{installation}/heads/{hostname}".format(
+            installation=inst_name,
+            hostname=hostname,
+        ),
+        b"head0",
+    )
 
-
+    # redis
+    await consul_backend.register_service_with_agent("redis", 6379)
 
 
 if __name__ == '__main__':
