@@ -55,4 +55,10 @@ You can browse the ui at http://localhost:8500.
 Open http://localhost:8081 in your browser window.
 
 ### Simulate motion detected:
+    Connect to tunnel: 
+    ssh-add -t 72000
+    ssh-add -K ~/.ssh/id_rsa
+    ssh-add -t 72000 $HOME/.ssh/ajcom
+    ssh -J tunnel@192.241.228.33 127.0.0.1 -p 2212 -l jenkins -D 1080
+
     redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'

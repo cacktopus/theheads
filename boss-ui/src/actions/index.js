@@ -1,3 +1,18 @@
+// Websocket
+export const websocketConnect = (url = 'wss://echo.websocket.org') => {
+    return {
+        type: 'WEBSOCKET:CONNECT',
+        payload: { url }
+    }
+}
+
+export const websocketTestSend = () => {
+    return {
+        type: 'WEBSOCKET:SEND',
+        payload: "hi there" //Object|number|string
+      }
+}
+
 // MENU
 
 export const menuSelectStand = index => ({
