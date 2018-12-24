@@ -1,10 +1,13 @@
 import React from 'react';
 //import Heads from '../containers/Heads'
 // import Draggable from 'react-draggable'; 
-import Draggable, {DraggableCore} from 'react-draggable'; 
+import Draggable, { DraggableCore } from 'react-draggable';
 // import Stand from '../containers/Stand';
 import cn from "classnames";
 import Heads from './Heads';
+import Cameras from './Cameras';
+
+import {encodeRot, decodeRot, encodePos, decodePos} from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -50,45 +53,42 @@ export default class Menu extends React.Component {
     // }
 
     // Move
-    handleMoveStart(e,a) {
+    handleMoveStart(e, a) {
+        this.props.standSelect();
         // console.log("h str", e, a);
         // this.props.standMove(1,a.)
     }
 
-    handleMoveDrag(e,a) {
+    handleMoveDrag(e, a) {
         // console.log("h dr", e, a);
-        const {x,y} = a;
-        const pos = {x,y};
+        const { x, y } = a;
+        const pos = encodePos(this.props.menu, { x, y });
+        // const pos = encrypt1({ x, y });
+        // const pos = { x, y };
+        // Convert the values 
+
         this.props.standMove(pos);
         // this.setState({ pos });
     }
 
-    handleMoveStop(e,a) {
-        // console.log("h stop", e, a);
+    handleMoveStop(e, a) {
     }
 
     // Rotate
-    handleRotateStart(e,a) {
-        // console.log("hrot str", e, a);
+    handleRotateStart(e, a) {
+        this.props.standSelect();
     }
 
-    handleRotateDrag(e,a) {
-        window.c_kk = {e,a};
-        const {x,y} = a;
+    handleRotateDrag(e, a) {
+        const { x, y } = a;
         var rad = Math.atan2(y, x); // In radians
-        // Then you can convert it to degrees as easy as:
+        var deg = encodeRot(rad * (180 / Math.PI));
         // var deg = rad * (180 / Math.PI);
 
-        this.props.standRotate(rad);
-
-        // // console.log(deg);
-        // // console.log("hrpt dr", e, a, rad);
-        // this.setState({
-        //     rotateRad: rad
-        // });
+        this.props.standRotate(deg);
     }
 
-    handleRotateStop(e,a) {
+    handleRotateStop(e, a) {
         // console.log("hrlt stop", e, a);
     }
 
@@ -96,29 +96,36 @@ export default class Menu extends React.Component {
         window.c_STN = this;
         const stand = this.props.stand;
         // let pos = {x: 0, y:0};
-        let pos = stand.get("pos").toJS();
+        let pos = decodePos(this.props.menu, stand.get("pos").toJS());
+
+        // let pos = decrypt1(stand.get("pos").toJS());
+        // let pos = stand.get("pos").toJS();
         pos.x = isNaN(pos.x) || pos.x === "" ? 0 : pos.x;
         pos.y = isNaN(pos.y) || pos.y === "" ? 0 : pos.y;
-        
+
         let rot = stand.get("rot");
         rot = isNaN(rot) ? 0 : rot;
+        rot = decodeRot(rot); // flip it so rotation is opposite direction.
 
         const selectedStandIndex = this.props.menu.get("selectedStandIndex");
+        const isSelected = selectedStandIndex === this.props.index;
 
         const heads = stand.get("heads");
-        // const cameras = stand.get("cameras");
+        const cameras = stand.get("cameras");
 
         // const standStyle = {transform:`translate(${stand.pos.x}px, ${stand.pos.y}px)`}
         // console.log('ren');
-        
+
         // try {
         //     pos = stand.get("pos");
         // } catch(e) {}
 
+        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+
         return (
             <Draggable
                 handle=".Stand-move"
-                defaultPosition={{x: 0, y: 0}}
+                defaultPosition={{ x: 0, y: 0 }}
                 // position={null}
                 position={pos}
                 // grid={[25, 25]}
@@ -139,23 +146,24 @@ export default class Menu extends React.Component {
                     // onStop={this.handleRotateStop}
                     // onMouseDown= (e= MouseEvent) => void
                 > */}
-                
-                    <div className={cn("Stand", {"Stand--selected" : selectedStandIndex === this.props.index})} onClick={this.props.standSelect}>
-                        <div className="Stand-rotateContainer" style={{transform: `rotate(${rot}rad)`}}>
-                            <div className="Stand-container">
-                                <div className="Stand-name noselect">
-                                    {stand.get("name")}
-                                </div>
-                                {/* <div className="Stand-select noselect" onClick={this.props.standStand}>
+
+                <div className={cn("Stand", { "Stand--selected": isSelected })} onClick={this.props.standSelect}>
+                    <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
+                        <div className="Stand-container">
+                            <div className="Stand-name noselect">
+                                {stand.get("name")}
+                            </div>
+                            {/* <div className="Stand-select noselect" onClick={this.props.standStand}>
                                     Select
                                 </div> */}
-                                <div className="Stand-remove noselect" onClick={this.props.standRemove}>
-                                    X
+                            <div className="Stand-remove noselect" onClick={this.props.standRemove}>
+                                X
                                 </div>
-                                <div className="Stand-move noselect">
-                                    Move
+                            <div className="Stand-move noselect">
+                                Move
                                 </div>
-                                
+
+                            {areRotatesHidden ? null :
                                 <div className="Stand-rotate noselect">
                                     {/* offset is used for the drag's reference */}
                                     <DraggableCore
@@ -169,17 +177,22 @@ export default class Menu extends React.Component {
                                         onStart={this.handleRotateStart}
                                         onDrag={this.handleRotateDrag}
                                         onStop={this.handleRotateStop}
-                                        // onMouseDown= (e= MouseEvent) => void
+                                    // onMouseDown= (e= MouseEvent) => void
                                     >
                                         <div className="Stand-rotate-handle"></div>
                                     </DraggableCore>
                                 </div>
-                                <div className="Stand-heads">
-                                    <Heads heads={heads} standIndex={this.props.index}/>
-                                </div>
+                            }
+
+                            <div className="Stand-heads">
+                                <Heads heads={heads} standIndex={this.props.index} />
+                            </div>
+                            <div className="Stand-cameras">
+                                <Cameras cameras={cameras} standIndex={this.props.index} />
                             </div>
                         </div>
                     </div>
+                </div>
             </Draggable>
         );
     }

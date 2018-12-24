@@ -1,7 +1,6 @@
 import { connect } from 'react-redux'
 // import { standsActions } from '../actions'
-import Stands from '../components/Stands'
-
+import Scene from '../components/Scene'
 
 const mapStateToProps = (state, ownProps) =>
 ({
@@ -20,4 +19,4 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(Stands)
+)(Scene)

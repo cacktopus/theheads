@@ -21,6 +21,16 @@ const defaultHead = {
     "rot": 0
 };
 
+const createNewCamera = ({
+    name = undefined,
+}, camerasArray) => {
+
+    let camera = Object.assign({}, defaultCamera);
+    camera.name = getNewName('camera', camerasArray);
+
+    return camera;
+}
+
 // Returns a new immutable object for a new stand
 const createNewStand = ({
     name = undefined, 
@@ -31,7 +41,7 @@ const createNewStand = ({
 } = {}, state) => {
 
     if (!name) {
-        name = getNewName(state);
+        name = getNewName("stand", state.toJS());
     }
 
     return fromJS({
@@ -74,15 +84,13 @@ const createNewStand = ({
     // }
 }
 
-const getNewName = state => {
-    const stands = state.toJS();
-
-    let maxStandNum = Math.max.apply(null, stands.map(st => st.name).filter(d => d.indexOf("stand") === 0 ).map(d => parseInt(d.replace("stand",""))).filter(d => !isNaN(d)))
+const getNewName = (prefix, arrayObj) => {
+    let maxStandNum = Math.max.apply(null, arrayObj.map(st => st.name).filter(d => d.indexOf(prefix) === 0 ).map(d => parseInt(d.replace(prefix,""))).filter(d => !isNaN(d)))
 
     if (maxStandNum >= 0) {
-        return `stand${maxStandNum + 1}`;
+        return `${prefix}${maxStandNum + 1}`;
     } else {
-        return `stand0`;
+        return `${prefix}0`;
     }
 }
 
@@ -115,6 +123,25 @@ const stands = (state = fromJS([]), action) => {
             return state.setIn([action.standIndex,"heads",action.headIndex,"pos"], fromJS(action.pos));
         case 'HEAD_ROTATE_BY_INDEX':
             return state.setIn([action.standIndex,"heads",action.headIndex,"rot"], fromJS(action.rot));
+
+        // Camera
+        case 'CAMERA_MOVE_BY_INDEX':
+            // console.log("CAMERA_MOVE_BY_INDEX", [action.standIndex,"cameras",action.cameraIndex,"pos"], fromJS(action.pos));
+            // window.c_CAM342 = { arr: [action.standIndex,"cameras",action.cameraIndex,"pos"], pos: fromJS(action.pos)};
+            return state.setIn([action.standIndex,"cameras",action.cameraIndex,"pos"], fromJS(action.pos));
+        case 'CAMERA_ROTATE_BY_INDEX':
+            return state.setIn([action.standIndex,"cameras",action.cameraIndex,"rot"], fromJS(action.rot));
+        case 'CAMERA_ADD_NEW':
+            let camerasList = state.getIn([action.standIndex,"cameras"]).toJS();
+            return state.updateIn([action.standIndex,"cameras"], cameras => cameras.push(fromJS(createNewCamera({}, camerasList))))
+        case 'CAMERA_REMOVE_BY_INDEX':
+            return state.removeIn([action.standIndex,"cameras",action.cameraIndex]);
+        case 'STAND_SET_SCENE':
+            if (action.sceneData && action.sceneData.stands && action.sceneData.stands.length > 0) {
+                return fromJS(action.sceneData.stands);
+            }
+            return state;
+        // Default
         default:
             return state;
     }

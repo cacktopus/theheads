@@ -1,0 +1,95 @@
+{
+    "name": "export",
+    "stands": [
+        {
+            "name": "stand0",
+            "pos": {
+                "x": 356,
+                "y": 19
+            },
+            "rot": 0,
+            "cameras": [
+                {
+                    "name": "camera0",
+                    "pos": {
+                        "x": 52,
+                        "y": -44
+                    },
+                    "rot": 39.64755556165312,
+                    "fov": 60,
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head0",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 39.518983637288684
+                }
+            ]
+        },
+        {
+            "name": "stand1",
+            "pos": {
+                "x": 47,
+                "y": 74
+            },
+            "rot": 58.03330173452224,
+            "cameras": [
+                {
+                    "name": "camera0",
+                    "pos": {
+                        "x": -45.1925,
+                        "y": -49.1354
+                    },
+                    "rot": 0,
+                    "fov": 60,
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head0",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            ]
+        },
+        {
+            "name": "stand2",
+            "pos": {
+                "x": 334,
+                "y": 112
+            },
+            "rot": 83.46616956449867,
+            "cameras": [
+                {
+                    "name": "camera0",
+                    "pos": {
+                        "x": 53.7803,
+                        "y": -60.3045
+                    },
+                    "rot": -48.00841087585696,
+                    "fov": 60,
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "heads": [
+                {
+                    "name": "head0",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 45.973758337779486
+                }
+            ]
+        }
+    ]
+}

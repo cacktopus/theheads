@@ -1,5 +1,5 @@
 import React from 'react';
-import Head from '../containers/Head'
+import Camera from '../containers/Camera'
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -12,11 +12,12 @@ export default class Menu extends React.Component {
     }
 
     render() {
-        const heads = this.props.heads;
+        window.c_HEADS = this;
+        const cameras = this.props.cameras;
 
         return (
-            <div className="Heads">
-                {heads.map((head, i) => <Head key={i} head={head} headIndex={i} standIndex={this.props.standIndex}/>)}
+            <div className="Cameras">
+                {cameras.map((camera, i) => <Camera key={i} camera={camera} cameraIndex={i} standIndex={this.props.standIndex}/>)}
             </div>
         );
     }
