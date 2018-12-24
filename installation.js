@@ -109,6 +109,7 @@ function get_json(url, callback) {
     xhr.send(null);
 }
 
+
 function main(ws_port) {
     var w = 1000;
     var h = 800;
@@ -123,17 +124,17 @@ function main(ws_port) {
     root.move(w / 2, 100);
     root.scale(scale, -scale, 0, 0);
 
+    var img = root.image("abc123/random.png", 20, 40).move(-10, -20).attr({opacity: 1});
+
+    bgReload = function (delay) {
+        var name = Math.random() + "/random.png";
+        img.load(name);
+        setTimeout(function() {
+            bgReload(delay);
+        }, delay);
+    }
+
     get_json("scene.json", function (data) {
-        var delay = 100;
-
-        var img = root.image("abc123/random.png", 20, 40).move(-10, -20).attr({opacity: 1});
-        var reload = function () {
-            var name = Math.random() + "/random.png";
-            img.load(name);
-            setTimeout(reload, delay);
-        };
-        setTimeout(reload, delay);
-
         root.line(0, 0, 1, 0).stroke({width: 0.040, color: "red"});
         root.line(0, 0, 0, 1).stroke({width: 0.040, color: "lightgreen"});
 
