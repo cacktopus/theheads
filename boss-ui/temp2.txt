@@ -1,0 +1,13 @@
+activate
+re-seed
+
+Consul URL: http://localhost:8500
+
+to connect to consul:
+./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1
+
+redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 2}}'
+
+
+
+redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 90}}'
