@@ -53,3 +53,6 @@ You can browse the ui at http://localhost:8500.
     python boss.py
     
 Open http://localhost:8081 in your browser window.
+
+### Simulate motion detected:
+    redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'

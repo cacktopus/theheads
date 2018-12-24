@@ -11,7 +11,8 @@ export default class Menu extends React.Component {
         super(props);
 
         this.state = {
-            sceneUrl : "/json/temp.json"
+            sceneUrl : "/build/json/temp.json"
+            // sceneUrl : "/json/temp.json"
             // sceneUrl : "/json/temp2.json"
         };
 
