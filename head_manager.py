@@ -14,10 +14,10 @@ class HeadQueue:
         self._head_name = head_name
         asyncio.ensure_future(self._send_loop())
 
-    def send(self, position: int):
+    def send(self, rotation: float):
         if self._queue.full():
             self._queue.get_nowait()
-        return self._queue.put_nowait(position)
+        return self._queue.put_nowait(rotation)
 
     async def _send_loop(self):
         while True:
@@ -40,7 +40,7 @@ class HeadQueue:
 
             else:
                 base_url = "http://{}:{}".format(msg[0]['Address'], msg[0]['ServicePort'])
-                url = base_url + "/position/{:d}".format(int(position))
+                url = base_url + "/rotation/{:f}".format(position)
                 await get(url)
 
             await asyncio.sleep(_SEND_DELAY)
@@ -50,8 +50,8 @@ class HeadManager:
     def __init__(self):
         self._queues = dict()
 
-    def send(self, head_name: str, position: int):
+    def send(self, head_name: str, rotation: float):
         if head_name not in self._queues:
             self._queues[head_name] = HeadQueue(head_name)
         queue = self._queues[head_name]
-        queue.send(position)
+        queue.send(rotation)

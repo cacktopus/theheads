@@ -89,9 +89,8 @@ function setup_websocket(ws_port, scene) {
             } else if (msg.type === "head-positioned") {
                 var data = msg.data;
                 console.log(data);
-                var pos = data.position;
                 var head = scene.heads[data.headName];
-                head.rotate(pos / 200 * 360);
+                head.rotate(data.rotation);
             }
         });
     }

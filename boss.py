@@ -116,8 +116,7 @@ async def motion_detected(
 
         theta = math.atan2(f.y, f.x) * 180 / math.pi
 
-        pos = 200 * theta / 360
-        print(head.name, int(pos))
+        print(head.name, theta)
 
         p0 = m * Vec(0.0, 0.0)
         p1 = m * Mat.rotz(theta) * Vec(5, 0, 0.0)
@@ -130,7 +129,7 @@ async def motion_detected(
             }
         })
 
-        head_manager.send(head.name, pos)
+        head_manager.send(head.name, theta)
 
 
 async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadManager):
