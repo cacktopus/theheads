@@ -1,6 +1,7 @@
 import {fromJS} from "immutable";
 // https://www.npmjs.com/package/@giantmachines/redux-websocket
-import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
+import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
+// import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
 const defaultCamera = 
 {
@@ -99,7 +100,7 @@ const getNewName = (prefix, arrayObj) => {
 const processWebsocketData = (state, payloadDataChunk) => {
     console.log('processWebsocketData');
     let { type, data } = payloadDataChunk;
-    let headName, heads, standIndex, cameraIndex, headIndex, rotation;
+    let headName, heads, standIndex, headIndex, rotation;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
 
     if (type === "head-positioned") {
@@ -144,9 +145,7 @@ const stands = (state = fromJS([]), action) => {
     switch (action.type) {
         // Websocket message
         case WEBSOCKET_MESSAGE: 
-            window.c_aa = {state, action};
-            console.log("web mesg c_aa");
-            let type, totalPayload;
+            let totalPayload;
             try {
                 totalPayload = JSON.parse(action.payload.data);
 
@@ -154,8 +153,6 @@ const stands = (state = fromJS([]), action) => {
                 totalPayload.forEach(payloadDataChunk => {
                     newState = processWebsocketData(newState, payloadDataChunk);
                 });
-
-                // JSON.parse(action.payload.data)[0].type === "head-positioned"
 
                 return newState;
             } catch(e) {}

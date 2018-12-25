@@ -2,8 +2,6 @@ import { connect } from 'react-redux'
 import { menuSelectCamera, cameraMoveByIndex, cameraRotateByIndex} from '../actions'
 import Camera from '../components/Camera'
 
-console.log(" THIS IS WHAT's in prog.. adding in the camera");
-
 const mapStateToProps = (state, ownProps) => {
     // const stands = state.stands;
     // const menu = state.menu;

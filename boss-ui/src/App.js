@@ -1,14 +1,9 @@
 import React from 'react'
-// import Footer from './Footer'
 import Menu from './containers/Menu'
 import Scene from './containers/Scene'
-// import VisibleTodoList from '../containers/VisibleTodoList'
 import './App.css';
-// const glm = require('gl-matrix');
 import {scale, rotate, translate, compose, applyToPoint} from 'transformation-matrix';
-// import tmatrix from 'transformation-matrix-js';
 
-// window.c_g = glm;
 window.c_tm = {scale, rotate, translate, compose, applyToPoint};
 
 const App = () => (

@@ -88,6 +88,10 @@ export default class Menu extends React.Component {
     websocketConnect() {
         this.props.websocketConnect(this.state.websocketUrl);
     }
+
+    websocketDisconnect() {
+        this.props.websocketDisconnect();
+    }
     
     websocketLoadLocalhostUrl() {
         this.setState({

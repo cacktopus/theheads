@@ -1,15 +1,8 @@
-// Websocket
+// WEBSOCKET
 import { WEBSOCKET_CONNECT, WEBSOCKET_DISCONNECT, WEBSOCKET_SEND } from '@giantmachines/redux-websocket'
 
-
-// export const websocketConnect = (url = 'http://localhost:8081/ws') => {
-
 const websocketUrl = "ws://localhost:8081/ws";
-// const websocketLoc = `ws://${document.location.host}/ws`;
-
-export const websocketConnect = (url = websocketUrl) => {
-    console.log("websocketConnect", url);
-    
+export const websocketConnect = (url = websocketUrl) => {    
     return {
         type: WEBSOCKET_CONNECT,
         payload: { url }
@@ -30,7 +23,6 @@ export const websocketSend = (payload) => {
 }
 
 // MENU
-
 export const menuSelectStand = index => ({
     type: 'MENU_SELECT_STAND',
     index

@@ -1,5 +1,6 @@
 import {fromJS} from "immutable";
 import { setCookie, getCookie } from '../helpers';
+import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
 const scale = getCookie("menu-scale");
 const translateX = getCookie("menu-translateX");
@@ -16,7 +17,8 @@ const initialState = {
     translate: {
         x: translateX !== null ? translateX : 0,
         y: translateY !== null ? translateY : 0
-    }
+    },
+    websocketStatus: undefined
 }
 
 const stands = (state = fromJS(initialState), action) => {
@@ -55,6 +57,18 @@ const stands = (state = fromJS(initialState), action) => {
             return state.setIn(["translate","y"], action.y);
         // case 'MENU_SET_TRANSLATE':
         //     return state.setIn(["translate","y"], action.y);
+        case WEBSOCKET_CONNECTING:
+            console.log(action);
+            return state;
+        case WEBSOCKET_OPEN:
+            console.log(action);
+            return state;
+        case WEBSOCKET_CLOSED:
+            console.log(action);
+            return state;
+        case WEBSOCKET_MESSAGE:
+            console.log(action);
+            return state;
         default:
             return state;
     }
