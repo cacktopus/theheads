@@ -453,7 +453,7 @@ export default class Menu extends React.Component {
                             <button onClick={this.loadScene}>Load</button>&nbsp;<button onClick={this.loadLocalSceneJson}>Local URL</button>
                         </div><div className="Menu-getScene">
                             <label>Export Scene:</label>
-                            <input id="clipboard-input" style={{width: 200}} placeholder="This will be populated on 'Copy to clipboard'." onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <input id="clipboard-input" style={{width: 200}} placeholder="This will be populated on 'Copy to clipboard'." />&nbsp;
                             <button onClick={this.exportSceneToJSON}>Copy to clipboard</button>
                             <span id="clipboard-msg"></span>
                         </div>
