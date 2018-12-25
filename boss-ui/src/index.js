@@ -18,7 +18,7 @@ import { createStore, applyMiddleware } from 'redux'
 import rootReducer from './reducers';
 
 // import {websocketConnect} from './actions';
-import {websocketConnect, websocketTestSend} from './actions';
+import {websocketConnect, websocketSend} from './actions';
 
 // let socket = io('wss://echo.websocket.org');
 // // let socket = io('ws://echo.websocket.org');
@@ -48,13 +48,13 @@ const store = createStore(
     )
 );
 
-// Connect to the websocket;
-store.dispatch(websocketConnect())
+// // Connect to the websocket;
+// store.dispatch(websocketConnect())
 
-window.c_ts = () => {
-    console.log("going it");
-    store.dispatch(websocketTestSend());
-}
+// window.c_ts = () => {
+//     console.log("going it");
+//     store.dispatch(websocketSend("hi there"));
+// }
 
 ReactDOM.render(
     <Provider store={store}>

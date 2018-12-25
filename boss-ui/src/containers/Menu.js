@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { menuToggleHideRotates, sceneFetchFromUrl, cameraAddNew, cameraRemoveByIndex, standAdd, menuSelectStand, menuSelectCamera, menuSelectHead, standSetFieldByIndex, standSetInFieldsByIndex, menuSetScale, menuSetTranslateX, menuSetTranslateY } from '../actions';
+import { menuToggleHideRotates, sceneFetchFromUrl, cameraAddNew, cameraRemoveByIndex, standAdd, menuSelectStand, menuSelectCamera, menuSelectHead, standSetFieldByIndex, standSetInFieldsByIndex, menuSetScale, menuSetTranslateX, menuSetTranslateY, websocketConnect, websocketDisconnect } from '../actions';
 
 import Menu from '../components/Menu'
 
@@ -32,6 +32,9 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     setTranslateY : y => dispatch(menuSetTranslateY(y)),
 
     menuToggleHideRotates: () => dispatch(menuToggleHideRotates()),
+
+    websocketConnect : (url) => dispatch(websocketConnect(url)),
+    websocketDisconnect : () => dispatch(websocketDisconnect()),
 })
 
 export default connect(

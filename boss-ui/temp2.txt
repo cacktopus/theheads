@@ -8,6 +8,6 @@ to connect to consul:
 
 redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 2}}'
 
-
+redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 0}}'
 
 redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 90}}'
