@@ -6,6 +6,8 @@ import React from 'react'
 
 let exportSceneMsgTimeout;
 
+const defaultWebsocketUrl = 'ws://' + window.location.hostname + ":" + window.location.port + '/ws';
+
 export default class Menu extends React.Component {
     constructor(props) {
         super(props);
@@ -13,7 +15,7 @@ export default class Menu extends React.Component {
         this.state = {
             sceneUrl : "/installation/dev/scene.json",
             // sceneUrl : "/build/json/temp.json",
-            websocketUrl : "ws://localhost:8081/ws"
+            websocketUrl : defaultWebsocketUrl, //"ws://localhost:8081/ws"
             // sceneUrl : "/json/temp.json"
             // sceneUrl : "/json/temp2.json"
         };
@@ -88,7 +90,9 @@ export default class Menu extends React.Component {
     }
     
     websocketLoadLocalhostUrl() {
-
+        this.setState({
+            websocketUrl: "ws://localhost:8081/ws"
+        })
     }
     
     websocketLoadOtherUrl() {
@@ -442,7 +446,7 @@ export default class Menu extends React.Component {
                     <div style={{ clear: "both" }}></div>
                 </div>
                 <div style={{marginTop: 15}}>
-                    <div style={{display: "inline-block"}}>
+                    <div style={{display: "inline-block", background: "#FBB", padding: "5px"}}>
                         <div className="Menu-loadScene">
                             <label>Import Scene:</label>
                             <input style={{width: 200}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
@@ -454,7 +458,7 @@ export default class Menu extends React.Component {
                             <span id="clipboard-msg"></span>
                         </div>
                     </div>
-                    <div style={{display: "inline-block"}}>
+                    <div style={{display: "inline-block", background: "#BFB", padding: "5px"}}>
                         <div className="Menu-loadScene">
                             <label style={transformLabelStyles}>Scale Scene:</label>
                             <input type="number" style={{width: 100}} placeholder="Scale" value={scale} onChange={this.setScale}/>&nbsp;
@@ -464,15 +468,15 @@ export default class Menu extends React.Component {
                             <input type="number" style={{width: 45}} placeholder="y" value={translateY} onChange={this.setTranslateY}/>&nbsp;
                         </div>
                     </div>
-                    <div style={{display: "inline-block"}}>
+                    <div style={{display: "inline-block", background: "#BBF", padding: "5px"}}>
                         <div className="Menu-websocket">
                             <label>Websocket Url:</label><span id="websocket-msg"></span>
                             <input type="text" style={{width: 200}} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl}/>&nbsp;
                         </div>
                         <div className="Menu-websocket">
                             <button onClick={this.websocketConnect}>Connect</button>&nbsp;
-                            <button onClick={this.websocketLoadLocalhostUrl}>Localhost URL</button>&nbsp;
-                            <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp;
+                            <button onClick={this.websocketLoadLocalhostUrl}>Autofill localhost:8081</button>&nbsp;
+                            {/* <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp; */}
                         </div>
                     </div>
                 </div>
