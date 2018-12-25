@@ -99,11 +99,13 @@ const getNewName = (prefix, arrayObj) => {
 const processWebsocketData = (state, payloadDataChunk) => {
     console.log('processWebsocketData');
     let { type, data } = payloadDataChunk;
-    let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
+    let headName, heads, standIndex, cameraIndex, headIndex, rotation;
+    // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
 
     if (type === "head-positioned") {
         headName = data.headName;
-        position = data.position;
+        rotation = data.rotation;
+        // position = data.position;
 
         standIndex = state.findIndex(stand => {
 
@@ -125,7 +127,7 @@ const processWebsocketData = (state, payloadDataChunk) => {
 
         if (standIndex >= 0 && headIndex >= 0) {
             // Convert position (0-200) to degrees (0 - 360)
-            rotation = 360 * position / 200;
+            // rotation = 360 * position / 200;
 
             return state.setIn([standIndex,"heads",headIndex,"rot"], rotation);
         }
