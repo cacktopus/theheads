@@ -11,7 +11,9 @@ export default class Menu extends React.Component {
         super(props);
 
         this.state = {
-            sceneUrl : "/build/json/temp.json"
+            sceneUrl : "/installation/dev/scene.json",
+            // sceneUrl : "/build/json/temp.json",
+            websocketUrl : "ws://localhost:8081/ws"
             // sceneUrl : "/json/temp.json"
             // sceneUrl : "/json/temp2.json"
         };
@@ -19,12 +21,19 @@ export default class Menu extends React.Component {
         this.addStand = this.addStand.bind(this);
         this.setLoadSceneUrl = this.setLoadSceneUrl.bind(this);
         this.loadScene = this.loadScene.bind(this);
+        this.loadLocalSceneJson = this.loadLocalSceneJson.bind(this);
+
         this.addNewCamera = this.addNewCamera.bind(this);
         this.removeCurrentCamera = this.removeCurrentCamera.bind(this);
         this.exportSceneToJSON = this.exportSceneToJSON.bind(this);
         this.setScale = e => { props.setScale(e.target.value) };
         this.setTranslateX = e => { props.setTranslateX(e.target.value) };
         this.setTranslateY = e => { props.setTranslateY(e.target.value) };
+
+        this.setWebsocketUrl = e => { this.setState({websocketUrl : e.target.value}) };
+        this.websocketConnect = this.websocketConnect.bind(this);
+        this.websocketLoadLocalhostUrl = this.websocketLoadLocalhostUrl.bind(this);
+        this.websocketLoadOtherUrl = this.websocketLoadOtherUrl.bind(this);
     }
 
     addStand() {
@@ -60,12 +69,30 @@ export default class Menu extends React.Component {
         this.props.loadSceneFromUrl(this.state.sceneUrl);
     }
 
+    loadLocalSceneJson() {
+        this.setState({
+            sceneUrl: "json/temp.json"
+        })
+    }
+
     addNewCamera() {
         this.props.cameraAddNew(this.props.selectedStandIndex);
     }
 
     removeCurrentCamera() {
         this.props.cameraRemove(this.props.selectedStandIndex, this.props.selectedCameraIndex);
+    }
+
+    websocketConnect() {
+        this.props.websocketConnect(this.state.websocketUrl);
+    }
+    
+    websocketLoadLocalhostUrl() {
+
+    }
+    
+    websocketLoadOtherUrl() {
+
     }
 
     render() {
@@ -418,11 +445,11 @@ export default class Menu extends React.Component {
                     <div style={{display: "inline-block"}}>
                         <div className="Menu-loadScene">
                             <label>Import Scene:</label>
-                            <input style={{width: 300}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
-                            <button onClick={this.loadScene}>Load</button>
+                            <input style={{width: 200}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <button onClick={this.loadScene}>Load</button>&nbsp;<button onClick={this.loadLocalSceneJson}>Local URL</button>
                         </div><div className="Menu-getScene">
                             <label>Export Scene:</label>
-                            <input id="clipboard-input" style={{width: 300}} placeholder="This will be populated on 'Copy to clipboard'." onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <input id="clipboard-input" style={{width: 200}} placeholder="This will be populated on 'Copy to clipboard'." onChange={this.setLoadSceneUrl}/>&nbsp;
                             <button onClick={this.exportSceneToJSON}>Copy to clipboard</button>
                             <span id="clipboard-msg"></span>
                         </div>
@@ -435,6 +462,17 @@ export default class Menu extends React.Component {
                             <label style={transformLabelStyles}>Translate Scene:</label>
                             <input type="number" style={{width: 45}} placeholder="x" value={translateX} onChange={this.setTranslateX}/>&nbsp;
                             <input type="number" style={{width: 45}} placeholder="y" value={translateY} onChange={this.setTranslateY}/>&nbsp;
+                        </div>
+                    </div>
+                    <div style={{display: "inline-block"}}>
+                        <div className="Menu-websocket">
+                            <label>Websocket Url:</label><span id="websocket-msg"></span>
+                            <input type="text" style={{width: 200}} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl}/>&nbsp;
+                        </div>
+                        <div className="Menu-websocket">
+                            <button onClick={this.websocketConnect}>Connect</button>&nbsp;
+                            <button onClick={this.websocketLoadLocalhostUrl}>Localhost URL</button>&nbsp;
+                            <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp;
                         </div>
                     </div>
                 </div>

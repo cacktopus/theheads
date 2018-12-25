@@ -1,4 +1,6 @@
 import {fromJS} from "immutable";
+// https://www.npmjs.com/package/@giantmachines/redux-websocket
+import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
 const defaultCamera = 
 {
@@ -94,11 +96,69 @@ const getNewName = (prefix, arrayObj) => {
     }
 }
 
+const processWebsocketData = (state, payloadDataChunk) => {
+    console.log('processWebsocketData');
+    let { type, data } = payloadDataChunk;
+    let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
+
+    if (type === "head-positioned") {
+        headName = data.headName;
+        position = data.position;
+
+        standIndex = state.findIndex(stand => {
+
+            heads = stand.get("heads");
+            if (heads && heads.size > 0) {
+                headIndex = heads.findIndex((head,i) => {
+                    return head.get("name") === headName;
+                })
+            }
+            
+            if (headIndex >= 0) {
+
+                return true;
+            } else {
+                headIndex = undefined;
+                return false;
+            }
+        })
+
+        if (standIndex >= 0 && headIndex >= 0) {
+            // Convert position (0-200) to degrees (0 - 360)
+            rotation = 360 * position / 200;
+
+            return state.setIn([standIndex,"heads",headIndex,"rot"], rotation);
+        }
+    }
+
+    return state;
+}
+
 // const stands = (state = [], action) => {
 const stands = (state = fromJS([]), action) => {
     window.c_sn_str = {state, action};
+    let newState = state;
 
     switch (action.type) {
+        // Websocket message
+        case WEBSOCKET_MESSAGE: 
+            window.c_aa = {state, action};
+            console.log("web mesg c_aa");
+            let type, totalPayload;
+            try {
+                totalPayload = JSON.parse(action.payload.data);
+
+                // For each payload data 
+                totalPayload.forEach(payloadDataChunk => {
+                    newState = processWebsocketData(newState, payloadDataChunk);
+                });
+
+                // JSON.parse(action.payload.data)[0].type === "head-positioned"
+
+                return newState;
+            } catch(e) {}
+
+            return state;
         case 'STAND_ADD':
             return state.push(createNewStand({}, state));
         case 'STAND_SETIN_FIELDS_BY_INDEX':
