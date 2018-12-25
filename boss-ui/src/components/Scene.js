@@ -32,8 +32,6 @@ export default class Menu extends React.Component {
     render() {
         window.c_ko = this;
 
-        const underVisuals = <UnderVisuals/>
-
         const stands = this.props.stands.map((stand, i) => {
             return <Stand key={i} index={i} stand={stand}/>
         });
@@ -45,7 +43,7 @@ export default class Menu extends React.Component {
         return (
             <div>
                 <div style={standsContainerStyle}>
-                    {underVisuals}
+                    <UnderVisuals/>
                     {stands}
                 </div>
             </div>

@@ -58,6 +58,7 @@ export function sceneFetchFromUrl(sceneUrl) {
         return fetch(sceneUrl)
             .then(response => response.json())
             .then(json => dispatch(standSetScene(json)))
+            .catch(e => console.log(e))
     }
 }
 

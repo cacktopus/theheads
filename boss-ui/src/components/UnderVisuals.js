@@ -1,5 +1,6 @@
 
 import React from 'react'
+import MotionLines from '../containers/MotionLines'
 
 export default class UnderVisuals extends React.Component {
     constructor(props) {
@@ -15,7 +16,7 @@ export default class UnderVisuals extends React.Component {
     render() {
         return (
             <div>
-                {/* FOV and lines to be added here instead... so other items are clickable. */}
+                <MotionLines/>
             </div>
         );
     }
