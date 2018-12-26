@@ -12,8 +12,7 @@ import websocket from '@giantmachines/redux-websocket'
 import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux'
 import rootReducer from './reducers';
-
-// import {websocketConnect, websocketSend} from './actions';
+import { customWebsocketMiddleware } from './middleware';
 
 const store = createStore(
     rootReducer,
@@ -22,6 +21,7 @@ const store = createStore(
         // socketIoMiddleware,
         websocket,
         thunkMiddleware, // lets us dispatch() functions
+        customWebsocketMiddleware
         // loggerMiddleware // neat middleware that logs actions
     )
 );

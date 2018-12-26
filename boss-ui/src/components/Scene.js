@@ -44,7 +44,9 @@ export default class Menu extends React.Component {
             <div>
                 <div style={standsContainerStyle}>
                     <UnderVisuals/>
-                    {stands}
+                    <div className="Stands">
+                        {stands}
+                    </div>
                 </div>
             </div>
         )

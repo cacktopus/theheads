@@ -88,6 +88,9 @@ body {
 .Stand-rotateContainer {
   width: 100px;
   height: 100px;
+  /* Use this so the origin is in the center */
+  margin-left: -50px; 
+  margin-top: -50px;
 }
 
 .Stand-container {
@@ -362,6 +365,27 @@ body {
   border: 1px solid #f25;
 }
 
+/* Motion Lines */
+.MotionLine {
+  opacity: 1;
+  /* -webkit-transition: opacity 1500ms;
+  transition: opacity 1500ms; */
+}
+
+.MotionLine.fadeOut {
+  animation-name: fadeOutMotionLine;
+  animation-duration: 1500ms; /* NOTE: this 1500ms should be the same value as what's in ./middleware/index.js => customWebsocketMiddleware, for the setTimeout duration of the removal for the MotionLine */
+}
+
+@keyframes fadeOutMotionLine {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
 
 /* UTILS */
 .noselect {

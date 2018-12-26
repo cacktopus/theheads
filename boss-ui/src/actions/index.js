@@ -2,7 +2,7 @@
 import { WEBSOCKET_CONNECT, WEBSOCKET_DISCONNECT, WEBSOCKET_SEND } from '@giantmachines/redux-websocket'
 
 const websocketUrl = "ws://localhost:8081/ws";
-export const websocketConnect = (url = websocketUrl) => {    
+export const websocketConnect = (url = websocketUrl) => {
     return {
         type: WEBSOCKET_CONNECT,
         payload: { url }
@@ -164,3 +164,24 @@ export const cameraRemoveByIndex = (standIndex, cameraIndex, rot) => ({
 //     type: 'STAND_REMOVE_BY_INDEX',
 //     index
 // })
+
+// WEBSOCKET - MOTION LINES
+
+export const motionLinesAddLine = (options) => {
+    const { lineId, shape, coords } = options;
+
+    return {
+        type: 'MOTIONLINES_ADD',
+        lineId,
+        shape,
+        coords
+    }
+}
+
+export const motionLinesRemoveLine = (options) => {
+    const { lineId } = options;
+    return {
+        type: 'MOTIONLINES_REMOVE',
+        lineId,
+    }
+}

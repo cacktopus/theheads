@@ -99,6 +99,7 @@ const getNewName = (prefix, arrayObj) => {
 
 const processWebsocketData = (state, payloadDataChunk) => {
     console.log('processWebsocketData');
+    
     let { type, data } = payloadDataChunk;
     let headName, heads, standIndex, headIndex, rotation;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
