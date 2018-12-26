@@ -6,8 +6,12 @@ Consul URL: http://localhost:8500
 to connect to consul:
 ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1
 
+# NEW:
+redis-cli publish the-heads-events '{"installation": "office", "data": {"headName": "head0", "stepPosition": 15, "rotation": 27.0}, "type": "head-positioned"}'
+redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
+
+
+# OLD:
 redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 2}}'
-
 redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 0}}'
-
 redis-cli publish the-heads-events '{"type": "head-positioned", "installation": "office", "data": {"headName": "head0", "position": 90}}'

@@ -1,15 +1,8 @@
-// Websocket
+// WEBSOCKET
 import { WEBSOCKET_CONNECT, WEBSOCKET_DISCONNECT, WEBSOCKET_SEND } from '@giantmachines/redux-websocket'
 
-
-// export const websocketConnect = (url = 'http://localhost:8081/ws') => {
-
 const websocketUrl = "ws://localhost:8081/ws";
-// const websocketLoc = `ws://${document.location.host}/ws`;
-
 export const websocketConnect = (url = websocketUrl) => {
-    console.log("websocketConnect", url);
-    
     return {
         type: WEBSOCKET_CONNECT,
         payload: { url }
@@ -30,7 +23,6 @@ export const websocketSend = (payload) => {
 }
 
 // MENU
-
 export const menuSelectStand = index => ({
     type: 'MENU_SELECT_STAND',
     index
@@ -66,6 +58,7 @@ export function sceneFetchFromUrl(sceneUrl) {
         return fetch(sceneUrl)
             .then(response => response.json())
             .then(json => dispatch(standSetScene(json)))
+            .catch(e => console.log(e))
     }
 }
 
@@ -171,3 +164,24 @@ export const cameraRemoveByIndex = (standIndex, cameraIndex, rot) => ({
 //     type: 'STAND_REMOVE_BY_INDEX',
 //     index
 // })
+
+// WEBSOCKET - MOTION LINES
+
+export const motionLinesAddLine = (options) => {
+    const { lineId, shape, coords } = options;
+
+    return {
+        type: 'MOTIONLINES_ADD',
+        lineId,
+        shape,
+        coords
+    }
+}
+
+export const motionLinesRemoveLine = (options) => {
+    const { lineId } = options;
+    return {
+        type: 'MOTIONLINES_REMOVE',
+        lineId,
+    }
+}

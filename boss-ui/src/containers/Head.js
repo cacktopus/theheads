@@ -3,8 +3,6 @@ import { headRotateByIndex} from '../actions'
 // import { menuSelectHead, headRotateByIndex} from '../actions'
 import Head from '../components/Head'
 
-console.log(" THIS IS WHAT's in prog.. adding in the head");
-
 const mapStateToProps = (state, ownProps) => {
     // const stands = state.stands;
     // const menu = state.menu;
