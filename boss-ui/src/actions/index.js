@@ -162,23 +162,25 @@ export const cameraRemoveByIndex = (standIndex, cameraIndex) => ({
 })
 
 // POPUP
-export const popupMove = (popupId, pos) => ({
-    type: 'POPUP_MOVE_BY_INDEX',
-    popupId: popupId,
+export const popupInfoMove = (standIndex, pos) => ({
+    type: 'POPUP_INFO_MOVE_BY_INDEX',
+    // popupId: popupId,
+    standIndex,
     pos
 })
 
-export const popupAddNew = (popupId, popupType, pos, payload) => ({
-    type: 'POPUP_ADD_NEW',
-    popupId,
-    popupType,
+export const popupInfoAddNew = (standIndex, pos) => ({
+    type: 'POPUP_INFO_ADD_NEW',
+    standIndex,
+    // popupId,
+    // popupType,
     pos,
-    payload
+    // payload
 })
 
-export const popupRemove = (popupId) => ({
-    type: 'POPUP_REMOVE',
-    popupId
+export const popupInfoRemove = (standIndex) => ({
+    type: 'POPUP_INFO_REMOVE',
+    standIndex
 })
 
 // export const standRemoveByIndex = index => ({

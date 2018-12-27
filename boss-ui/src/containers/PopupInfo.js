@@ -1,6 +1,6 @@
 import { connect } from 'react-redux'
-import { popupMove } from '../actions'
-import Popup from '../components/Popup'
+import { popupInfoMove, popupInfoRemove } from '../actions'
+import PopupInfo from '../components/PopupInfo'
 
 const mapStateToProps = (state, ownProps) => {
     // const stands = state.stands;
@@ -20,8 +20,8 @@ const mapStateToProps = (state, ownProps) => {
     return ({
         // stands: state.stands, //ownProps.filter === state.visibilityFilter
         stand: state.stands.get(ownProps.standIndex),
-        // cameras: state.stands .get(ownProps.index),
-        // menu: state.menu
+        popupInfo: state.stands.getIn([ownProps.standIndex,"popupInfo"]),
+        menu: state.menu
     });
 }
 
@@ -32,11 +32,12 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
     // selectCamera: () => dispatch(menuSelectCamera({standIndex : ownProps.standIndex, cameraIndex: ownProps.cameraIndex})),
-    popupMove: (pos) => dispatch(popupMove(ownProps.standIndex, ownProps.popupId, pos)),
+    popupInfoMove: (pos) => dispatch(popupInfoMove(ownProps.standIndex, pos)),
+    popupInfoRemove: (pos) => dispatch(popupInfoRemove(ownProps.standIndex)),
     // cameraRotate: (rot) => dispatch(cameraRotateByIndex(ownProps.standIndex, ownProps.cameraIndex, rot))
 });
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(Popup)
+)(PopupInfo)

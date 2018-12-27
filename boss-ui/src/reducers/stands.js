@@ -40,7 +40,8 @@ const createNewStand = ({
     pos = { x: 0, y: 0},
     rot = 0, 
     cameras = [defaultCamera],
-    heads = [defaultHead]
+    heads = [defaultHead],
+    popupInfo = undefined
 } = {}, state) => {
 
     if (!name) {
@@ -52,7 +53,8 @@ const createNewStand = ({
         "pos": pos,
         "rot": rot,
         "cameras": cameras,
-        "heads": heads
+        "heads": heads,
+        "popupInfo" : popupInfo
     })
     
     // return {
@@ -195,6 +197,19 @@ const stands = (state = fromJS([]), action) => {
                 return fromJS(action.sceneData.stands);
             }
             return state;
+
+        // Popup
+        case 'POPUP_INFO_MOVE_BY_INDEX':
+            console.log('move it')
+            return state; //state.setIn(["popups", action.popupId], {type: action.popupType});
+        case 'POPUP_INFO_ADD_NEW':
+            window.c_soi = state;
+            console.log('hi');
+            return state.setIn([action.standIndex,"popupInfo"], fromJS({pos: action.pos}));
+
+        case 'POPUP_INFO_REMOVE':
+            return state.removeIn([action.standIndex,"popupInfo"]);
+
         // Default
         default:
             return state;

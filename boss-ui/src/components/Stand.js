@@ -6,6 +6,7 @@ import Draggable, { DraggableCore } from 'react-draggable';
 import cn from "classnames";
 import Heads from './Heads';
 import Cameras from './Cameras';
+import PopupInfo from '../containers/PopupInfo';
 
 import {encodeRot, decodeRot, encodePos, decodePos} from '../helpers';
 
@@ -20,7 +21,8 @@ export default class Menu extends React.Component {
 
         // this.onMouseDown = this.onMouseDown.bind(this);
 
-        this.toggleInfoPopup = this.toggleInfoPopup.bind(this);
+        this.togglePopupInfo = this.togglePopupInfo.bind(this);
+
         this.handleMoveStart = this.handleMoveStart.bind(this);
         this.handleMoveDrag = this.handleMoveDrag.bind(this);
         this.handleMoveStop = this.handleMoveStop.bind(this);
@@ -53,23 +55,17 @@ export default class Menu extends React.Component {
     //     });
     // }
 
-    toggleInfoPopup(e) {
-        // The x and y of the Scene
-        var {x, y} = document.getElementById("Scene").getBoundingClientRect();
+    togglePopupInfo(e) {
+        if (!this.props.popupInfo) {
+            // The x and y of the Scene
+            var {x, y} = document.getElementById("Scene").getBoundingClientRect();
 
-        const clickPos = { x: e.nativeEvent.clientX - x, y: e.nativeEvent.clientY - y };
-        console.log(clickPos);
+            const clickPos = { x: e.nativeEvent.clientX - x, y: e.nativeEvent.clientY - y };
 
-        // e.persist();
-        // window.c_ee = e;
-        
-        // console.log(e);
-        const standName = this.props.stand.get("name");
-
-        const popupId = `StandInfo-${standName}`; 
-        const popupType = "info";
-
-        this.props.standInfoPopup(popupId, popupType, clickPos);
+            this.props.popupInfoAddNew(clickPos);
+        } else {
+            this.props.popupInfoRemove();
+        }
     }
 
     // Move
@@ -140,6 +136,16 @@ export default class Menu extends React.Component {
         //     pos = stand.get("pos");
         // } catch(e) {}
 
+        let popupInfo;
+
+        if (this.props.popupInfo) {
+            popupInfo = (
+                <div className="Stand-popupInfo">
+                    <PopupInfo standIndex={this.props.index} pos={this.props.popupInfo.get("pos")}/>
+                </div>
+            );
+        }
+
         const areRotatesHidden = this.props.menu.get("areRotatesHidden");
 
         return (
@@ -168,6 +174,7 @@ export default class Menu extends React.Component {
                 > */}
 
                 <div className={cn("Stand", { "Stand--selected": isSelected })} onClick={this.props.standSelect}>
+                    {popupInfo}
                     <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                         <div className="Stand-container">
                             <div className="Stand-name noselect">
@@ -182,7 +189,7 @@ export default class Menu extends React.Component {
                             <div className="Stand-move noselect">
                                 Move
                                 </div>
-                            <div className="Stand-info noselect" onClick={this.toggleInfoPopup}>
+                            <div className="Stand-info noselect" onClick={this.togglePopupInfo}>
                                 Info
                             </div>
 

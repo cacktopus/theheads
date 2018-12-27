@@ -134,6 +134,7 @@ body {
   border: 1px solid black;
 } */
 
+
 .Stand-info {
   display: block;
   position: absolute;
@@ -142,6 +143,36 @@ body {
   border: 1px solid black;
   cursor: pointer;
 }
+
+.PopupInfo {
+  position: absolute;
+  width: 170px;
+  height: 160px;
+  top: 0;
+  left: 0;
+  background: white;
+  border: 1px solid black;
+  border-radius: 10px;
+  z-index: 99;
+  overflow: hidden;
+  /* display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: pointer; */
+}
+.PopupInfo-closeButton {
+  position: absolute;
+  /* bottom: 0;
+  left: 0; */
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  border: 1px solid black;
+  padding: 5px;
+}
+
 
 .Stand-move {
   position: absolute;

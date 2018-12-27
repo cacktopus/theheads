@@ -23,9 +23,14 @@ export default class Popup extends React.Component {
         this.handleMoveDrag = this.handleMoveDrag.bind(this);
         this.handleMoveStop = this.handleMoveStop.bind(this);
 
+        this.closePopupInfo = this.closePopupInfo.bind(this);
         // this.handleRotateStart = this.handleRotateStart.bind(this);
         // this.handleRotateDrag = this.handleRotateDrag.bind(this);
         // this.handleRotateStop = this.handleRotateStop.bind(this);
+    }
+
+    closePopupInfo() {
+        this.props.popupInfoRemove();
     }
 
     // Move
@@ -35,7 +40,7 @@ export default class Popup extends React.Component {
         const pos = { x: x - curPos.x, y: y - curPos.y };
 
         this.setState({ moveRelativeStartPos: pos });
-        this.props.selectCamera();
+        // this.props.selectCamera();
     }
 
     handleMoveDrag(e, a) {
@@ -48,7 +53,7 @@ export default class Popup extends React.Component {
         
         const newPos = encodePosScale(this.props.menu, rotateVector(pos, rot));//, origin);
 
-        this.props.cameraMove(newPos);
+        this.props.popupInfoMove(newPos);
     }
 
     handleMoveStop(e, a) {
@@ -78,7 +83,8 @@ export default class Popup extends React.Component {
     // }
 
     getCurrentPos() {
-        let pos = this.props.camera.get("pos").toJS();
+        // let pos = this.props.get("pos").toJS();
+        let pos = this.props.popupInfo.get("pos").toJS();
         pos.x = isNaN(pos.x) ? 0 : pos.x;
         pos.y = isNaN(pos.y) ? 0 : pos.y;
 
@@ -87,11 +93,17 @@ export default class Popup extends React.Component {
     }
 
     render() {
-        const camera = this.props.camera;
-
         let pos = this.getCurrentPos();
 
-        return <div>POPUP</div>;
+        return (
+            <div className="PopupInfo">
+                Popup Details<br/>
+                {this.props.stand.get("name")} : {this.props.stand.getIn(["heads",0,"name"])}
+            <div className="PopupInfo-closeButton" onClick={this.closePopupInfo}>
+                    X
+                </div>
+            </div>
+        );
 
         // let rot = camera.get("rot");
         // rot = isNaN(rot) ? 0 : rot;

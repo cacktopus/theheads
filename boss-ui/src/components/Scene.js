@@ -2,7 +2,7 @@ import React from 'react'
 //import Heads from '../containers/Heads'
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 import Stand from '../containers/Stand';
-import Popups from '../components/Popups';
+// import Popups from '../components/Popups';
 import UnderVisuals from '../containers/UnderVisuals';
 
 export default class Menu extends React.Component {
@@ -48,7 +48,7 @@ export default class Menu extends React.Component {
                     <div className="Stands">
                         {stands}
                     </div>
-                    <Popups popups={this.props.popups}/>
+                    {/* <Popups popups={this.props.popups}/> */}
                 </div>
             </div>
         )

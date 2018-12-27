@@ -5,7 +5,7 @@ import Scene from '../components/Scene'
 const mapStateToProps = (state, ownProps) =>
 ({
   stands: state.stands,
-  popups: state.popups //ownProps.filter === state.visibilityFilter
+//   popups: state.popups //ownProps.filter === state.visibilityFilter
 });
 
 // const mapStateToProps = (state, ownProps) => ({});

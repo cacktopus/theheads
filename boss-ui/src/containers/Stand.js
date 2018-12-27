@@ -1,11 +1,12 @@
 import { connect } from 'react-redux'
-import { popupAddNew, standRemoveByIndex, standMoveByIndex, standRotateByIndex, menuSelectStand } from '../actions'
+import { popupInfoAddNew, popupInfoRemove, standRemoveByIndex, standMoveByIndex, standRotateByIndex, menuSelectStand } from '../actions'
 import Stand from '../components/Stand'
 
 const mapStateToProps = (state, ownProps) =>
 ({
   stands: state.stands, //ownProps.filter === state.visibilityFilter
-  menu: state.menu
+  menu: state.menu,
+  popupInfo: state.stands.getIn([ownProps.index, "popupInfo"])
 });
 
 // const mapStateToProps = (state, ownProps) => ({});
@@ -20,7 +21,8 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     // standSetField: (fieldName, value) => dispatch(standSetFieldByIndex(ownProps.index, fieldName, value)), // pos = {x, y}
     // standSetInFields: (fieldNames, value) => dispatch(standSetInFieldsByIndex(ownProps.index, fieldNames, value)), // pos = {x, y}
 
-    standInfoPopup: (popupId, popupType, clickPos) => { dispatch(popupAddNew(popupId, popupType, clickPos, { standIndex: ownProps.standIndex} )) }, //dispatch(standInfoPopup(ownProps.index, pos)), // pos = {x, y}
+    popupInfoAddNew: (clickPos) => { dispatch(popupInfoAddNew(ownProps.index, clickPos)) },
+    popupInfoRemove: () => { dispatch(popupInfoRemove(ownProps.index)) },
 
     standMove: (pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     standRemove: () => dispatch(standRemoveByIndex(ownProps.index)), // pos = {x, y}
