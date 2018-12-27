@@ -1,91 +1,170 @@
-import base64
+import asyncio
 import json
-import math
-import os
-import random
-import sys
-import time
 
-# import etcd3
-from datetime import datetime
+import asyncio_redis
+from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
+from aiohttp import web
 
-from multiprocessing import Pool, Lock
+import motors
+from config import THE_HEADS_EVENTS, Config
+from const import DEFAULT_CONSUL_ENDPOINT
+from consul_config import ConsulBackend
 
-from lease_rpc import grant, ttl
-from rpc import lock, get
-from rpc_util import key
-from txn_rpc import txn
-
-stdout_lock = Lock()
-
-hosts = [
-    "192.168.1.10",
-    "192.168.1.11",
-    "192.168.1.12",
-]
+STEPPERS_PORT = 8080
+NUM_STEPS = 200
+DEFAULT_SPEED = 50
+directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
+_DEFAULT_REDIS = "127.0.0.1:6379"
 
 
-def get_lock(args):
-    pid, lockname, t0 = args
+class Stepper:
+    def __init__(self, cfg, redis: asyncio_redis.Connection):
+        self._pos = 0
+        self._target = 0
+        self._motor = motors.setup()
+        self._speed = DEFAULT_SPEED
+        self.queue = asyncio.Queue()
+        self.cfg = cfg
+        self.redis = redis
 
-    def out(*args, **kw):
-        t = time.time() - t0
-        with stdout_lock:
-            print("{:x} | {:>6.2f} |".format(pid, t), *args, **kw)
-            sys.stdout.flush()
+    @property
+    def pos(self) -> int:
+        return self._pos
 
-    out("connected")
+    def zero(self):
+        self._pos = 0
+        self._target = 0
 
-    next_tick = 5 - (time.time() % 5)
-    out("delay {:.2f}".format(next_tick))
+    def set_target(self, target: int):
+        self._target = target
 
-    start = int(math.ceil(next_tick))
-    target_ttl = random.randint(start, start + 60)
-    # target_ttl = {1: 15, 2: 500}[pid]
+    def set_speed(self, speed: float):
+        self._speed = speed
 
-    out("getting lease, ttl:", target_ttl)
-    lease_id = grant(target_ttl)['ID']
+    def current_rotation(self) -> float:
+        return self._pos / NUM_STEPS * 360.0
 
-    time.sleep(next_tick)
+    async def seek(self):
+        while True:
+            options = [
+                ((self._target - self._pos) % NUM_STEPS, 1),
+                ((self._pos - self._target) % NUM_STEPS, -1),
+            ]
 
-    out("calling lock")
-    mylock = lock(lockname, lease_id)
-    lock_key = key(mylock)
-    out("mylock:", lock_key, json.dumps(mylock))
-    read = get(lock_key)
-    out("readlock:", key(read), json.dumps(read))
+            steps, direction = min(options)
 
-    lease = (read or {}).get('lease')
-    if lease is not None:
-        out("ttl", ttl(lease))
+            if steps > 0:
+                self._pos += direction
+                self._pos %= NUM_STEPS
+                self.queue.put_nowait(self._pos)
+                self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
 
-    while True:
-        out("attempting txn")
-        res = txn(
-            lock_key=lock_key,
-            msg_success="{:x} Doin' some work with {} at {}".format(pid, lockname, datetime.now()).encode(),
-            msg_failure="{:x} out".format(pid).encode(),
-            log=out,
-        )
-        out(res.keys())
-        if not res.get('succeeded'):
-            break
-        out("waiting")
-        time.sleep(5)
+            await asyncio.sleep(1.0 / self._speed)
 
-    out("I'm out")
+    async def redis_publisher(self):
+        while True:
+            pos = await self.queue.get()
+            msg = {
+                "type": "head-positioned",
+                "installation": self.cfg['installation'],
+                "data": {
+                    "headName": self.cfg['head'],
+                    "stepPosition": pos,
+                    "rotation": self.current_rotation(),
+                }
+            }
+            await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
+
+
+def adjust_position(request, speed, target):
+    speed = float(speed) if speed else None
+    stepper = request.app['stepper']
+    stepper.set_target(target)
+    if speed is not None:
+        stepper.set_speed(speed)
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json")
+
+
+def position(request):
+    target = int(request.match_info.get('target'))
+    speed = request.query.get("speed")
+
+    return adjust_position(request, speed, target)
+
+
+def rotation(request):
+    theta = float(request.match_info.get('theta'))
+    speed = request.query.get("speed")
+
+    target = int(round(theta / 360.0 * NUM_STEPS))
+
+    return adjust_position(request, speed, target)
+
+
+async def zero(request):
+    stepper = request.app['stepper']
+    stepper.zero()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json")
+
+
+async def get_config(endpoint: str):
+    cfg = await Config(ConsulBackend(endpoint)).setup()
+
+    redis_server = _DEFAULT_REDIS  # TODO
+
+    head = await cfg.get_config_str("/the-heads/installation/{installation}/heads/{hostname}")
+
+    return dict(
+        endpoint=endpoint,
+        installation=cfg.installation,
+        redis_server=redis_server,
+        head=head,
+    )
+
+
+async def setup(app: web.Application, loop):
+    cfg = await get_config(DEFAULT_CONSUL_ENDPOINT)
+
+    redis_host, redis_port_str = cfg['redis_server'].split(":")
+    redis_port = int(redis_port_str)
+
+    print("connecting to redis")
+    redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
+    print("connected to redis")
+
+    stepper = Stepper(cfg, redis_connection)
+    asyncio.ensure_future(stepper.redis_publisher())
+
+    app['stepper'] = stepper
+
+    asyncio.ensure_future(stepper.seek(), loop=loop)
+    return cfg
+
+
+async def home(request):
+    cfg = request.app['cfg']
+    stepper = request.app['stepper']
+    result = 'This is head "{}"\nPosition is {}'.format(cfg['head'], stepper.pos)
+    return web.Response(text=result)
 
 
 def main():
-    pid = os.getpid()
-    lockname = "lock-{}".format(pid).encode()
-    t0 = time.time()
+    loop = asyncio.get_event_loop()
+    app = web.Application()
+    cfg = loop.run_until_complete(setup(app, loop))
 
-    start = 0x20
-    num = 10
+    app['cfg'] = cfg
 
-    with Pool(num) as p:
-        p.map(get_lock, [(i, lockname, t0) for i in range(start, start + num)])
+    app.add_routes([
+        web.get("/", home),
+        web.get("/position/{target}", position),
+        web.get("/rotation/{theta}", rotation),
+        web.get("/zero", zero),
+    ])
+    web.run_app(app, port=STEPPERS_PORT)
 
 
 if __name__ == '__main__':
