@@ -6,7 +6,7 @@ export const customWebsocketMiddleware = store => next => action => {
         let totalPayload; // parse through each payload
         try {
             totalPayload = JSON.parse(action.payload.data);
-            window.c_aa = action;
+
             // For each payload data 
             totalPayload.forEach((payloadDataChunk, i) => {
 
@@ -34,23 +34,14 @@ export const customWebsocketMiddleware = store => next => action => {
                     default:
                         break;
                 }
-                console.log("333");
-                // store.dispatch()
-                // newState = processWebsocketData(newState, payloadDataChunk);
-                // if (type) === "draw")) {
-                //     console.log("444");
-                //     setTimeout(() => {
-                //         console.log("clear the draw");
-                //     }, 1000);
-                // }
             });
         } catch (e) { }
     }
-    window.c_cm = {
-        store,
-        next,
-        action
-    };
+    // window.c_cm = {
+    //     store,
+    //     next,
+    //     action
+    // };
 
     next(action);
 }

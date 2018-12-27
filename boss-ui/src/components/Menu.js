@@ -6,14 +6,22 @@ import React from 'react'
 
 let exportSceneMsgTimeout;
 
-const defaultWebsocketUrl = 'ws://' + window.location.hostname + ":" + window.location.port + '/ws';
+let defaultWebsocketUrl;
+let defaultSceneUrl;
+if (window.location.hostname === "localhost" && window.location.port === "3000") {
+    defaultWebsocketUrl = "ws://localhost:8081/ws";
+    defaultSceneUrl = "json/temp.json";
+} else {
+    defaultWebsocketUrl = 'ws://' + window.location.hostname + ":" + window.location.port + '/ws';
+    defaultSceneUrl = "/installation/dev/scene.json";
+}
 
 export default class Menu extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            sceneUrl : "/installation/dev/scene.json",
+            sceneUrl : defaultSceneUrl,
             // sceneUrl : "/build/json/temp.json",
             websocketUrl : defaultWebsocketUrl, //"ws://localhost:8081/ws"
             // sceneUrl : "/json/temp.json"
@@ -23,7 +31,8 @@ export default class Menu extends React.Component {
         this.addStand = this.addStand.bind(this);
         this.setLoadSceneUrl = this.setLoadSceneUrl.bind(this);
         this.loadScene = this.loadScene.bind(this);
-        this.loadLocalSceneJson = this.loadLocalSceneJson.bind(this);
+        this.loadTempSceneJson = this.loadTempSceneJson.bind(this);
+        this.loadRegSceneJson = this.loadRegSceneJson.bind(this);
 
         this.addNewCamera = this.addNewCamera.bind(this);
         this.removeCurrentCamera = this.removeCurrentCamera.bind(this);
@@ -34,8 +43,14 @@ export default class Menu extends React.Component {
 
         this.setWebsocketUrl = e => { this.setState({websocketUrl : e.target.value}) };
         this.websocketConnect = this.websocketConnect.bind(this);
+        this.websocketDisconnect = this.websocketDisconnect.bind(this);
         this.websocketLoadLocalhostUrl = this.websocketLoadLocalhostUrl.bind(this);
         this.websocketLoadOtherUrl = this.websocketLoadOtherUrl.bind(this);
+    }
+
+    componentDidMount() {
+        this.loadScene();
+        this.websocketConnect();
     }
 
     addStand() {
@@ -71,9 +86,15 @@ export default class Menu extends React.Component {
         this.props.loadSceneFromUrl(this.state.sceneUrl);
     }
 
-    loadLocalSceneJson() {
+    loadTempSceneJson() {
         this.setState({
             sceneUrl: "json/temp.json"
+        })
+    }
+
+    loadRegSceneJson() {
+        this.setState({
+            sceneUrl: "/installation/dev/scene.json"
         })
     }
 
@@ -401,6 +422,18 @@ export default class Menu extends React.Component {
 
         const transformLabelStyles = {width: 120};
 
+        // Websocket connection buttons
+        const websocketStatus = this.props.menu.get("websocketStatus");
+        let websocketConnectionButton;
+
+        if (websocketStatus === "open") {
+            websocketConnectionButton = <button onClick={this.websocketDisconnect}>Disconnect</button>
+        } else if (websocketStatus === "connecting") {
+            websocketConnectionButton = <button disabled={true}>Connecting</button>
+        } else {
+            websocketConnectionButton = <button onClick={this.websocketConnect}>Connect</button>
+        }
+
         return (
             <div className="Menu">
                 <div>
@@ -454,7 +487,7 @@ export default class Menu extends React.Component {
                         <div className="Menu-loadScene">
                             <label>Import Scene:</label>
                             <input style={{width: 200}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
-                            <button onClick={this.loadScene}>Load</button>&nbsp;<button onClick={this.loadLocalSceneJson}>Local URL</button>
+                            <button onClick={this.loadScene}>Load</button>&nbsp;<button onClick={this.loadTempSceneJson}>Temp</button>&nbsp;<button onClick={this.loadRegSceneJson}>Reg</button>
                         </div><div className="Menu-getScene">
                             <label>Export Scene:</label>
                             <input id="clipboard-input" style={{width: 200}} placeholder="This will be populated on 'Copy to clipboard'." />&nbsp;
@@ -478,7 +511,7 @@ export default class Menu extends React.Component {
                             <input type="text" style={{width: 200}} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl}/>&nbsp;
                         </div>
                         <div className="Menu-websocket">
-                            <button onClick={this.websocketConnect}>Connect</button>&nbsp;
+                            {websocketConnectionButton}&nbsp;
                             <button onClick={this.websocketLoadLocalhostUrl}>Autofill localhost:8081</button>&nbsp;
                             {/* <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp; */}
                         </div>

@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { headRotateByIndex} from '../actions'
+import { websocketSend, headRotateByIndex } from '../actions'
 // import { menuSelectHead, headRotateByIndex} from '../actions'
 import Head from '../components/Head'
 
@@ -42,7 +42,19 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     // standMove: (pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     // standRemove: () => dispatch(standRemoveByIndex(ownProps.index)), // pos = {x, y}
     // headRotate: (rot) => dispatch(headRotateByIndex(ownProps.standIndex, ownProps.index, rot)) // rot = radian amount
-    headRotate: (rot) => dispatch(headRotateByIndex(ownProps.standIndex, ownProps.headIndex, rot)) // rot = radian amount
+    headRotate: (rot) => {
+        window.c_HH = { ownProps, rot };
+        dispatch(headRotateByIndex(ownProps.standIndex, ownProps.headIndex, rot));
+
+        const websocketPayload = {
+            "type": "head-rotation",
+            "data": { 
+                "headName": ownProps.head.get("name"),
+                "rotation": rot
+            }
+        }
+        dispatch(websocketSend(websocketPayload));
+    }// rot = radian amount
     // standMoveByIndex: (standIndex, pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     // standRotateByIndex: (standIndex, rot) => dispatch(standRotateByIndex(ownProps.index, rot)) // rot = radian amount
 });

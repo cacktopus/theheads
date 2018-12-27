@@ -40,7 +40,8 @@ const createNewStand = ({
     pos = { x: 0, y: 0},
     rot = 0, 
     cameras = [defaultCamera],
-    heads = [defaultHead]
+    heads = [defaultHead],
+    popupInfo = undefined
 } = {}, state) => {
 
     if (!name) {
@@ -52,7 +53,8 @@ const createNewStand = ({
         "pos": pos,
         "rot": rot,
         "cameras": cameras,
-        "heads": heads
+        "heads": heads,
+        "popupInfo" : popupInfo
     })
     
     // return {
@@ -98,8 +100,6 @@ const getNewName = (prefix, arrayObj) => {
 }
 
 const processWebsocketData = (state, payloadDataChunk) => {
-    console.log('processWebsocketData');
-    
     let { type, data } = payloadDataChunk;
     let headName, heads, standIndex, headIndex, rotation;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
@@ -138,13 +138,13 @@ const processWebsocketData = (state, payloadDataChunk) => {
     return state;
 }
 
-// const stands = (state = [], action) => {
 const stands = (state = fromJS([]), action) => {
     window.c_sn_str = {state, action};
     let newState = state;
 
     switch (action.type) {
         // Websocket message
+        // NOTE: This should probably be handles by the websocket middleware... which then sends specific dispatch (window.c_ )
         case WEBSOCKET_MESSAGE: 
             let totalPayload;
             try {
@@ -162,18 +162,15 @@ const stands = (state = fromJS([]), action) => {
         case 'STAND_ADD':
             return state.push(createNewStand({}, state));
         case 'STAND_SETIN_FIELDS_BY_INDEX':
-            // console.log("STAND_SETIN_FIELDS_BY_INDEX", action);
             // return state.setIn([action.index,"pos"], fromJS(action.pos));
             let setInLocation = [action.index];
             setInLocation = setInLocation.concat(action.fieldNames);
             return state.setIn(setInLocation, fromJS(action.value));
         case 'STAND_SET_FIELD_BY_INDEX':
-            // console.log("STAND_SET_FIELD_BY_INDEX", action);
             return state.setIn([action.index,action.fieldName], fromJS(action.value));
         case 'STAND_MOVE_BY_INDEX':
             return state.setIn([action.index,"pos"], fromJS(action.pos));
         case 'STAND_ROTATE_BY_INDEX':
-            // console.log("STAND_ROTATE_BY_INDEX", {state, action});
             return state.setIn([action.index,"rot"], fromJS(action.rot));
         case 'STAND_REMOVE_BY_INDEX':
             return state.remove(action.index);
@@ -186,7 +183,6 @@ const stands = (state = fromJS([]), action) => {
 
         // Camera
         case 'CAMERA_MOVE_BY_INDEX':
-            // console.log("CAMERA_MOVE_BY_INDEX", [action.standIndex,"cameras",action.cameraIndex,"pos"], fromJS(action.pos));
             // window.c_CAM342 = { arr: [action.standIndex,"cameras",action.cameraIndex,"pos"], pos: fromJS(action.pos)};
             return state.setIn([action.standIndex,"cameras",action.cameraIndex,"pos"], fromJS(action.pos));
         case 'CAMERA_ROTATE_BY_INDEX':
@@ -201,6 +197,19 @@ const stands = (state = fromJS([]), action) => {
                 return fromJS(action.sceneData.stands);
             }
             return state;
+
+        // Popup
+        case 'POPUP_INFO_MOVE_BY_INDEX':
+            console.log('move it')
+            return state; //state.setIn(["popups", action.popupId], {type: action.popupType});
+        case 'POPUP_INFO_ADD_NEW':
+            window.c_soi = state;
+            console.log('hi');
+            return state.setIn([action.standIndex,"popupInfo"], fromJS({pos: action.pos}));
+
+        case 'POPUP_INFO_REMOVE':
+            return state.removeIn([action.standIndex,"popupInfo"]);
+
         // Default
         default:
             return state;

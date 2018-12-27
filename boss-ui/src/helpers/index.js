@@ -43,7 +43,7 @@ export const encodePos = (menu, pos) => {
 
     let matrix = compose(
         
-        scale(scaleVal, -1*scaleVal),
+        scale(1/scaleVal, -1/scaleVal),
         // rotate(Math.PI/2),
         translate(-1*translateX, -1*translateY),
     );
@@ -61,7 +61,7 @@ export const decodePos = (menu, pos) => {
     let matrix = compose(
         translate(translateX, translateY),
         // rotate(-1*Math.PI/2),
-        scale(1/scaleVal, -1/scaleVal)
+        scale(scaleVal, -1*scaleVal)
     );
 
     const newPos = applyToPoint(matrix, pos);
