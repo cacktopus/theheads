@@ -20,7 +20,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     // standSetField: (fieldName, value) => dispatch(standSetFieldByIndex(ownProps.index, fieldName, value)), // pos = {x, y}
     // standSetInFields: (fieldNames, value) => dispatch(standSetInFieldsByIndex(ownProps.index, fieldNames, value)), // pos = {x, y}
 
-    standInfoPopup: (popupIndex, popupType) => { dispatch(popupAddNew(ownProps.standIndex, popupIndex, popupType)) }, //dispatch(standInfoPopup(ownProps.index, pos)), // pos = {x, y}
+    standInfoPopup: (popupId, popupType, clickPos) => { dispatch(popupAddNew(popupId, popupType, clickPos, { standIndex: ownProps.standIndex} )) }, //dispatch(standInfoPopup(ownProps.index, pos)), // pos = {x, y}
 
     standMove: (pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     standRemove: () => dispatch(standRemoveByIndex(ownProps.index)), // pos = {x, y}

@@ -64,11 +64,12 @@ export default class Menu extends React.Component {
         // window.c_ee = e;
         
         // console.log(e);
+        const standName = this.props.stand.get("name");
 
-        const popupIndex = "pop" + (new Date()).getTime();
+        const popupId = `StandInfo-${standName}`; 
         const popupType = "info";
 
-        this.props.standInfoPopup(popupIndex, popupType, clickPos);
+        this.props.standInfoPopup(popupId, popupType, clickPos);
     }
 
     // Move

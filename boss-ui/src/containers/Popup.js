@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { popupMoveByIndex } from '../actions'
+import { popupMove } from '../actions'
 import Popup from '../components/Popup'
 
 const mapStateToProps = (state, ownProps) => {
@@ -32,7 +32,7 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
     // selectCamera: () => dispatch(menuSelectCamera({standIndex : ownProps.standIndex, cameraIndex: ownProps.cameraIndex})),
-    popupMove: (pos) => dispatch(popupMoveByIndex(ownProps.standIndex, ownProps.popupId, pos)),
+    popupMove: (pos) => dispatch(popupMove(ownProps.standIndex, ownProps.popupId, pos)),
     // cameraRotate: (rot) => dispatch(cameraRotateByIndex(ownProps.standIndex, ownProps.cameraIndex, rot))
 });
 

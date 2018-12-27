@@ -22,7 +22,19 @@ export default class Popups extends React.Component {
 
 
     render() {
+
+        // const popups = this.props.popups.map((popup, i) => {
+        //     return <div key={i}>opop</div>; ///<Popup key={i} index={i} popup={popup}/>
+        // });
+        
+        window.c_pops = this.props.popups;
+        const popups = undefined; //"hi";
+
         window.c_POPS = this;
-        return <div></div>;
+        return (
+            <div className="Popups">
+                {popups}
+            </div>
+        );
     }
 }

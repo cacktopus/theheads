@@ -16,6 +16,7 @@ const stands = (state = fromJS(initialState), action) => {
         case 'POPUP_MOVE_BY_INDEX':
             return state; //state.setIn(["popups", action.popupId], {type: action.popupType});
         case 'POPUP_ADD_NEW':
+            console.log("ACTIN=",action);
             return state.set(action.popupId, {type: action.popupType, standIndex: action.standIndex});
         case 'POPUP_REMOVE':
             return state.remove(action.popupId);
