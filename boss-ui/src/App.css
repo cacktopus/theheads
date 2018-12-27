@@ -108,8 +108,15 @@ body {
 }
 
 .Stand-name {
-  position: absolute;
+  /* position: absolute;
   top: -20px;
+  transform: rotate(-90deg) translate(-70px,-60px); Transform them to the top */
+  position: absolute;
+  top: 0;
+  -webkit-transform: rotate(-90deg) translate(-38px,-80px);
+  transform: rotate(-90deg) translate(-38px,-80px);
+  left: 1px;
+  width: 120px;
 }
 
 .Stand-remove {
@@ -126,6 +133,15 @@ body {
   cursor: pointer;
   border: 1px solid black;
 } */
+
+.Stand-info {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: pointer;
+}
 
 .Stand-move {
   position: absolute;

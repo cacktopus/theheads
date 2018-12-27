@@ -58,17 +58,15 @@ const stands = (state = fromJS(initialState), action) => {
         // case 'MENU_SET_TRANSLATE':
         //     return state.setIn(["translate","y"], action.y);
         case WEBSOCKET_CONNECTING:
-            console.log(action);
-            return state;
+            return state.set("websocketStatus", "connecting");
         case WEBSOCKET_OPEN:
-            console.log(action);
-            return state;
+            return state.set("websocketStatus", "open");
         case WEBSOCKET_CLOSED:
-            console.log(action);
-            return state;
-        case WEBSOCKET_MESSAGE:
-            console.log(action);
-            return state;
+            return state.set("websocketStatus", undefined);
+        // case WEBSOCKET_MESSAGE:
+        //     // NOTE: WEBSOCKET_MESSAGE should probably be dealt with in the websocket middleware...
+        //     // ... which in turn handles the message and dispatches a specific type of dispatch message
+        //     return state;
         default:
             return state;
     }

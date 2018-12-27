@@ -46,13 +46,8 @@ export default class Camera extends React.Component {
         // const pos = { x, y }; //: x - origin.x, y: y - origin.y };
         const rot = decodeRot(this.props.stand.get("rot"));
         
-        // cosnt tempPos = 
-
         const newPos = encodePosScale(this.props.menu, rotateVector(pos, rot));//, origin);
 
-        // console.log(`${rot}: a: ${a.x},${a.y}. ${pos.x},${pos.y} => ${newPos.x}, ${newPos.y}`);
-        console.log(a);
-        window.c_aa = a;
         this.props.cameraMove(newPos);
     }
 

@@ -16,6 +16,7 @@ export const websocketDisconnect = () => {
 }
 
 export const websocketSend = (payload) => {
+    console.log('WEBSOCK SEND', payload);
     return {
         type: WEBSOCKET_SEND,
         payload: payload
@@ -149,15 +150,36 @@ export const cameraRotateByIndex = (standIndex, cameraIndex, rot) => ({
     rot
 })
 
-export const cameraAddNew = (standIndex, cameraIndex, rot) => ({
+export const cameraAddNew = (standIndex) => ({
     type: 'CAMERA_ADD_NEW',
     standIndex
 })
 
-export const cameraRemoveByIndex = (standIndex, cameraIndex, rot) => ({
+export const cameraRemoveByIndex = (standIndex, cameraIndex) => ({
     type: 'CAMERA_REMOVE',
     standIndex,
     cameraIndex
+})
+
+// POPUP
+export const popupMoveByIndex = (standIndex, popupId, pos) => ({
+    type: 'POPUP_MOVE_BY_INDEX',
+    standIndex: standIndex,
+    popupId: popupId,
+    pos
+})
+
+export const popupAddNew = (standIndex, popupId, popupType) => ({
+    type: 'POPUP_ADD_NEW',
+    standIndex,
+    popupId,
+    popupType
+})
+
+export const popupRemoveByIndex = (standIndex, popupId) => ({
+    type: 'POPUP_REMOVE',
+    standIndex,
+    popupId
 })
 
 // export const standRemoveByIndex = index => ({
