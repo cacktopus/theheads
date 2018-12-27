@@ -53,11 +53,10 @@ class Config:
         self._backend = backend
         self._params = {}
 
-    async def setup(self, installation_override=None):
-        hostname = platform.node()
-        self._params['hostname'] = hostname
+    async def setup(self, instance_name, installation_override=None):
+        self._params['instance'] = instance_name
         self._params['installation'] = installation_override or await self.get_config_str(
-            "/the-heads/machines/{hostname}/installation"
+            "/the-heads/assignment/{instance}"
         )
         return self
 
