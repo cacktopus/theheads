@@ -9,7 +9,8 @@ from aiohttp import web
 import motors
 from config import THE_HEADS_EVENTS, Config
 from const import DEFAULT_CONSUL_ENDPOINT
-from consul_config import ConsulBackend, ConfigError
+from consul_config import ConsulBackend
+from health import health_check
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -188,6 +189,7 @@ def main():
 
     app.add_routes([
         web.get("/", home),
+        web.get('/health', health_check),
         web.get("/position/{target}", position),
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
