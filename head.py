@@ -133,6 +133,7 @@ async def setup(app: web.Application, args, loop):
         port = instances[0]['ServicePort']
 
     head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
+    assert head_cfg['name'] == args.instance
 
     redis_server = _DEFAULT_REDIS  # TODO
 
