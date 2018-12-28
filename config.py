@@ -3,6 +3,7 @@ import platform
 from typing import Dict, List
 
 import aiohttp
+import yaml
 
 from const import DEFAULT_CONSUL_ENDPOINT
 
@@ -68,6 +69,15 @@ class Config:
         result = await self._backend.get_config_str(key)
 
         return result.decode().strip()
+
+    async def get_config_yaml(self, key_template: str) -> str:
+        key = key_template.format(**self._params)
+        assert key.endswith(".yaml")
+
+        print("config get -yaml", key)
+
+        result = await self._backend.get_config_str(key.encode())
+        return yaml.load(result)
 
     async def get_prefix(self, key_template: str) -> Dict[bytes, bytes]:
         key = key_template.format(**self._params).encode()

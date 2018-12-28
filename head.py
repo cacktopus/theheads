@@ -8,7 +8,6 @@ from aiohttp import web
 
 import motors
 from config import THE_HEADS_EVENTS, Config
-from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend, ConfigError
 from health import health_check
 
@@ -20,10 +19,10 @@ _DEFAULT_REDIS = "127.0.0.1:6379"
 
 
 class Stepper:
-    def __init__(self, cfg, redis: asyncio_redis.Connection):
+    def __init__(self, cfg, redis: asyncio_redis.Connection, motor):
         self._pos = 0
         self._target = 0
-        self._motor = motors.setup()
+        self._motor = motor
         self._speed = DEFAULT_SPEED
         self.queue = asyncio.Queue()
         self.cfg = cfg
@@ -133,6 +132,8 @@ async def setup(app: web.Application, args, loop):
         print(instances[0])
         port = instances[0]['ServicePort']
 
+    head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
+
     redis_server = _DEFAULT_REDIS  # TODO
 
     redis_host, redis_port_str = redis_server.split(":")
@@ -142,7 +143,12 @@ async def setup(app: web.Application, args, loop):
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
     print("connected to redis")
 
-    stepper = Stepper(cfg, redis_connection)
+    if head_cfg.get('virtual', False):
+        motor = motors.FakeStepper()
+    else:
+        motor = motors.setup()
+
+    stepper = Stepper(cfg, redis_connection, motor)
     asyncio.ensure_future(stepper.redis_publisher())
 
     app['stepper'] = stepper
@@ -153,8 +159,9 @@ async def setup(app: web.Application, args, loop):
         endpoint=args.endpoint,
         installation=cfg.installation,
         redis_server=redis_server,
-        head=args.instance,
+        instance=args.instance,
         port=port,
+        head=head_cfg,
     )
 
     return result
