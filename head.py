@@ -149,22 +149,33 @@ async def get_config(args):
     return result
 
 
-async def publish_active(redis: asyncio_redis.Connection, name: str):
-    data = {
-        "component": "head",
-        "name": name,
-    }
+async def publish_active(app):
+    redis = app['redis']
+    cfg = app['cfg']
+    stepper = app['stepper']
+
+    def data():
+        return {
+            "component": "head",
+            "name": cfg['head']['name'],
+            "installation": cfg['installation'],
+            "extra": {
+                "headName": cfg['head']['name'],
+                "stepPosition": stepper.pos,
+                "rotation": stepper.current_rotation(),
+            }
+        }
 
     await redis.publish(THE_HEADS_EVENTS, json.dumps({
         "type": "startup",
-        "data": data,
+        "data": data(),
     }))
 
     while True:
         await asyncio.sleep(5)
         await redis.publish(THE_HEADS_EVENTS, json.dumps({
             "type": "active",
-            "data": data,
+            "data": data(),
         }))
 
 
@@ -238,8 +249,7 @@ def main():
     ])
 
     asyncio.ensure_future(publish_active(
-        app['redis'],
-        cfg['head']['name'],
+        app,
     ))
 
     web.run_app(app, port=cfg['port'])
