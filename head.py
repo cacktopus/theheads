@@ -155,14 +155,14 @@ async def publish_active(redis: asyncio_redis.Connection, name: str):
         "name": name,
     }
 
-    redis.publish(THE_HEADS_EVENTS, json.dumps({
+    await redis.publish(THE_HEADS_EVENTS, json.dumps({
         "type": "startup",
         "data": data,
     }))
 
     while True:
         await asyncio.sleep(5)
-        redis.publish(THE_HEADS_EVENTS, json.dumps({
+        await redis.publish(THE_HEADS_EVENTS, json.dumps({
             "type": "active",
             "data": data,
         }))
@@ -174,9 +174,9 @@ async def setup(app: web.Application, args, loop):
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
-    print("connecting to redis")
+    print("connecting to redis: {}:{}".format(redis_host, redis_port))
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
-    print("connected to redis")
+    print("connected to redis: {}:{}".format(redis_host, redis_port))
 
     if cfg['head'].get('virtual', False):
         motor = motors.FakeStepper()
