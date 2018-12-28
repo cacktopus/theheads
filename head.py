@@ -179,7 +179,12 @@ async def publish_active(app):
         }))
 
 
-async def setup(config_endpoint: str, instance: str, port_override: Optional[int]):
+async def setup(
+        instance: str,
+        config_endpoint: Optional[str] = None,
+        port_override: Optional[int] = None
+):
+    config_endpoint = config_endpoint or "http://127.0.0.1:8500"
     cfg = await get_config(config_endpoint, instance, port_override)
 
     redis_host, redis_port_str = cfg['redis_server'].split(":")
@@ -231,7 +236,8 @@ async def home(request):
     return web.Response(text="\n".join(lines))
 
 
-async def run_app(app: web.Application, port):
+async def run_app(app: web.Application):
+    port = app['cfg']['port']
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, port=port)
@@ -255,12 +261,12 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
-        args.endpoint,
-        args.instance,
-        args.port,
+        instance=args.instance,
+        config_endpoint=args.endpoint,
+        port_override=args.port,
     ))
 
-    loop.run_until_complete(run_app(app, app['cfg']['port']))
+    loop.run_until_complete(run_app(app))
     loop.run_forever()
     # web.run_app(app, port=cfg['port'])
 
