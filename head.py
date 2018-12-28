@@ -9,7 +9,7 @@ from aiohttp import web
 import motors
 from config import THE_HEADS_EVENTS, Config
 from const import DEFAULT_CONSUL_ENDPOINT
-from consul_config import ConsulBackend
+from consul_config import ConsulBackend, ConfigError
 from health import health_check
 
 STEPPERS_PORT = 8080
