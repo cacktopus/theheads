@@ -171,8 +171,16 @@ async def setup(app: web.Application, args, loop):
 async def home(request):
     cfg = request.app['cfg']
     stepper = request.app['stepper']
-    result = 'This is head "{}"\nPosition is {}'.format(cfg['head'], stepper.pos)
-    return web.Response(text=result)
+
+    lines = [
+        'This is head "{}"'.format(cfg['head']['name']),
+        'Position is {}'.format(stepper.pos),
+    ]
+
+    if cfg['head'].get('virtual', False):
+        lines.append("This is a virtual head")
+
+    return web.Response(text="\n".join(lines))
 
 
 def main():
