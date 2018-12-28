@@ -47,7 +47,12 @@ async def main(inst_name: str):
         await consul_backend.register_service_with_agent("heads", 18081, ID="head1", tags=["head1"])
         await put("/the-heads/assignment/head1", inst_name.encode())
 
+        # redis
         await consul_backend.register_service_with_agent("redis", 6379)
+
+        # boss
+        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-00", tags=["boss-00"])
+        await put("/the-heads/assignment/boss-00", inst_name.encode())
 
     await setup_services()
     await setup_instances()
