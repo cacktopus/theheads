@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+from typing import Optional
 
 import asyncio_redis
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
@@ -111,37 +112,36 @@ async def zero(request):
     return web.Response(text=result + "\n", content_type="application/json")
 
 
-async def get_config(args):
-    consul_backend = ConsulBackend(args.endpoint)
+async def get_config(config_endpoint: str, instance: str, port: Optional[int]):
+    consul_backend = ConsulBackend(config_endpoint)
 
     # TODO: this is going to read "installation", which doesn't fit the new paradigm
-    cfg = await Config(consul_backend).setup(args.instance)
+    cfg = await Config(consul_backend).setup(instance)
 
-    port = args.port
     if port is None:
         # TODO: should this be using the agent endpoints?
-        resp, text = await consul_backend.get_nodes_for_service("heads", tags=[args.instance])
+        resp, text = await consul_backend.get_nodes_for_service("heads", tags=[instance])
         assert resp.status == 200
         instances = json.loads(text)
         if len(instances) == 0:
-            raise ConfigError("No head service defined for {}".format(args.instance))
+            raise ConfigError("No head service defined for {}".format(instance))
 
         if len(instances) > 1:
-            raise ConfigError("Multiple head services defined for {}".format(args.instance))
+            raise ConfigError("Multiple head services defined for {}".format(instance))
 
         print(instances[0])
         port = instances[0]['ServicePort']
 
     head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
-    assert head_cfg['name'] == args.instance
+    assert head_cfg['name'] == instance
 
     redis_server = _DEFAULT_REDIS  # TODO
 
     result = dict(
-        endpoint=args.endpoint,
+        condig_endpoint=config_endpoint,
         installation=cfg.installation,
         redis_server=redis_server,
-        instance=args.instance,
+        instance=instance,
         port=port,
         head=head_cfg,
     )
@@ -179,8 +179,8 @@ async def publish_active(app):
         }))
 
 
-async def setup(app: web.Application, args, loop):
-    cfg = await get_config(args)
+async def setup(config_endpoint: str, instance: str, port_override: Optional[int]):
+    cfg = await get_config(config_endpoint, instance, port_override)
 
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
@@ -196,13 +196,24 @@ async def setup(app: web.Application, args, loop):
 
     stepper = Stepper(cfg, redis_connection, motor)
     asyncio.ensure_future(stepper.redis_publisher())
+    asyncio.ensure_future(stepper.seek())
 
+    app = web.Application()
+    app['cfg'] = cfg
     app['stepper'] = stepper
     app['redis'] = redis_connection
 
-    asyncio.ensure_future(stepper.seek(), loop=loop)
+    app.add_routes([
+        web.get("/", home),
+        web.get('/health', health_check),
+        web.get("/position/{target}", position),
+        web.get("/rotation/{theta}", rotation),
+        web.get("/zero", zero),
+    ])
 
-    return cfg
+    asyncio.ensure_future(publish_active(app))
+
+    return app
 
 
 async def home(request):
@@ -220,6 +231,13 @@ async def home(request):
     return web.Response(text="\n".join(lines))
 
 
+async def run_app(app: web.Application, port):
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, port=port)
+    await site.start()
+
+
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
 
@@ -235,24 +253,16 @@ def main():
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()
-    app = web.Application()
-    cfg = loop.run_until_complete(setup(app, args, loop))
 
-    app['cfg'] = cfg
-
-    app.add_routes([
-        web.get("/", home),
-        web.get('/health', health_check),
-        web.get("/position/{target}", position),
-        web.get("/rotation/{theta}", rotation),
-        web.get("/zero", zero),
-    ])
-
-    asyncio.ensure_future(publish_active(
-        app,
+    app = loop.run_until_complete(setup(
+        args.endpoint,
+        args.instance,
+        args.port,
     ))
 
-    web.run_app(app, port=cfg['port'])
+    loop.run_until_complete(run_app(app, app['cfg']['port']))
+    loop.run_forever()
+    # web.run_app(app, port=cfg['port'])
 
 
 if __name__ == '__main__':
