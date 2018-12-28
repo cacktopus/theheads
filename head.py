@@ -69,7 +69,7 @@ class Stepper:
                 "type": "head-positioned",
                 "installation": self.cfg['installation'],
                 "data": {
-                    "headName": self.cfg['head'],
+                    "headName": self.cfg['head']['name'],
                     "stepPosition": pos,
                     "rotation": self.current_rotation(),
                 }
