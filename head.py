@@ -111,7 +111,7 @@ async def zero(request):
     return web.Response(text=result + "\n", content_type="application/json")
 
 
-async def setup(app: web.Application, args, loop):
+async def get_config(args):
     consul_backend = ConsulBackend(args.endpoint)
 
     # TODO: this is going to read "installation", which doesn't fit the new paradigm
@@ -137,14 +137,29 @@ async def setup(app: web.Application, args, loop):
 
     redis_server = _DEFAULT_REDIS  # TODO
 
-    redis_host, redis_port_str = redis_server.split(":")
+    result = dict(
+        endpoint=args.endpoint,
+        installation=cfg.installation,
+        redis_server=redis_server,
+        instance=args.instance,
+        port=port,
+        head=head_cfg,
+    )
+
+    return result
+
+
+async def setup(app: web.Application, args, loop):
+    cfg = await get_config(args)
+
+    redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
     print("connecting to redis")
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
     print("connected to redis")
 
-    if head_cfg.get('virtual', False):
+    if cfg['head'].get('virtual', False):
         motor = motors.FakeStepper()
     else:
         motor = motors.setup()
@@ -156,16 +171,7 @@ async def setup(app: web.Application, args, loop):
 
     asyncio.ensure_future(stepper.seek(), loop=loop)
 
-    result = dict(
-        endpoint=args.endpoint,
-        installation=cfg.installation,
-        redis_server=redis_server,
-        instance=args.instance,
-        port=port,
-        head=head_cfg,
-    )
-
-    return result
+    return cfg
 
 
 async def home(request):
