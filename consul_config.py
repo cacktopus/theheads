@@ -6,6 +6,10 @@ from const import DEFAULT_CONSUL_ENDPOINT
 from rpc_util import d64
 
 
+class ConfigError(Exception):
+    pass
+
+
 class ConsulBackend:
     def __init__(self, consul_endpoint: str = DEFAULT_CONSUL_ENDPOINT):
         self._consul_endpoint = consul_endpoint
@@ -57,7 +61,7 @@ class ConsulBackend:
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
         return await put(url, value)
 
-    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None):
+    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None, meta=None):
         url = self._consul_endpoint + "/v1/agent/service/register"
         payload = {"Name": name, "Port": port}
 
@@ -66,6 +70,10 @@ class ConsulBackend:
 
         if tags is not None:
             payload["Tags"] = tags
+
+        if meta is not None:
+            assert isinstance(meta, dict)
+            payload["Meta"] = meta
 
         data = json.dumps(payload)
         return await put(url, data)

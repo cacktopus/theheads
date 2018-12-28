@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 
@@ -7,8 +8,7 @@ from aiohttp import web
 
 import motors
 from config import THE_HEADS_EVENTS, Config
-from const import DEFAULT_CONSUL_ENDPOINT
-from consul_config import ConsulBackend
+from consul_config import ConsulBackend, ConfigError
 from health import health_check
 
 STEPPERS_PORT = 8080
@@ -19,10 +19,10 @@ _DEFAULT_REDIS = "127.0.0.1:6379"
 
 
 class Stepper:
-    def __init__(self, cfg, redis: asyncio_redis.Connection):
+    def __init__(self, cfg, redis: asyncio_redis.Connection, motor):
         self._pos = 0
         self._target = 0
-        self._motor = motors.setup()
+        self._motor = motor
         self._speed = DEFAULT_SPEED
         self.queue = asyncio.Queue()
         self.cfg = cfg
@@ -69,7 +69,7 @@ class Stepper:
                 "type": "head-positioned",
                 "installation": self.cfg['installation'],
                 "data": {
-                    "headName": self.cfg['head'],
+                    "headName": self.cfg['head']['name'],
                     "stepPosition": pos,
                     "rotation": self.current_rotation(),
                 }
@@ -111,51 +111,121 @@ async def zero(request):
     return web.Response(text=result + "\n", content_type="application/json")
 
 
-async def get_config(endpoint: str):
-    cfg = await Config(ConsulBackend(endpoint)).setup()
+async def get_config(args):
+    consul_backend = ConsulBackend(args.endpoint)
+
+    # TODO: this is going to read "installation", which doesn't fit the new paradigm
+    cfg = await Config(consul_backend).setup(args.instance)
+
+    port = args.port
+    if port is None:
+        # TODO: should this be using the agent endpoints?
+        resp, text = await consul_backend.get_nodes_for_service("heads", tags=[args.instance])
+        assert resp.status == 200
+        instances = json.loads(text)
+        if len(instances) == 0:
+            raise ConfigError("No head service defined for {}".format(args.instance))
+
+        if len(instances) > 1:
+            raise ConfigError("Multiple head services defined for {}".format(args.instance))
+
+        print(instances[0])
+        port = instances[0]['ServicePort']
+
+    head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
+    assert head_cfg['name'] == args.instance
 
     redis_server = _DEFAULT_REDIS  # TODO
 
-    head = await cfg.get_config_str("/the-heads/installation/{installation}/heads/{hostname}")
-
-    return dict(
-        endpoint=endpoint,
+    result = dict(
+        endpoint=args.endpoint,
         installation=cfg.installation,
         redis_server=redis_server,
-        head=head,
+        instance=args.instance,
+        port=port,
+        head=head_cfg,
     )
 
+    return result
 
-async def setup(app: web.Application, loop):
-    cfg = await get_config(DEFAULT_CONSUL_ENDPOINT)
+
+async def publish_active(redis: asyncio_redis.Connection, name: str):
+    data = {
+        "component": "head",
+        "name": name,
+    }
+
+    await redis.publish(THE_HEADS_EVENTS, json.dumps({
+        "type": "startup",
+        "data": data,
+    }))
+
+    while True:
+        await asyncio.sleep(5)
+        await redis.publish(THE_HEADS_EVENTS, json.dumps({
+            "type": "active",
+            "data": data,
+        }))
+
+
+async def setup(app: web.Application, args, loop):
+    cfg = await get_config(args)
 
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
-    print("connecting to redis")
+    print("connecting to redis: {}:{}".format(redis_host, redis_port))
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
-    print("connected to redis")
+    print("connected to redis: {}:{}".format(redis_host, redis_port))
 
-    stepper = Stepper(cfg, redis_connection)
+    if cfg['head'].get('virtual', False):
+        motor = motors.FakeStepper()
+    else:
+        motor = motors.setup()
+
+    stepper = Stepper(cfg, redis_connection, motor)
     asyncio.ensure_future(stepper.redis_publisher())
 
     app['stepper'] = stepper
+    app['redis'] = redis_connection
 
     asyncio.ensure_future(stepper.seek(), loop=loop)
+
     return cfg
 
 
 async def home(request):
     cfg = request.app['cfg']
     stepper = request.app['stepper']
-    result = 'This is head "{}"\nPosition is {}'.format(cfg['head'], stepper.pos)
-    return web.Response(text=result)
+
+    lines = [
+        'This is head "{}"'.format(cfg['head']['name']),
+        'Position is {}'.format(stepper.pos),
+    ]
+
+    if cfg['head'].get('virtual', False):
+        lines.append("This is a virtual head")
+
+    return web.Response(text="\n".join(lines))
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Process some integers.')
+
+    parser.add_argument('instance', type=str,
+                        help='Instance name for this head')
+
+    parser.add_argument('--port', type=int, default=None,
+                        help='Port override')
+
+    parser.add_argument('--endpoint', type=str, default="http://127.0.0.1:8500",
+                        help='Config service endpoint')
+
+    args = parser.parse_args()
+
     loop = asyncio.get_event_loop()
     app = web.Application()
-    cfg = loop.run_until_complete(setup(app, loop))
+    cfg = loop.run_until_complete(setup(app, args, loop))
 
     app['cfg'] = cfg
 
@@ -166,7 +236,13 @@ def main():
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
     ])
-    web.run_app(app, port=STEPPERS_PORT)
+
+    asyncio.ensure_future(publish_active(
+        app['redis'],
+        cfg['head']['name'],
+    ))
+
+    web.run_app(app, port=cfg['port'])
 
 
 if __name__ == '__main__':

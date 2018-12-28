@@ -3,6 +3,7 @@ import platform
 from typing import Dict, List
 
 import aiohttp
+import yaml
 
 from const import DEFAULT_CONSUL_ENDPOINT
 
@@ -53,11 +54,10 @@ class Config:
         self._backend = backend
         self._params = {}
 
-    async def setup(self, installation_override=None):
-        hostname = platform.node()
-        self._params['hostname'] = hostname
+    async def setup(self, instance_name, installation_override=None):
+        self._params['instance'] = instance_name
         self._params['installation'] = installation_override or await self.get_config_str(
-            "/the-heads/machines/{hostname}/installation"
+            "/the-heads/assignment/{instance}"
         )
         return self
 
@@ -69,6 +69,15 @@ class Config:
         result = await self._backend.get_config_str(key)
 
         return result.decode().strip()
+
+    async def get_config_yaml(self, key_template: str) -> str:
+        key = key_template.format(**self._params)
+        assert key.endswith(".yaml")
+
+        print("config get -yaml", key)
+
+        result = await self._backend.get_config_str(key.encode())
+        return yaml.load(result)
 
     async def get_prefix(self, key_template: str) -> Dict[bytes, bytes]:
         key = key_template.format(**self._params).encode()

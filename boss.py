@@ -145,7 +145,7 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadMana
         msg = json.loads(reply.value)
 
         data = msg['data']
-        src = data.get('cameraName') or data['headName']
+        src = data.get('cameraName') or data.get('headName') or data['name']
 
         REDIS_MESSAGE_RECEIVED.labels(
             reply.channel,
@@ -245,7 +245,8 @@ async def task_handler(request):
 async def get_config(args):
     endpoint = ConsulBackend(args.config_endpoint)
     cfg = await Config(endpoint).setup(
-        installation_override=args.installation
+        instance_name="boss-00",
+        installation_override=args.installation,
     )
 
     resp, text = await endpoint.get_nodes_for_service("redis")

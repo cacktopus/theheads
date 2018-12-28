@@ -1,15 +1,14 @@
 import asyncio
-import platform
 
-from consul_config import ConsulBackend
-from const import DEFAULT_CONSUL_ENDPOINT
 import yaml
+
+from const import DEFAULT_CONSUL_ENDPOINT
+from consul_config import ConsulBackend
 
 INSTALLATION = "dev"
 
 
 async def main(inst_name: str):
-    hostname = platform.node()
     consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
 
     async def put(key: str, value: bytes):
@@ -17,45 +16,46 @@ async def main(inst_name: str):
         resp, _ = await consul_backend.put(key.encode(), value)
         assert resp.status == 200
 
-    await put(
-        "/the-heads/machines/{}/installation".format(hostname),
-        inst_name.encode()
-    )
+    async def setup_services():
+        with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
+            inst_data = yaml.safe_load(fp)
 
-    with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
-        inst_data = yaml.safe_load(fp)
+        for stand in inst_data['stands']:
+            for camera in stand['cameras']:
+                await put(
+                    "/the-heads/installation/{}/cameras/{}.yaml".format(inst_name, camera['name']),
+                    yaml.dump(camera, encoding='utf-8'),
+                )
 
-    for stand in inst_data['stands']:
-        for camera in stand['cameras']:
-            await put(
-                "/the-heads/installation/{}/cameras/{}.yaml".format(inst_name, camera['name']),
-                yaml.dump(camera, encoding='utf-8'),
-            )
+            for head in stand['heads']:
+                await put(
+                    "/the-heads/installation/{}/heads/{}.yaml".format(inst_name, head['name']),
+                    yaml.dump(head, encoding='utf-8'),
+                )
 
-        for head in stand['heads']:
-            await put(
-                "/the-heads/installation/{}/heads/{}.yaml".format(inst_name, head['name']),
-                yaml.dump(head, encoding='utf-8'),
-            )
+            stand['cameras'] = [x['name'] for x in stand['cameras']]
+            stand['heads'] = [x['name'] for x in stand['heads']]
+            key = "/the-heads/installation/{}/stands/{}.yaml".format(inst_name, stand['name'])
+            value = yaml.dump(stand, encoding='utf-8')
+            await put(key, value)
 
-        stand['cameras'] = [x['name'] for x in stand['cameras']]
-        stand['heads'] = [x['name'] for x in stand['heads']]
-        key = "/the-heads/installation/{}/stands/{}.yaml".format(inst_name, stand['name'])
-        value = yaml.dump(stand, encoding='utf-8')
-        await put(key, value)
+    async def setup_instances():
+        # heads
+        await consul_backend.register_service_with_agent("heads", 18080, ID="head0", tags=["head0"])
+        await put("/the-heads/assignment/head0", inst_name.encode())
 
-    # heads
-    await consul_backend.register_service_with_agent("heads", 8080, ID="head0", tags=["head0"])
-    await put(
-        "/the-heads/installation/{installation}/heads/{hostname}".format(
-            installation=inst_name,
-            hostname=hostname,
-        ),
-        b"head0",
-    )
+        await consul_backend.register_service_with_agent("heads", 18081, ID="head1", tags=["head1"])
+        await put("/the-heads/assignment/head1", inst_name.encode())
 
-    # redis
-    await consul_backend.register_service_with_agent("redis", 6379)
+        # redis
+        await consul_backend.register_service_with_agent("redis", 6379)
+
+        # boss
+        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-00", tags=["boss-00"])
+        await put("/the-heads/assignment/boss-00", inst_name.encode())
+
+    await setup_services()
+    await setup_instances()
 
 
 if __name__ == '__main__':
