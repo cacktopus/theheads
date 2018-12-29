@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import json
 import platform
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 
 import aiohttp
 import prometheus_client
@@ -81,20 +81,16 @@ async def handle(request):
     return web.Response(text=result, content_type="text/html")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--consul', type=str, default="127.0.0.1",
-                        help="ip of consul agent")
-
-    parser.add_argument('--port', type=int, default=80,
-                        help="port to run on")
-
-    args = parser.parse_args()
-
+async def setup(
+        port: int,
+        consul_host: Optional[str] = "127.0.0.1",
+):
     app = web.Application()
 
-    app['consul_host'] = args.consul
+    app['consul_host'] = consul_host
+    app['cfg'] = {
+        "port": port,
+    }
 
     jinja_env = Environment(
         loader=FileSystemLoader('templates'),
@@ -130,7 +126,29 @@ def main():
         web.get('/metrics', handle_metrics),
     ])
 
-    web.run_app(app, port=args.port)
+    return app
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--consul', type=str, default="127.0.0.1",
+                        help="ip of consul agent")
+
+    parser.add_argument('--port', type=int, default=80,
+                        help="port to run on")
+
+    args = parser.parse_args()
+
+    loop = asyncio.get_event_loop()
+
+    app = loop.run_until_complete(setup(
+        consul_host=args.consul,
+        port=args.port,
+    ))
+
+    loop.run_until_complete(util.run_app(app))
+    loop.run_forever()
 
 
 if __name__ == '__main__':
