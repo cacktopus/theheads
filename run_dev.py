@@ -1,5 +1,6 @@
 import asyncio
 
+import boss
 import head
 import util
 
@@ -7,10 +8,12 @@ import util
 async def run():
     app0 = await head.setup(instance="head0")
     app1 = await head.setup(instance="head1")
+    app2 = await boss.setup("dev", 8081)
 
     await asyncio.wait([
         util.run_app(app0),
         util.run_app(app1),
+        util.run_app(app2),
     ])
 
 

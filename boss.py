@@ -245,7 +245,8 @@ async def task_handler(request):
 
 async def get_config(
         installation: str,
-        config_endpoint: Optional[str] = None,
+        port: int,
+        config_endpoint: str,
 ):
     endpoint = ConsulBackend(config_endpoint)
     cfg = await Config(endpoint).setup(
@@ -261,7 +262,13 @@ async def get_config(
 
     assert len(redis_servers) > 0, "Need at least one redis server, for now"
 
-    result = dict(endpoint=config_endpoint, installation=cfg.installation, redis_servers=redis_servers, cfg=cfg, )
+    result = dict(
+        endpoint=config_endpoint,
+        installation=cfg.installation,
+        redis_servers=redis_servers,
+        cfg=cfg,
+        port=port,
+    )
 
     print("Using installation:", result['installation'])
     return result
@@ -304,15 +311,10 @@ def frontend_handler(*path_prefix):
 
 async def setup(
         installation: str,
-        config_endpoint: Optional[str] = "http://127.0.0.1:8500"
+        port: int,
+        config_endpoint: Optional[str] = "http://127.0.0.1:8500",
 ):
-    cfg = await get_config(installation, config_endpoint)
-
-    # lock = loop.run_until_complete(aquire_lock(cfg))
-    # lock_key = rpc_util.key(lock).decode()
-    #
-    # # TODO: we may not have the lock here
-    # print("obtained lock:", lock_key)
+    cfg = await get_config(installation, port, config_endpoint)
 
     app = web.Application()
     app['cfg'] = cfg
@@ -368,6 +370,7 @@ def main():
     app = loop.run_until_complete(setup(
         installation=args.installation,
         config_endpoint=args.config_endpoint,
+        port=args.port,
     ))
 
     loop.run_until_complete(util.run_app(app))
