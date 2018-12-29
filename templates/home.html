@@ -25,6 +25,7 @@
         </span>
         <span class="smaller">
             {{ node.ServicePort }} {{node.ServiceTags | join(", ")}}
+            (<a href="http://{{ node.Address }}:{{ node.ServicePort }}">ip</a>)
         </span>
     </li>
     {% endfor %}

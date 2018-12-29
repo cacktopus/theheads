@@ -85,12 +85,14 @@ async def handle(request):
 async def setup(
         port: int,
         consul_host: Optional[str] = "127.0.0.1",
+        use_IPs=False,
 ):
     app = web.Application()
 
     app['consul_host'] = consul_host
     app['cfg'] = {
         "port": port,
+        "use_ips": use_IPs,
     }
 
     jinja_env = Environment(
