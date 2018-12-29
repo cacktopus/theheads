@@ -91,6 +91,12 @@ function setup_websocket(ws_port, scene) {
                 console.log(data);
                 var head = scene.heads[data.headName];
                 head.rotate(data.rotation);
+            } else if (msg.type === "active") {
+                if (msg.data.component === "head") {
+                    var extra = msg.data.extra;
+                    var head = scene.heads[extra.headName];
+                    head.rotate(extra.rotation);
+                }
             }
         });
     }

@@ -160,6 +160,9 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadMana
         if msg['type'] == "head-positioned":
             await head_positioned(inst, ws_manager, hm, msg)
 
+        if msg['type'] == "active":
+            ws_manager.send(msg)
+
 
 async def html_handler(request):
     filename = request.match_info.get('name') + ".html"
