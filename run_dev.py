@@ -1,6 +1,7 @@
 import asyncio
 
 import head
+import util
 
 
 async def run():
@@ -8,8 +9,8 @@ async def run():
     app1 = await head.setup(instance="head1")
 
     await asyncio.wait([
-        head.run_app(app0),
-        head.run_app(app1),
+        util.run_app(app0),
+        util.run_app(app1),
     ])
 
 

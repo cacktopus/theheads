@@ -11,6 +11,7 @@ import motors
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend, ConfigError
 from health import health_check
+from util import run_app
 
 STEPPERS_PORT = 8080
 NUM_STEPS = 200
@@ -234,14 +235,6 @@ async def home(request):
         lines.append("This is a virtual head")
 
     return web.Response(text="\n".join(lines))
-
-
-async def run_app(app: web.Application):
-    port = app['cfg']['port']
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, port=port)
-    await site.start()
 
 
 def main():

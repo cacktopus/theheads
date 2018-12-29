@@ -4,13 +4,14 @@ import math
 import os
 import platform
 from string import Template
-from typing import Dict
+from typing import Dict, Optional
 
 import asyncio_redis
 import prometheus_client
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+import util
 import ws
 from config import THE_HEADS_EVENTS, get_args, Config
 from consul_config import ConsulBackend
@@ -242,11 +243,14 @@ async def task_handler(request):
     return web.Response(text="\n\n".join(text), content_type="text/plain")
 
 
-async def get_config(args):
-    endpoint = ConsulBackend(args.config_endpoint)
+async def get_config(
+        installation: str,
+        config_endpoint: Optional[str] = None,
+):
+    endpoint = ConsulBackend(config_endpoint)
     cfg = await Config(endpoint).setup(
         instance_name="boss-00",
-        installation_override=args.installation,
+        installation_override=installation,
     )
 
     resp, text = await endpoint.get_nodes_for_service("redis")
@@ -257,7 +261,7 @@ async def get_config(args):
 
     assert len(redis_servers) > 0, "Need at least one redis server, for now"
 
-    result = dict(endpoint=args.config_endpoint, installation=cfg.installation, redis_servers=redis_servers, cfg=cfg, )
+    result = dict(endpoint=config_endpoint, installation=cfg.installation, redis_servers=redis_servers, cfg=cfg, )
 
     print("Using installation:", result['installation'])
     return result
@@ -298,10 +302,11 @@ def frontend_handler(*path_prefix):
     return handler
 
 
-def main():
-    loop = asyncio.get_event_loop()
-    args = get_args()
-    cfg = loop.run_until_complete(get_config(args))
+async def setup(
+        installation: str,
+        config_endpoint: Optional[str] = "http://127.0.0.1:8500"
+):
+    cfg = await get_config(installation, config_endpoint)
 
     # lock = loop.run_until_complete(aquire_lock(cfg))
     # lock_key = rpc_util.key(lock).decode()
@@ -323,6 +328,12 @@ def main():
 
     asyncio.ensure_future(the_grid.decay())
 
+    json_inst = await build_installation(cfg['installation'], cfg['cfg'])
+    inst = Installation.unmarshal(json_inst)
+
+    app['inst'] = inst
+    hm = HeadManager()
+
     app.add_routes([
         web.get('/', home),
         web.get('/health', health_check),
@@ -343,18 +354,24 @@ def main():
         web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
     ])
 
+    for redis in cfg['redis_servers']:
+        asyncio.ensure_future(run_redis(redis, ws_manager, inst, hm))
+
+    return app
+
+
+def main():
+    args = get_args()
+
     loop = asyncio.get_event_loop()
 
-    json_inst = loop.run_until_complete(build_installation(cfg['installation'], cfg['cfg']))
-    inst = Installation.unmarshal(json_inst)
-    app['inst'] = inst
+    app = loop.run_until_complete(setup(
+        installation=args.installation,
+        config_endpoint=args.config_endpoint,
+    ))
 
-    hm = HeadManager()
-
-    for redis in cfg['redis_servers']:
-        asyncio.ensure_future(run_redis(redis, ws_manager, inst, hm), loop=loop)
-
-    web.run_app(app, port=args.port)
+    loop.run_until_complete(util.run_app(app))
+    loop.run_forever()
 
 
 if __name__ == '__main__':
