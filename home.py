@@ -19,6 +19,7 @@ CONSUL_PORT = 8500
 
 
 async def get(url: str) -> Tuple[int, Dict]:
+    print(url)
     async with aiohttp.ClientSession() as session:
         async with session.get(url=url) as response:
             resp = await response.text()

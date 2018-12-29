@@ -41,18 +41,24 @@ async def main(inst_name: str):
 
     async def setup_instances():
         # heads
-        await consul_backend.register_service_with_agent("heads", 18080, ID="head0", tags=["head0"])
+        await consul_backend.register_service_with_agent("heads", 18080, ID="head0", tags=["head0", "frontend"])
         await put("/the-heads/assignment/head0", inst_name.encode())
 
-        await consul_backend.register_service_with_agent("heads", 18081, ID="head1", tags=["head1"])
+        await consul_backend.register_service_with_agent("heads", 18081, ID="head1", tags=["head1", "frontend"])
         await put("/the-heads/assignment/head1", inst_name.encode())
 
         # redis
         await consul_backend.register_service_with_agent("redis", 6379)
 
         # boss
-        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-00", tags=["boss-00"])
+        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-00", tags=["boss-00", "frontend"])
         await put("/the-heads/assignment/boss-00", inst_name.encode())
+
+        # consul-fe
+        await consul_backend.register_service_with_agent("consul-fe", 8500, tags=["frontend"])
+
+        # home
+        await consul_backend.register_service_with_agent("home", 8500, tags=["frontend"])
 
     await setup_services()
     await setup_instances()
