@@ -1,9 +1,11 @@
 import asyncio
+import json
 from typing import Dict
 
 import aiohttp
 from aiohttp import web
 
+from head_manager import HeadManager
 from installation import Installation
 
 
@@ -12,11 +14,12 @@ class Closed:
 
 
 class WebsocketConnection:
-    def __init__(self, inst: Installation):
+    def __init__(self, inst: Installation, head_manager: HeadManager):
         self._ws = None
         self._send_queue = asyncio.Queue()
         self._send_stuff_coro = asyncio.ensure_future(self._send_loop())
         self._inst = inst
+        self._head_manager = head_manager
 
     async def handle(self, request):
         print("Websocket connect")
@@ -34,7 +37,14 @@ class WebsocketConnection:
                 if msg.data == 'close':
                     await self._ws.close()
                 else:
-                    await self._ws.send_str(msg.data + '/answer')
+                    payload = json.loads(msg.data)
+                    if payload['type'] == 'head-rotation':
+                        data = payload['data']
+                        self._head_manager.send(
+                            head_name=data['headName'],
+                            rotation=data['rotation'],
+                        )
+
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       self._ws.exception())
@@ -79,7 +89,7 @@ class WebsocketManager:
         self._clients = set()
 
     async def websocket_handler(self, request):
-        conn = WebsocketConnection(request.app['inst'])
+        conn = WebsocketConnection(request.app['inst'], request.app['head_manager'])
         self._clients.add(conn)
         ws = await conn.handle(request)
         self._clients.remove(conn)

@@ -339,6 +339,8 @@ async def setup(
     app['inst'] = inst
     hm = HeadManager()
 
+    app['head_manager'] = hm
+
     app.add_routes([
         web.get('/', home),
         web.get('/health', health_check),
