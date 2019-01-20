@@ -3,6 +3,9 @@ re-seed
 
 Consul URL: http://localhost:8500
 
+This is somehow related:
+http://127.0.0.1:18080/?fbclid=IwAR0cJ2wKUDhZocJ-RP6LdrRvbSXzScKz4qTPgGfNVqRzMVOZN9x4JmWn9LQ
+
 to connect to consul:
 ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1
 
