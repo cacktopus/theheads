@@ -32,6 +32,9 @@ In another window, run:
 
     redis-server
 
+You can view the redis monitor with:
+    redis-cli monitor
+
 ### Install consul
 
 Download consul from https://www.consul.io/downloads.html, verify the checksums, and unzip.
@@ -50,17 +53,23 @@ You can browse the ui at http://localhost:8500.
     # get javascript library 
     curl -O https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.js
 
-    python boss.py
+    python run_dev.py
+
+    (previously: python boss.py)
     
-Open http://localhost:8081 in your browser window.
+Open http://localhost:8000 in your browser window.
+For Boss: Open http://localhost:8081 in your browser window.
 
 ### Simulate motion detected:
     Connect to tunnel: 
     ssh-add -t 72000
     ssh-add -K ~/.ssh/id_rsa
     ssh-add -t 72000 $HOME/.ssh/ajcom
+
+    To connect to tunnel:
     ssh -J tunnel@192.241.228.33 127.0.0.1 -p 2212 -l jenkins -D 1080
 
+    In Firefox: settings search for proxy. do proxy setup for manual.
     Then can visit in firefox: boss.service.consul:8081
 
     redis-cli publish the-heads-events '{"type":"motion-detected","installation":"office","data":{"cameraName":"camera0","position":17}}'
