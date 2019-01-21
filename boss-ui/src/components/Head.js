@@ -43,7 +43,6 @@ export default class Menu extends React.Component {
 
     // Rotate
     handleRotateStart(e, a) {
-        console.log("hrot str", e, a);
         this.props.headRotateStart();
     }
 
@@ -61,9 +60,7 @@ export default class Menu extends React.Component {
     }
 
     handleRotateStop(e, a) {
-        console.log("hrot stoppp", e, a);
         this.props.headRotateStop();
-        // console.log("hrlt stop", e, a);
     }
 
     render() {
@@ -78,25 +75,27 @@ export default class Menu extends React.Component {
         rot = isNaN(rot) ? 0 : rot;
         rot = decodeRot(rot);
 
+        let vRot = head.get("vRot");
+        vRot = isNaN(vRot) ? 0 : vRot;
+        vRot = decodeRot(vRot);
+
         const selectedStandIndex = this.props.menu.get("selectedStandIndex");
         const selectedHeadIndex = this.props.menu.get("selectedHeadIndex");
 
         const isSelected = selectedStandIndex === this.props.standIndex && selectedHeadIndex === this.props.headIndex;
 
-        // const standStyle = {transform:`translate(${stand.pos.x}px, ${stand.pos.y}px)`}
-        // console.log('ren');
-
-        // try {
-        //     pos = stand.get("pos");
-        // } catch(e) {}
-
         const areRotatesHidden = this.props.menu.get("areRotatesHidden");
 
         return (
-            <div className={cn("Head", { "Head--selected": isSelected })}>
+            <div className={cn("Head noselect", { "Head--selected": isSelected })}>
                 <div className="Head-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                     <div className="Head-container">
                         <img alt="head" className="Head-img" src="./media/head-arrow.png" draggable="false" />
+                    </div>
+                </div>
+                <div className="Head-rotateContainer" style={{ transform: `rotate(${vRot}deg)` }}>
+                    <div className="Head-container">
+                        {/* <img alt="head" className="Head-img" src="./media/head-arrow.png" draggable="false" /> */}
 
                         {areRotatesHidden ? null :
                             <div className="Head-rotate noselect">

@@ -246,6 +246,9 @@ body {
 }
 
 .Head-rotateContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
   border-radius: 50%;
   border: 1px solid #840d00;
 }

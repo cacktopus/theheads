@@ -45,7 +45,6 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     headRotateStart: () => dispatch(headRotateStartByIndex(ownProps.standIndex, ownProps.index)),
     headRotateStop: () => dispatch(headRotateStopByIndex(ownProps.standIndex, ownProps.index)),
     headRotate: (rot) => {
-        window.c_HH = { ownProps, rot };
         dispatch(headRotateByIndex(ownProps.standIndex, ownProps.headIndex, rot));
 
         const websocketPayload = {

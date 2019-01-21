@@ -21,7 +21,8 @@ const defaultHead = {
         "x": 0,
         "y": 0
     },
-    "rot": 0 
+    "rot": 0 ,
+    "vRot": 0 // Virtual rotation (i.e. the manual rotation of the head)
 };
 
 const createNewCamera = ({
@@ -111,6 +112,7 @@ const getStandIndexFromHeadName = (state, headName) => {
 const processWebsocketData = (state, payloadDataChunk) => {
     let { type, data } = payloadDataChunk;
     let headName, heads, standIndex, headIndex, rotation;
+    let newState = state;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
 
     switch (type) {
@@ -141,15 +143,14 @@ const processWebsocketData = (state, payloadDataChunk) => {
                 // Convert position (0-200) to degrees (0 - 360)
                 // rotation = 360 * position / 200;
 
-                // 
-                // processWebsocketDatap_p
+                newState = state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
 
-                // If the head isn't manually moving
-                if (!state.getIn([standIndex, "isManualHeadMove"])) {
-                    return state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
+                // If the head isn't manually moving, do not move the virtual rotation of the head.
+                if (!newState.getIn([standIndex, "isManualHeadMove"])) {
+                    return newState.setIn([standIndex, "heads", headIndex, "vRot"], rotation);
                 } else {
                     // Ignore the messages if head is manually being rotated within the UI
-                    return state;
+                    return newState;
                 }
             }
     // case 'HEAD_ROTATE_STOP_BY_INDEX':
@@ -207,7 +208,9 @@ const stands = (state = fromJS([]), action) => {
         case 'HEAD_MOVE_BY_INDEX':
             return state.setIn([action.standIndex, "heads", action.headIndex, "pos"], fromJS(action.pos));
         case 'HEAD_ROTATE_BY_INDEX':
-            return state.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
+            return state.setIn([action.standIndex, "heads", action.headIndex, "vRot"], fromJS(action.rot));
+            // newState = state.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
+            // return newState.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
         case 'HEAD_ROTATE_START_BY_INDEX':
             return state.setIn([action.standIndex, "isManualHeadMove"], true);
         case 'HEAD_ROTATE_STOP_BY_INDEX':
