@@ -1,3 +1,7 @@
+To make things send message to heads:
+http://127.0.0.1:18080/rotation/180?fbclid=IwAR23AsoWASl0pXT4zFsUiHKJznlHLRwtxXA5aDFdpJSs28JtEETqNHJDPvE
+
+
 activate
 re-seed
 
