@@ -111,6 +111,7 @@ export default class Menu extends React.Component {
     render() {
         window.c_STN = this;
         const stand = this.props.stand;
+        const isActive = stand.get("isActive");
         // let pos = {x: 0, y:0};
         let pos = decodePos(this.props.menu, stand.get("pos").toJS());
 
@@ -173,7 +174,7 @@ export default class Menu extends React.Component {
                     // onMouseDown= (e= MouseEvent) => void
                 > */}
 
-                <div className={cn("Stand", { "Stand--selected": isSelected })} onClick={this.props.standSelect}>
+                <div className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.props.standSelect}>
                     {popupInfo}
                     <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                         <div className="Stand-container">

@@ -1,6 +1,8 @@
 import {fromJS} from "immutable";
 import { setCookie, getCookie } from '../helpers';
-import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
+import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED } from "@giantmachines/redux-websocket";
+// NOTE: WEBSOCKET_MESSAGE is dealt within ../middleware/index.js
+// ... which in turn handles the message and dispatches a specific type of dispatch message
 
 const scale = getCookie("menu-scale");
 const translateX = getCookie("menu-translateX");
@@ -63,10 +65,6 @@ const stands = (state = fromJS(initialState), action) => {
             return state.set("websocketStatus", "open");
         case WEBSOCKET_CLOSED:
             return state.set("websocketStatus", undefined);
-        // case WEBSOCKET_MESSAGE:
-        //     // NOTE: WEBSOCKET_MESSAGE should probably be dealt with in the websocket middleware...
-        //     // ... which in turn handles the message and dispatches a specific type of dispatch message
-        //     return state;
         default:
             return state;
     }

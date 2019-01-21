@@ -43,7 +43,8 @@ export default class Menu extends React.Component {
 
     // Rotate
     handleRotateStart(e, a) {
-        // console.log("hrot str", e, a);
+        console.log("hrot str", e, a);
+        this.props.headRotateStart();
     }
 
     handleRotateDrag(e, a) {
@@ -60,6 +61,8 @@ export default class Menu extends React.Component {
     }
 
     handleRotateStop(e, a) {
+        console.log("hrot stoppp", e, a);
+        this.props.headRotateStop();
         // console.log("hrlt stop", e, a);
     }
 

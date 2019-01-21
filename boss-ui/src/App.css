@@ -73,11 +73,17 @@ body {
 /* Stand */
 .Stand {
   position: absolute;
+  opacity: 0.25;
+
   /* width: 100px;
   height: 100px;
   transform: translate(0px,0px);
   border: 1px solid black;
   background : grey; */
+}
+
+.Stand--active {
+  opacity: 1;
 }
 
 .Stand--selected {

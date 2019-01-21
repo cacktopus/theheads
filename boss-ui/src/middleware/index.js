@@ -1,5 +1,9 @@
-import { motionLinesAddLine, motionLinesRemoveLine } from "../actions";
+import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive } from "../actions";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
+
+
+// This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
+let timeoutSetActive = {};
 
 export const customWebsocketMiddleware = store => next => action => {
     if (action.type === WEBSOCKET_MESSAGE) {
@@ -30,6 +34,23 @@ export const customWebsocketMiddleware = store => next => action => {
                                 lineId
                             }));
                         }, 1500); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
+                        break;
+                    case "active":
+                        try {
+                            var headName = payloadDataChunk.data.name
+                        
+                            // Send message that the head is active.
+                            store.dispatch(standSetIsActive(headName));
+
+                            clearTimeout(timeoutSetActive[headName]);
+
+                            var setToNotActiveAfterDur = 10 * 1000; // e.g. 10 seconds
+
+                            timeoutSetActive[headName] = setTimeout(() => {
+                                store.dispatch(standSetIsNotActive(headName));
+                            },setToNotActiveAfterDur);
+                        } catch(e) {}
+
                         break;
                     default:
                         break;

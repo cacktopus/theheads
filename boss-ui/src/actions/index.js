@@ -16,7 +16,7 @@ export const websocketDisconnect = () => {
 }
 
 export const websocketSend = (payload) => {
-    console.log('WEBSOCK SEND', payload);
+    // console.log('WEBSOCK SEND', payload);
     return {
         type: WEBSOCKET_SEND,
         payload: payload
@@ -120,6 +120,16 @@ export const standRemoveByIndex = index => ({
     index
 })
 
+export const standSetIsActive = (headName) => ({
+    type: 'STAND_SET_IS_ACTIVE',
+    headName
+})
+
+export const standSetIsNotActive = (headName) => ({
+    type: 'STAND_SET_IS_NOT_ACTIVE',
+    headName
+})
+
 // HEAD
 export const headMoveByIndex = (standIndex, headIndex, pos) => ({
     type: 'HEAD_MOVE_BY_INDEX',
@@ -133,6 +143,17 @@ export const headRotateByIndex = (standIndex, headIndex, rot) => ({
     standIndex,
     headIndex,
     rot
+})
+
+export const headRotateStartByIndex = (standIndex, headIndex) => ({
+    type: 'HEAD_ROTATE_START_BY_INDEX',
+    standIndex,
+    headIndex
+})
+export const headRotateStopByIndex = (standIndex, headIndex) => ({
+    type: 'HEAD_ROTATE_STOP_BY_INDEX',
+    standIndex,
+    headIndex
 })
 
 // CAMERA
