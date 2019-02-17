@@ -1,6 +1,7 @@
 import React from 'react'
 import cn from 'classnames'
-import {encodeRot, decodeRot, encodePos, decodePos} from '../helpers';
+import {decodePos} from '../helpers';
+// import {encodeRot, decodeRot, encodePos, decodePos} from '../helpers';
 
 const lineStyle = (x1, y1, x2, y2, startFade) => {
     const distance = Math.sqrt(((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)));

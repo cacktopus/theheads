@@ -1,13 +1,14 @@
 import React from 'react';
 //import Cameras from '../containers/Cameras'
 // import Draggable from 'react-draggable'; 
-import { DraggableCore } from 'react-draggable';
+// // -> Needed? import { DraggableCore } from 'react-draggable';
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 // import Stand from '../containers/Stand';
 import { rotateVector } from '../helpers';
-import cn from "classnames";
+// import cn from "classnames";
 
-import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
+import {decodeRot, encodePosScale, decodePosScale} from '../helpers';
+// import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
 
 export default class Popup extends React.Component {
     constructor(props) {
@@ -93,7 +94,7 @@ export default class Popup extends React.Component {
     }
 
     render() {
-        let pos = this.getCurrentPos();
+        // let pos = this.getCurrentPos();
 
         return (
             <div className="PopupInfo">

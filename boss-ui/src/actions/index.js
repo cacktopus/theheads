@@ -55,10 +55,20 @@ export const menuToggleHideRotates = () => ({
 export function sceneFetchFromUrl(sceneUrl) {
     return dispatch => {
         // dispatch(requestPosts(subreddit))
-        console.log('fetching');
         return fetch(sceneUrl)
             .then(response => response.json())
-            .then(json => dispatch(standSetScene(json)))
+            .then(json => {
+                if (typeof json === "object") {
+                    if (json.scale) {
+                        dispatch(menuSetScale(json.scale));
+                    } 
+                    if (json.translate && json.translate.x && json.translate.y) {
+                        dispatch(menuSetTranslateX(json.translate.x));
+                        dispatch(menuSetTranslateY(json.translate.y));
+                    }
+                }
+                dispatch(standSetScene(json))
+            })
             .catch(e => console.log(e))
     }
 }
