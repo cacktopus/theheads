@@ -38,14 +38,14 @@ console.log("FIguRE OUT THE DECODE / ENCODE... in progress with... ");
 
 export const encodePos = (menu, pos) => {
     const scaleVal = menu.get("scale");
-    const translateX = parseFloat(menu.getIn(["translate","x"]));
-    const translateY = parseFloat(menu.getIn(["translate","y"]));
+    const translateX = parseFloat(menu.getIn(["translate", "x"]));
+    const translateY = parseFloat(menu.getIn(["translate", "y"]));
 
     let matrix = compose(
-        
-        scale(1/scaleVal, -1/scaleVal),
+
+        scale(1 / scaleVal, -1 / scaleVal),
         // rotate(Math.PI/2),
-        translate(-1*translateX, -1*translateY),
+        translate(-1 * translateX, -1 * translateY),
     );
 
     const newPos = applyToPoint(matrix, pos);
@@ -55,13 +55,13 @@ export const encodePos = (menu, pos) => {
 
 export const decodePos = (menu, pos) => {
     const scaleVal = menu.get("scale");
-    const translateX = parseFloat(menu.getIn(["translate","x"]));
-    const translateY = parseFloat(menu.getIn(["translate","y"]));
+    const translateX = parseFloat(menu.getIn(["translate", "x"]));
+    const translateY = parseFloat(menu.getIn(["translate", "y"]));
 
     let matrix = compose(
         translate(translateX, translateY),
         // rotate(-1*Math.PI/2),
-        scale(scaleVal, -1*scaleVal)
+        scale(scaleVal, -1 * scaleVal)
     );
 
     const newPos = applyToPoint(matrix, pos);
@@ -73,7 +73,7 @@ export const encodePosScale = (menu, pos) => {
     const scaleVal = menu.get("scale");
 
     let matrix = compose(
-        scale(scaleVal, -1*scaleVal)
+        scale(scaleVal, -1 * scaleVal)
     );
 
     const newPos = applyToPoint(matrix, pos);
@@ -85,7 +85,7 @@ export const decodePosScale = (menu, pos) => {
     const scaleVal = menu.get("scale");
 
     let matrix = compose(
-        scale(1/scaleVal, -1/scaleVal)
+        scale(1 / scaleVal, -1 / scaleVal)
     );
 
     const newPos = applyToPoint(matrix, pos);
@@ -102,25 +102,31 @@ export const decodeRot = (rot) => {
 }
 
 // Cookies
-export const setCookie = (name,value,days) => {
+export const setCookie = (name, value, days) => {
     var expires = "";
     if (days) {
         var date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
         expires = "; expires=" + date.toUTCString();
     }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 export const getCookie = (name) => {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
+    for (var i = 0; i < ca.length; i++) {
         var c = ca[i];
-        while (c.charAt(0)===' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length,c.length);
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
     }
     return null;
 }
-export const eraseCookie = (name) => {   
-    document.cookie = name+'=; Max-Age=-99999999;';  
+export const eraseCookie = (name) => {
+    document.cookie = name + '=; Max-Age=-99999999;';
+}
+
+export const noTouchMove = (elem) => {
+    elem.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+    }, false);
 }

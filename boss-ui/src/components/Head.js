@@ -6,7 +6,7 @@ import { DraggableCore } from 'react-draggable';
 // import Stand from '../containers/Stand';
 import cn from "classnames";
 
-import {encodeRot, decodeRot } from '../helpers';
+import {encodeRot, decodeRot, noTouchMove} from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -20,6 +20,13 @@ export default class Menu extends React.Component {
         this.handleRotateStart = this.handleRotateStart.bind(this);
         this.handleRotateDrag = this.handleRotateDrag.bind(this);
         this.handleRotateStop = this.handleRotateStop.bind(this);
+
+        // Refs
+        this.refHeadRotateHandle = React.createRef();
+    }
+
+    componentDidMount() {
+        noTouchMove(this.refHeadRotateHandle.current);
     }
     /*
         // Move
@@ -43,10 +50,12 @@ export default class Menu extends React.Component {
 
     // Rotate
     handleRotateStart(e, a) {
+        e.preventDefault();
         this.props.headRotateStart();
     }
 
     handleRotateDrag(e, a) {
+        e.preventDefault();
         const { x, y } = a;
         var rad = Math.atan2(y, x); // In radians
         // Then you can convert it to degrees as easy as:
@@ -60,11 +69,11 @@ export default class Menu extends React.Component {
     }
 
     handleRotateStop(e, a) {
+        e.preventDefault();
         this.props.headRotateStop();
     }
 
     render() {
-        window.c_STN = this;
         const head = this.props.head;
 
         // let pos = stand.get("pos").toJS();
@@ -113,7 +122,7 @@ export default class Menu extends React.Component {
                                     onStop={this.handleRotateStop}
                                 // onMouseDown= (e= MouseEvent) => void
                                 >
-                                    <div className="Head-rotate-handle"></div>
+                                    <div ref={this.refHeadRotateHandle} className="Head-rotate-handle"></div>
                                 </DraggableCore>
                             </div>
                         }

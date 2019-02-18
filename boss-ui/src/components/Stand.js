@@ -8,7 +8,7 @@ import Heads from './Heads';
 import Cameras from './Cameras';
 import PopupInfo from '../containers/PopupInfo';
 
-import {encodeRot, decodeRot, encodePos, decodePos} from '../helpers';
+import {encodeRot, decodeRot, encodePos, decodePos, noTouchMove} from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -37,6 +37,15 @@ export default class Menu extends React.Component {
         // this.handleMoveDragLeave = this.handleMoveDragLeave.bind(this);
         // this.handleMoveDragOver = this.handleMoveDragOver.bind(this);
         // this.handleMoveDragStart = this.handleMoveDragStart.bind(this);
+
+        // Refs
+        this.refStandRotateHandle = React.createRef();
+        this.refStandMoveHandle = React.createRef();
+    }
+
+    componentDidMount() {
+        noTouchMove(this.refStandRotateHandle.current);
+        noTouchMove(this.refStandMoveHandle.current);
     }
 
     // handleMoveDrag = {this.handleMoveDrag}
@@ -148,6 +157,10 @@ export default class Menu extends React.Component {
         }
 
         const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+        const standName = stand.get("name");
+
+        const StandRotateHandle = <div>jim</div>;//<NoTouchMove className=""><div>Hi</div>></NoTouchMove>
+        // const StandRotateHandle = noTouchMove(<div/>);
 
         return (
             <Draggable
@@ -174,7 +187,7 @@ export default class Menu extends React.Component {
                     // onMouseDown= (e= MouseEvent) => void
                 > */}
 
-                <div className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.props.standSelect}>
+                <div ref={this.refStand} id={`Stand-${standName}`} className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.props.standSelect}>
                     {popupInfo}
                     <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                         <div className="Stand-container">
@@ -187,9 +200,9 @@ export default class Menu extends React.Component {
                             <div className="Stand-remove noselect" onClick={this.props.standRemove}>
                                 X
                                 </div>
-                            <div className="Stand-move noselect">
+                            <div ref={this.refStandMoveHandle} className="Stand-move noselect">
                                 Move
-                                </div>
+                            </div>
                             <div className="Stand-info noselect" onClick={this.togglePopupInfo}>
                                 Info
                             </div>
@@ -210,7 +223,7 @@ export default class Menu extends React.Component {
                                         onStop={this.handleRotateStop}
                                     // onMouseDown= (e= MouseEvent) => void
                                     >
-                                        <div className="Stand-rotate-handle"></div>
+                                        <div ref={this.refStandRotateHandle} className="Stand-rotate-handle"/>
                                     </DraggableCore>
                                 </div>
                             }

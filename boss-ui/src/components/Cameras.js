@@ -12,7 +12,6 @@ export default class Menu extends React.Component {
     }
 
     render() {
-        window.c_HEADS = this;
         const cameras = this.props.cameras;
 
         return (

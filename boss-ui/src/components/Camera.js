@@ -7,7 +7,7 @@ import { DraggableCore } from 'react-draggable';
 import { rotateVector } from '../helpers';
 import cn from "classnames";
 
-import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
+import {encodeRot, decodeRot, encodePosScale, decodePosScale, noTouchMove} from '../helpers';
 
 export default class Camera extends React.Component {
     constructor(props) {
@@ -26,6 +26,13 @@ export default class Camera extends React.Component {
         this.handleRotateStart = this.handleRotateStart.bind(this);
         this.handleRotateDrag = this.handleRotateDrag.bind(this);
         this.handleRotateStop = this.handleRotateStop.bind(this);
+
+        // Refs
+        this.refCameraRotateHandle = React.createRef();
+    }
+
+    componentDidMount() {
+        noTouchMove(this.refCameraRotateHandle.current);
     }
 
     // Move
@@ -87,7 +94,6 @@ export default class Camera extends React.Component {
     }
 
     render() {
-        window.c_CAM = this;
         const camera = this.props.camera;
 
         let pos = this.getCurrentPos();
@@ -123,7 +129,7 @@ export default class Camera extends React.Component {
             pointerEvents: "none" // https://stackoverflow.com/questions/3680429/click-through-a-div-to-underlying-elements
         }
 
-        window.c_fov = {fovHeight, fovLength, fov, fovStyle};
+        // window.c_fov = {fovHeight, fovLength, fov, fovStyle};
 
         const areRotatesHidden = this.props.menu.get("areRotatesHidden");
 
@@ -161,7 +167,7 @@ export default class Camera extends React.Component {
                                             onStop={this.handleRotateStop}
                                         // onMouseDown= (e= MouseEvent) => void
                                         >
-                                            <div className="Camera-rotate-handle"></div>
+                                            <div ref={this.refCameraRotateHandle} className="Camera-rotate-handle"></div>
                                         </DraggableCore>
                                     </div>
                             }
