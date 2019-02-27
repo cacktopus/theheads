@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
 	"periph.io/x/periph/host"
+	"time"
 )
 
 var ibits = [4]uint{3, 2, 1, 0}
@@ -14,13 +16,13 @@ func send(data []byte) []byte {
 	var result []byte = nil
 
 	/*
-		   for rgb in data:
-	        for b in rgb:
-	            for ibit in range(3,-1,-1):
-	                #print ibit, b, ((b>>(2*ibit+1))&1), ((b>>(2*ibit+0))&1), [hex(v) for v in tx]
-	                tx.append(((b>>(2*ibit+1))&1)*0x60 +
-	                          ((b>>(2*ibit+0))&1)*0x06 +
-	                          0x88)
+			   for rgb in data:
+		        for b in rgb:
+		            for ibit in range(3,-1,-1):
+		                #print ibit, b, ((b>>(2*ibit+1))&1), ((b>>(2*ibit+0))&1), [hex(v) for v in tx]
+		                tx.append(((b>>(2*ibit+1))&1)*0x60 +
+		                          ((b>>(2*ibit+0))&1)*0x06 +
+		                          0x88)
 	*/
 
 	for _, b := range data {
@@ -52,13 +54,21 @@ func main() {
 	}
 
 	// Write 0x10 to the device, and read a byte right after.
-	write := send([]byte{
-		0x00,
-		0x00,
-		0x00,
-	})
-	read := make([]byte, len(write))
-	if err := c.Tx(write, read); err != nil {
-		log.Fatal(err)
+	write := make([]byte, 80*3)
+
+	for {
+		rand.Read(write)
+
+		for pos := range write {
+			write[pos] /= 32
+		}
+
+		use := send(write)
+		read := make([]byte, len(use))
+		if err := c.Tx(use, read); err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(time.Millisecond * 30)
 	}
 }
