@@ -10,12 +10,19 @@ from aiohttp import web
 from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 import health
+import read_temperature
 import util
 from journald_tail import run_journalctl
 from metrics import handle_metrics
 from voltage_monitor import monitor_voltage
 
 CONSUL_PORT = 8500
+
+TEMPERATURE = prometheus_client.Gauge(
+    "rpi_cpu_temp_degrees",
+    "Raspberry PI CPU temperature in degrees",
+    ["zone"],
+)
 
 
 async def get(url: str) -> Tuple[int, Dict]:
@@ -122,6 +129,8 @@ async def setup(
             lambda x: journald_logged.inc(),
             lambda x: None,
         ))
+
+        asyncio.ensure_future(read_temperature.monitor_temperatures(TEMPERATURE))
 
     app.add_routes([
         web.get('/', handle),
