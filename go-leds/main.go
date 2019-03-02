@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"log"
+	"math"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
@@ -14,8 +15,14 @@ import (
 var ibits = [4]uint{3, 2, 1, 0}
 
 const (
-	numLeds       = 80
-	maxBrightness = 0.33
+	numLeds       = 69
+	maxBrightness = 0.05
+	startLed      = 8
+
+	meter = 1.0
+	inch  = 0.0254 * meter
+
+	ledRingRadius = (15.0/2 - 1) * inch
 )
 
 func adaptForSpi(data []byte) []byte {
@@ -81,9 +88,22 @@ func main() {
 	}
 
 	leds := make([]led, numLeds)
+	positions := make([]Vec2, numLeds)
+
+	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
+		N := (numLeds - startLed) - 1
+		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
+		u := Vec2{math.Cos(theta), math.Sin(theta)}
+		u = u.Scale(ledRingRadius)
+		positions[i] = u
+		fmt.Println(n, theta, N, u)
+	}
+
+	// reset state. TODO: gradually turn this to zero.
+	send(c, leds)
 
 	for t := 0; ; t++ {
-		for i := 0; i < numLeds; i++ {
+		for i := startLed; i < numLeds; i++ {
 			leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+000)*0.01, float64(t)*0.003))
 			leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003))
 			leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003))
@@ -93,7 +113,7 @@ func main() {
 
 		time.Sleep(time.Millisecond * 30)
 		if t%10 == 0 {
-			fmt.Println(leds[0])
+			fmt.Println(leds[numLeds/2])
 		}
 	}
 }
