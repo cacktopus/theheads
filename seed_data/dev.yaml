@@ -1,6 +1,8 @@
 name: dev
 stands:
-- cameras:
+
+- name: stand-00
+  cameras:
   - description: Raspberry Pi PiNoir Camera V2 Video Module
     fov: 64.33
     name: camera0
@@ -10,10 +12,13 @@ stands:
   - name: vhead-00
     pos: {x: 0, y: 0}
     rot: 0
-  name: stand0
-  pos: {x: -0.75, y: 0}
+  pos: {x: 0, y: 0}
   rot: -90
-- cameras:
+
+- name: stand-01
+  pos: {x: 2, y: 0}
+  rot: -90
+  cameras:
   - description: Raspberry Pi PiNoir Camera V2 Video Module
     fov: 64.33
     name: camera1
@@ -23,17 +28,75 @@ stands:
   - name: vhead-01
     pos: {x: 0, y: 0}
     rot: 0
-  name: stand1
-  pos: {x: 0.75, y: 0}
+
+- name: stand-02
+  pos: {x: 4, y: 0}
   rot: -90
-- cameras:
-  - description: Mac built-in
-    fov: 60
-    name: camera2
+  heads:
+  - name: vhead-02
     pos: {x: 0, y: 0}
     rot: 0
-  enabled: true
-  heads: []
-  name: stand2
-  pos: {x: 0, y: 0}
+
+- name: stand-03
+  pos: {x: 6, y: 0}
   rot: -90
+  heads:
+  - name: vhead-03
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-04
+  pos: {x: 8, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-04
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-05
+  pos: {x: 10, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-05
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-06
+  pos: {x: 12, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-06
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-07
+  pos: {x: 14, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-07
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-08
+  pos: {x: 16, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-08
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-09
+  pos: {x: 18, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-09
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-10
+  pos: {x: 20, y: 0}
+  rot: -90
+  heads:
+  - name: vhead-10
+    pos: {x: 0, y: 0}
+    rot: 0

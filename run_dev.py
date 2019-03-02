@@ -8,7 +8,7 @@ import util
 
 async def run():
     heads = []
-    for i in range(2):
+    for i in range(11):
         app = await head.setup(instance="vhead-{:02}".format(i))
         heads.append(util.run_app(app))
 
