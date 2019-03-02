@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"log"
 	"periph.io/x/periph/conn/physic"
@@ -13,21 +14,12 @@ import (
 var ibits = [4]uint{3, 2, 1, 0}
 
 const (
-	numLeds = 80
+	numLeds       = 80
+	maxBrightness = 0.33
 )
 
-func send(data []byte) []byte {
+func adaptForSpi(data []byte) []byte {
 	var result []byte = nil
-
-	/*
-			   for rgb in data:
-		        for b in rgb:
-		            for ibit in range(3,-1,-1):
-		                #print ibit, b, ((b>>(2*ibit+1))&1), ((b>>(2*ibit+0))&1), [hex(v) for v in tx]
-		                tx.append(((b>>(2*ibit+1))&1)*0x60 +
-		                          ((b>>(2*ibit+0))&1)*0x06 +
-		                          0x88)
-	*/
 
 	for _, b := range data {
 		for _, ibit := range ibits {
@@ -36,6 +28,37 @@ func send(data []byte) []byte {
 		}
 	}
 	return result
+}
+
+func send(conn spi.Conn, leds []led) {
+	write := make([]byte, numLeds*3)
+
+	for i := 0; i < numLeds; i++ {
+		// TODO: confirm rgb order
+		write[i*3+0] = byte(255.0 * clamp(0, leds[i].r, maxBrightness))
+		write[i*3+1] = byte(255.0 * clamp(0, leds[i].g, maxBrightness))
+		write[i*3+2] = byte(255.0 * clamp(0, leds[i].b, maxBrightness))
+	}
+
+	adapted := adaptForSpi(write)
+	read := make([]byte, len(adapted))
+	if err := conn.Tx(adapted, read); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func clamp(min, x, max float64) float64 {
+	if x < min {
+		return min
+	}
+	if x > max {
+		return max
+	}
+	return x
+}
+
+type led struct {
+	r, g, b float64
 }
 
 func main() {
@@ -57,24 +80,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Write 0x10 to the device, and read a byte right after.
-	write := make([]byte, numLeds*3)
+	leds := make([]led, numLeds)
 
 	for t := 0; ; t++ {
-		const f = 128.0
-
 		for i := 0; i < numLeds; i++ {
-			write[i*3+0] = byte((1 + simplexnoise.Noise2(float64(i+000)*0.01, float64(t)*0.003)) * f)
-			write[i*3+1] = byte((1 + simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003)) * f)
-			write[i*3+2] = byte((1 + simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003)) * f)
+			leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+000)*0.01, float64(t)*0.003))
+			leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003))
+			leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003))
 		}
 
-		use := send(write)
-		read := make([]byte, len(use))
-		if err := c.Tx(use, read); err != nil {
-			log.Fatal(err)
-		}
+		send(c, leds)
 
 		time.Sleep(time.Millisecond * 30)
+		if t%10 == 0 {
+			fmt.Println(leds[0])
+		}
 	}
 }
