@@ -7,8 +7,8 @@ import util
 
 
 async def run():
-    app0 = await head.setup(instance="head0")
-    app1 = await head.setup(instance="head1")
+    app0 = await head.setup(instance="vhead-00")
+    app1 = await head.setup(instance="vhead-01")
     app2 = await boss.setup(installation="dev", port=8081)
     app3 = await home.setup(port=8000)
 

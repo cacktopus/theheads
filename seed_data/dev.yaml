@@ -7,7 +7,7 @@ stands:
     pos: {x: 0.1, y: 0}
     rot: 0
   heads:
-  - name: head0
+  - name: vhead-00
     pos: {x: 0, y: 0}
     rot: 0
   name: stand0
@@ -20,7 +20,7 @@ stands:
     pos: {x: 0.1, y: 0}
     rot: 0
   heads:
-  - name: head1
+  - name: vhead-01
     pos: {x: 0, y: 0}
     rot: 0
   name: stand1
