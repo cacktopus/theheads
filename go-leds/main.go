@@ -16,7 +16,7 @@ var ibits = [4]uint{3, 2, 1, 0}
 
 const (
 	numLeds       = 69
-	maxBrightness = 0.05
+	maxBrightness = 0.33
 	startLed      = 8
 
 	meter = 1.0
@@ -90,11 +90,12 @@ func main() {
 	leds := make([]led, numLeds)
 	positions := make([]Vec2, numLeds)
 
+	// Calculate real-world approximate position of LEDS
 	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
 		N := (numLeds - startLed) - 1
 		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
 		u := Vec2{math.Cos(theta), math.Sin(theta)}
-		u = u.Scale(ledRingRadius)
+		u = u.Scale(ledRingRadius * 3.333)
 		positions[i] = u
 		fmt.Println(n, theta, N, u)
 	}
@@ -104,9 +105,24 @@ func main() {
 
 	for t := 0; ; t++ {
 		for i := startLed; i < numLeds; i++ {
-			leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+000)*0.01, float64(t)*0.003))
-			leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003))
-			leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003))
+			pos := positions[i]
+			leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+				float64(pos.x+000),
+				float64(pos.y+000),
+				float64(t)*0.003,
+			))
+
+			leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+				float64(pos.x+100),
+				float64(pos.y+100),
+				float64(t)*0.003,
+			))
+
+			leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+				float64(pos.x+200),
+				float64(pos.y+200),
+				float64(t)*0.003,
+			))
 		}
 
 		send(c, leds)
