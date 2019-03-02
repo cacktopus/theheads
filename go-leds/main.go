@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"log"
-	"math/rand"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
@@ -11,6 +11,10 @@ import (
 )
 
 var ibits = [4]uint{3, 2, 1, 0}
+
+const (
+	numLeds = 80
+)
 
 func send(data []byte) []byte {
 	var result []byte = nil
@@ -54,10 +58,14 @@ func main() {
 	}
 
 	// Write 0x10 to the device, and read a byte right after.
-	write := make([]byte, 80*3)
+	write := make([]byte, numLeds*3)
 
-	for {
-		rand.Read(write)
+	for t := 0; ; t++ {
+		for i := 0; i < numLeds; i++ {
+			write[i*3+0] = byte(simplexnoise.Noise2(float64(i+0)*0.01, float64(t)*0.003) * 256.0)
+			write[i*3+1] = byte(simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003) * 256.0)
+			write[i*3+2] = byte(simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003) * 256.0)
+		}
 
 		for pos := range write {
 			write[pos] /= 32
