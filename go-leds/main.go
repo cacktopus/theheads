@@ -61,14 +61,12 @@ func main() {
 	write := make([]byte, numLeds*3)
 
 	for t := 0; ; t++ {
-		for i := 0; i < numLeds; i++ {
-			write[i*3+0] = byte(simplexnoise.Noise2(float64(i+0)*0.01, float64(t)*0.003) * 256.0)
-			write[i*3+1] = byte(simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003) * 256.0)
-			write[i*3+2] = byte(simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003) * 256.0)
-		}
+		const f = 128.0
 
-		for pos := range write {
-			write[pos] /= 32
+		for i := 0; i < numLeds; i++ {
+			write[i*3+0] = byte((1 + simplexnoise.Noise2(float64(i+000)*0.01, float64(t)*0.003)) * f)
+			write[i*3+1] = byte((1 + simplexnoise.Noise2(float64(i+100)*0.01, float64(t)*0.003)) * f)
+			write[i*3+2] = byte((1 + simplexnoise.Noise2(float64(i+200)*0.01, float64(t)*0.003)) * f)
 		}
 
 		use := send(write)
