@@ -7,14 +7,15 @@ import util
 
 
 async def run():
-    app0 = await head.setup(instance="vhead-00")
-    app1 = await head.setup(instance="vhead-01")
+    heads = []
+    for i in range(2):
+        app = await head.setup(instance="vhead-{:02}".format(i))
+        heads.append(util.run_app(app))
+
     app2 = await boss.setup(installation="dev", port=8081)
     app3 = await home.setup(port=8000)
 
-    await asyncio.wait([
-        util.run_app(app0),
-        util.run_app(app1),
+    await asyncio.wait(heads + [
         util.run_app(app2),
         util.run_app(app3),
     ])
