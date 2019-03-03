@@ -132,9 +132,9 @@ async def build_installation(inst_name: str, cfg: Config):
     result = dict(
         name=inst_name,
         stands=list(stands.values()),
-        scale=200,
+        scale=75,
         translate={
-            "x": 200,
+            "x": 750,
             "y": 100,
         }
     )

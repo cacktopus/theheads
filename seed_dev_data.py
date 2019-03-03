@@ -1,11 +1,32 @@
 import asyncio
+import math
 
 import yaml
 
 from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend
+from transformations import Vec, Mat
 
 INSTALLATION = "dev"
+
+
+def setup_positions():
+    radius = 20
+    spacing = 2
+
+    theta = 2 * math.atan2(spacing, (2 * radius))
+    theta *= 180 / math.pi
+
+    d = Vec(0, radius)
+
+    result = []
+    for i in range(11):
+        phi = (3.5 - i) * theta
+        p = Mat.rotz(phi) * d - d
+        print(p)
+        result.append((p, phi - 90))
+
+    return result
 
 
 async def main(inst_name: str):
@@ -17,10 +38,12 @@ async def main(inst_name: str):
         assert resp.status == 200
 
     async def setup_services():
+        positions = setup_positions()
+
         with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
             inst_data = yaml.safe_load(fp)
 
-        for stand in inst_data['stands']:
+        for i, stand in enumerate(inst_data['stands']):
             for camera in stand.get('cameras', []):
                 await put(
                     "/the-heads/installation/{}/cameras/{}.yaml".format(inst_name, camera['name']),
@@ -35,6 +58,12 @@ async def main(inst_name: str):
 
             stand['cameras'] = [x['name'] for x in stand.get('cameras', [])]
             stand['heads'] = [x['name'] for x in stand['heads']]
+
+            pos, rot = positions[i]
+
+            stand['pos'] = {"x": pos.x, "y": pos.y}
+            stand['rot'] = rot
+
             key = "/the-heads/installation/{}/stands/{}.yaml".format(inst_name, stand['name'])
             value = yaml.dump(stand, encoding='utf-8')
             await put(key, value)
@@ -42,7 +71,7 @@ async def main(inst_name: str):
     async def setup_instances():
         for i in range(11):
             name = "vhead-{:02}".format(i)
-            await consul_backend.register_service_with_agent("heads", 18080+i, ID=name, tags=[name, "frontend"])
+            await consul_backend.register_service_with_agent("heads", 18080 + i, ID=name, tags=[name, "frontend"])
             await put("/the-heads/assignment/{}".format(name), inst_name.encode())
 
         # redis
