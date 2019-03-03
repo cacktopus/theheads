@@ -13,18 +13,36 @@ INSTALLATION = "dev"
 def setup_positions():
     radius = 20
     spacing = 2
+    d0 = Vec(0, radius)
 
+    result = []
+
+    d = d0
     theta = 2 * math.atan2(spacing, (2 * radius))
     theta *= 180 / math.pi
 
-    d = Vec(0, radius)
-
-    result = []
-    for i in range(11):
+    for i in range(8):
         phi = (3.5 - i) * theta
-        p = Mat.rotz(phi) * d - d
+        p = Mat.rotz(phi) * d - d0
         print(p)
         result.append((p, phi - 90))
+
+    d -= Vec(0, 2 * spacing)
+    theta = 2 * math.atan2(2 * spacing, (2 * radius))
+    theta *= 180 / math.pi
+
+    for i in range(2):
+        phi = (.5 - i) * theta
+        p = Mat.rotz(phi) * d - d0
+        print(p)
+        result.append((p, -90))
+
+    d -= Vec(0, 1.5 * spacing)
+    for i in range(1):
+        phi = 0
+        p = Mat.rotz(phi) * d - d0
+        print(p)
+        result.append((p, -90))
 
     return result
 
