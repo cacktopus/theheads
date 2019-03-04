@@ -50,6 +50,10 @@ class Vec:
         a, b = self, other
         return a.x * b.x + a.y * b.y + a.z * b.z
 
+    @property
+    def point2(self):
+        return [self.x, self.y]
+
 
 class Mat:
     def __init__(self, data):
