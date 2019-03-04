@@ -90,21 +90,21 @@ def inset(svg, points, offset: float):
     lines = list(generate_offset_lines(poly, signed_offset))
 
     for line in lines:
-        svg.add(svg.circle(line.p.point2, 1, fill='magenta'))
+        # svg.add(svg.circle(line.p.point2, 1, fill='magenta'))
         p0 = line.p + line.u.scale(0)
         p1 = line.p + line.u.scale(500)
-        svg.add(svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
+        # svg.add(svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
 
     for l0, l1 in all_pairs(lines):
         p_new = l0.intersect(l1)
 
         if should_include_point(lines, p_new, sign):
             if good(p_new.point2):
-                svg.add(svg.circle(p_new.point2, 1, fill='green'))
+                pass  # svg.add(svg.circle(p_new.point2, 1, fill='green'))
             result.append(p_new.point2)
         else:
             if good(p_new.point2):
-                svg.add(svg.circle(p_new.point2, 1, fill='red'))
+                pass  # psvg.add(svg.circle(p_new.point2, 1, fill='red'))
 
     return make_convex(result)
 
@@ -154,18 +154,17 @@ def main():
         # points = __p
         if all(good(p) for p in points):
             print("points", points)
-            svg.add(svg.polygon(points, fill='grey'))
+            # svg.add(svg.polygon(points, fill='black'))
             count += 1
             try:
                 poly = inset(svg, points, 5)
             except Exception as e:
                 print(e)
                 raise
-                break
             print(len(poly))
             print(poly)
 
-            svg.add(svg.polygon(poly, fill='red'))
+            svg.add(svg.polygon(poly, fill='black'))
             # break
 
     svg.save()
