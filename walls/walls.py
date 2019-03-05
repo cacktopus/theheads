@@ -9,10 +9,14 @@ from pyhull.voronoi import VoronoiTess
 from line import Line2D
 from transformations import Vec
 
+import Polygon
+
 EPSILON = 1E-9
 
-MAX_X = 1000
-MAX_Y = 1000
+MAX_X = 500
+MAX_Y = 500
+R = 15
+WIDTH = 3
 
 
 def rotate(items):
@@ -114,10 +118,11 @@ def good(p):
 
 
 def main():
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=50)
+    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=R)
+
     # print(len(points))
 
-    svg = svgwrite.Drawing('test.svg', profile='tiny')
+    svg = svgwrite.Drawing('test2.svg', profile='tiny')
     # dwg.add(dwg.line((0, 0), (100, 100), stroke=svgwrite.rgb(10, 10, 16, '%')))
     # dwg.add(dwg.text('Test', insert=(20, 20)))
 
@@ -149,6 +154,8 @@ def main():
            [477.140818910828, 96.7637774099614], [405.4868577426532, 35.73168464501639],
            [372.383738467881, 72.63759223463302]]
 
+    window = Polygon.Polygon([[50, 50], [50, 250], [250, 250], [250, 50]])
+
     for region in v.regions:
         points = [v.vertices[i] for i in region]
         # points = __p
@@ -157,14 +164,17 @@ def main():
             # svg.add(svg.polygon(points, fill='black'))
             count += 1
             try:
-                poly = inset(svg, points, 5)
+                poly = inset(svg, points, WIDTH / 2)
             except Exception as e:
                 print(e)
                 raise
-            print(len(poly))
-            print(poly)
 
-            svg.add(svg.polygon(poly, fill='black'))
+            result = list(window & Polygon.Polygon(poly))
+            print(result)
+
+            if len(result):
+                add = svg.polygon(result[0], fill='black')
+                svg.add(add)
             # break
 
     svg.save()
