@@ -1,4 +1,5 @@
 import itertools
+import math
 import os
 from collections import defaultdict
 from typing import List, Tuple
@@ -185,6 +186,24 @@ def process(svg, window, poly):
         if len(result):
             add = svg.svg.polygon(result[0], fill='black', opacity=0.40)
             svg.add(add)
+
+
+def distance(p0, p1):
+    return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
+
+
+def fun_circles(svg):
+    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=R)
+
+    radii = {}
+    for i in range(len(points)):
+        radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
+
+    for i, point in enumerate(points):
+        r = radii[i] - 0.66
+        svg.debug(
+            svg.svg.circle(point, r, fill='black', stroke='black', fill_opacity=1.0, stroke_opacity=1.0,
+                           stroke_width=0.5))
 
 
 def main():
