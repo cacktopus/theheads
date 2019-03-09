@@ -21,7 +21,7 @@ EPSILON = 1E-9
 MAX_X = 500
 MAX_Y = 500
 R = 15
-WIDTH = 3
+WIDTH = 4.5
 
 
 class DebugSVG:
@@ -151,12 +151,46 @@ def good(p):
     return 0 < p[0] < MAX_X and 0 < p[1] < MAX_Y
 
 
-def centroid(t: List[Tuple]):
-    assert len(t) == 3
-    x = sum(p[0] for p in t) / 3
-    y = sum(p[1] for p in t) / 3
+def centroid(triangle: List[Tuple]):
+    assert len(triangle) == 3
+    x = sum(p[0] for p in triangle) / 3
+    y = sum(p[1] for p in triangle) / 3
 
     return x, y
+
+
+def circumcenter(triangle: List[Tuple]):
+    a, b, c = triangle
+    ax, ay = a
+    bx, by = b
+    cx, cy = c
+
+    d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+
+    ux = (1 / d) * (
+            (ax ** 2 + ay ** 2) * (by - cy) +
+            (bx ** 2 + by ** 2) * (cy - ay) +
+            (cx ** 2 + cy ** 2) * (ay - by)
+    )
+
+    uy = (1 / d) * (
+            (ax ** 2 + ay ** 2) * (cx - bx) +
+            (bx ** 2 + by ** 2) * (ax - cx) +
+            (cx ** 2 + cy ** 2) * (bx - ax)
+    )
+
+    return ux, uy
+
+
+def circumcenter_centroid_lerp(ratio: float, triangle: List[Tuple]) -> Tuple:
+    p0 = Vec(*circumcenter(triangle))
+    p1 = Vec(*centroid(triangle))
+
+    u = p1 - p0
+
+    result = p0 + u.scale(ratio)
+
+    return result.point2
 
 
 def spooky_cells(dely: DelaunayTri):
@@ -165,7 +199,8 @@ def spooky_cells(dely: DelaunayTri):
     for v in dely.vertices:
         for i in v:
             triangle = [dely.points[a] for a in v]
-            cells[i].append(centroid(triangle))
+            center = circumcenter_centroid_lerp(0.6, triangle)
+            cells[i].append(center)
 
     return cells
 
