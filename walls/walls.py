@@ -1,9 +1,13 @@
 import itertools
-from typing import List
+import os
+from collections import defaultdict
+from typing import List, Tuple
 
 import svgwrite
+import svgwrite.container
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
+from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
 from line import Line2D
@@ -17,6 +21,35 @@ MAX_X = 500
 MAX_Y = 500
 R = 15
 WIDTH = 3
+
+
+class DebugSVG:
+    def __init__(self, filename):
+        base, ext = os.path.splitext(filename)
+        self._prod = svgwrite.Drawing(base + ext, profile='tiny')
+        self._debug = svgwrite.Drawing(base + "-debug" + ext, profile='tiny')
+        self._prod_g = svgwrite.container.Group()
+        self._prod_g.scale(1.7)
+        self._prod_g.translate(-250, -200 + 12.5 + 12.5 / 2)
+        self._prod.add(self._prod_g)
+
+    def save(self):
+        self._prod.save()
+        self._debug.save()
+
+    def add(self, *args):
+        self._prod_g.add(*args)
+        self._debug.add(*args)
+
+    @property
+    def svg(self):
+        return self._prod
+
+    def prod(self, *args):
+        self._prod_g.add(*args)
+
+    def debug(self, *args):
+        self._debug.add(*args)
 
 
 def rotate(items):
@@ -64,7 +97,7 @@ def all_pairs(items):
     yield from itertools.combinations(items, 2)
 
 
-def make_convex(poly: List[Vec]) -> List[Vec]:
+def make_convex(poly: List[Tuple]) -> List[Vec]:
     hull = ConvexHull(poly)
 
     print(hull.vertices)
@@ -94,21 +127,21 @@ def inset(svg, points, offset: float):
     lines = list(generate_offset_lines(poly, signed_offset))
 
     for line in lines:
-        # svg.add(svg.circle(line.p.point2, 1, fill='magenta'))
+        # svg.debug(svg.svg.circle(line.p.point2, 1, fill='magenta'))
         p0 = line.p + line.u.scale(0)
         p1 = line.p + line.u.scale(500)
-        # svg.add(svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
+        # svg.debug(svg.svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
 
     for l0, l1 in all_pairs(lines):
         p_new = l0.intersect(l1)
 
         if should_include_point(lines, p_new, sign):
             if good(p_new.point2):
-                pass  # svg.add(svg.circle(p_new.point2, 1, fill='green'))
+                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='green'))
             result.append(p_new.point2)
         else:
             if good(p_new.point2):
-                pass  # psvg.add(svg.circle(p_new.point2, 1, fill='red'))
+                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='red'))
 
     return make_convex(result)
 
@@ -117,67 +150,84 @@ def good(p):
     return 0 < p[0] < MAX_X and 0 < p[1] < MAX_Y
 
 
+def centroid(t: List[Tuple]):
+    assert len(t) == 3
+    x = sum(p[0] for p in t) / 3
+    y = sum(p[1] for p in t) / 3
+
+    return x, y
+
+
+def spooky_cells(dely: DelaunayTri):
+    cells = defaultdict(list)
+
+    for v in dely.vertices:
+        for i in v:
+            triangle = [dely.points[a] for a in v]
+            cells[i].append(centroid(triangle))
+
+    return cells
+
+
+def process(svg, window, poly):
+    if all(good(p) for p in poly):
+        print("points", poly)
+
+        try:
+            poly = inset(svg, poly, WIDTH / 2)
+        except Exception as e:
+            print(e)
+            raise
+
+        result = list(window & Polygon.Polygon(poly))
+        print(result)
+
+        if len(result):
+            add = svg.svg.polygon(result[0], fill='black', opacity=0.40)
+            svg.add(add)
+
+
 def main():
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=R)
+    svg = DebugSVG("test.svg")
 
-    # print(len(points))
+    try:
+        points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=R)
 
-    svg = svgwrite.Drawing('test2.svg', profile='tiny')
-    # dwg.add(dwg.line((0, 0), (100, 100), stroke=svgwrite.rgb(10, 10, 16, '%')))
-    # dwg.add(dwg.text('Test', insert=(20, 20)))
+        for point in points:
+            svg.debug(svg.svg.circle(point, R / 2, fill='white', stroke='black', fill_opacity=0.0, stroke_opacity=0.5,
+                                     stroke_width=0.5))
 
-    v = VoronoiTess(points)
-    # print(dir(v))
-    # print(v.vertices)
-    # print(v.ridges)
-    # print(v.dim)
-    # print(v.regions)
+        dely = DelaunayTri(points)
+        for v in dely.vertices:
+            pts = [dely.points[p] for p in v]
+            if all(50 < x < 450 and 50 < y < 350 for (x, y) in pts):
+                svg.debug(svg.svg.polygon(pts, fill='white', stroke='green', stroke_opacity=0.50, fill_opacity=0.0,
+                                          stroke_width=0.5))
 
-    # for p in points:
-    #     s.add(s.circle(p, 2))
+        window = Polygon.Polygon([[100, 100], [100, 275 - 12.5], [400, 275 - 12.5], [400, 100]])
 
-    # for p in v.vertices:
-    #     if 500 > p[0] > 0 and 500 > p[1] > 0:
-    #         s.add(s.circle(p, 1))
+        cells = spooky_cells(dely)
+        for i, cell in sorted(cells.items()):
+            if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
+                for point in cell:
+                    svg.debug(svg.svg.circle(point, 1, fill='magenta', stroke='magenta'))
+                fixed = make_convex(cell)
+                svg.debug(svg.svg.polygon(fixed, fill='red', stroke='red', opacity=0.50))
+                process(svg, window, fixed)
 
-    count = 0
+        v = VoronoiTess(points)
+        count = 0
 
-    # __p = [
-    #     [402, 107],
-    #     [316, 68],
-    #     [399, 38],
-    #     [413, 83],
-    #     [403, 106],
-    # ]
+        # for region in v.regions:
+        #     points = [v.vertices[i] for i in region]
+        #     process(svg, window, points)
+        #     count += 1
 
-    __p = [[395.4236064945018, 124.6003154593059], [417.2044240544242, 134.4926919229175],
-           [477.140818910828, 96.7637774099614], [405.4868577426532, 35.73168464501639],
-           [372.383738467881, 72.63759223463302]]
+    except:
+        raise
 
-    window = Polygon.Polygon([[50, 50], [50, 250], [250, 250], [250, 50]])
-
-    for region in v.regions:
-        points = [v.vertices[i] for i in region]
-        # points = __p
-        if all(good(p) for p in points):
-            print("points", points)
-            # svg.add(svg.polygon(points, fill='black'))
-            count += 1
-            try:
-                poly = inset(svg, points, WIDTH / 2)
-            except Exception as e:
-                print(e)
-                raise
-
-            result = list(window & Polygon.Polygon(poly))
-            print(result)
-
-            if len(result):
-                add = svg.polygon(result[0], fill='black')
-                svg.add(add)
-            # break
-
-    svg.save()
+    finally:
+        svg.save()
 
 
 if __name__ == '__main__':
