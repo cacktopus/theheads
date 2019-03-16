@@ -1,3 +1,4 @@
+import binascii
 import struct
 from typing import Tuple
 
@@ -23,6 +24,8 @@ def main():
         data = f.read()
 
     header, data = data[:80], data[80:]
+
+    print(binascii.hexlify(header))
 
     item, data = data[:4], data[4:]
     num_triangles = int.from_bytes(item, 'little')
