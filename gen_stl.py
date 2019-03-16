@@ -3,7 +3,7 @@ import struct
 
 from walls import doubles
 
-w, h = 164, 79
+width, height, depth = 164, 79, 20
 
 header = binascii.unhexlify("""
 53544c422041544620372e362e302e32353120434f4c4f523da0a0a0ff202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020
@@ -13,22 +13,23 @@ header = binascii.unhexlify("""
 def gen_triangles():
     t0 = [
         (0, 0),
-        (w, 0),
-        (w, h),
+        (width, 0),
+        (width, height),
     ]
 
     t1 = [
         (0, 0),
-        (w, h),
-        (0, h),
+        (width, height),
+        (0, height),
     ]
 
     for t in t0, t1:
         triangle = []
+
         n = (0, 0, -1)
         triangle.extend(n)
         for i, (p0, p1) in enumerate(doubles(t)):
-            point = (p0[0], p1[0], 0)
+            point = (p0[0], p0[1], 0)
             triangle.extend(point)
 
         yield triangle
