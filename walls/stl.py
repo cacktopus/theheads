@@ -34,6 +34,13 @@ def main():
         print(f"p1 {p1}")
         print(f"p2 {p2}")
 
+        attr_byte_count = int.from_bytes(data[:2], 'little')
+        data = data[2:]
+
+        print(attr_byte_count)
+
+    assert len(data) == 0
+
 
 if __name__ == '__main__':
     main()
