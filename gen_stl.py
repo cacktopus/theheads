@@ -28,11 +28,38 @@ def gen_triangles():
 
         n = (0, 0, -1)
         triangle.extend(n)
-        for i, (p0, p1) in enumerate(doubles(t)):
+        for i, (p0, p1) in enumerate(doubles(list(reversed(t)))):
             point = (p0[0], p0[1], 0)
             triangle.extend(point)
 
         yield triangle
+
+    for t in t0, t1:
+        triangle = []
+
+        n = (0, 0, 1)
+        triangle.extend(n)
+        for i, (p0, p1) in enumerate(doubles(t)):
+            point = (p0[0], p0[1], depth)
+            triangle.extend(point)
+
+        yield triangle
+
+    yield [
+        -1, 0, 0,
+        0, 0, 0,
+        0, height, depth,
+        0, height, 0,
+    ]
+
+    yield [
+        -1, 0, 0,
+        0, 0, 0,
+        0, 0, depth,
+        0, height, depth,
+    ]
+
+    # function given a line in xy, build a wall (specify the direction? or infer)
 
 
 def main():
