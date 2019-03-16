@@ -4,16 +4,22 @@ from typing import Tuple
 Vec = Tuple[float, float, float]
 
 
+def thresh_zero(x):
+    return 0.0 if abs(x) < 1E-7 else x
+
+
 def read_vec(data) -> Tuple[Vec, bytes]:
     fmt = "3f"
     sz = struct.calcsize(fmt)
     buf, data = data[:sz], data[sz:]
     verts = struct.unpack(fmt, buf)
-    return verts, data
+    return (thresh_zero(verts[0]),
+            thresh_zero(verts[1]),
+            thresh_zero(verts[2])), data
 
 
 def main():
-    with open("cube.stl", "rb") as f:
+    with open("box-with-hole.stl", "rb") as f:
         data = f.read()
 
     header, data = data[:80], data[80:]
