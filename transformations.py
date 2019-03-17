@@ -50,9 +50,23 @@ class Vec:
         a, b = self, other
         return a.x * b.x + a.y * b.y + a.z * b.z
 
+    def cross(self, other: "Vec") -> "Vec":
+        a, b = self, other
+
+        return Vec(
+            a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x,
+            1.0,
+        )
+
     @property
     def point2(self):
         return [self.x, self.y]
+
+    @property
+    def point3(self):
+        return [self.x, self.y, self.z]
 
 
 class Mat:

@@ -1,6 +1,7 @@
 import binascii
 import struct
 
+from transformations import Vec
 from walls import doubles
 
 width, height, depth = 164, 79, 20
@@ -8,6 +9,26 @@ width, height, depth = 164, 79, 20
 header = binascii.unhexlify("""
 53544c422041544620372e362e302e32353120434f4c4f523da0a0a0ff202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020
 """.strip())
+
+
+def build_wall(p0, p1):
+    v0, v1 = Vec(*p0), Vec(*p1)
+    to = v1 - v0
+
+    n = to.cross(Vec(0.0, 0.0, 1.0)).unit().point3
+    a = [*v0.point2, 0.0]
+    b = [*v1.point2, 0.0]
+    c = [*v1.point2, depth]
+
+    t0 = [*n, *a, *b, *c]
+
+    a = [*v0.point2, 0.0]
+    b = [*v1.point2, depth]
+    c = [*v0.point2, depth]
+
+    t1 = [*n, *a, *b, *c]
+
+    return t0, t1
 
 
 def gen_triangles():
@@ -59,7 +80,12 @@ def gen_triangles():
         0, height, depth,
     ]
 
-    # function given a line in xy, build a wall (specify the direction? or infer)
+    t0, t1 = build_wall(
+        (width, 0),
+        (width, height),
+    )
+    yield t0
+    yield t1
 
 
 def main():
