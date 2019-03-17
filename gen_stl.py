@@ -4,7 +4,7 @@ import struct
 from transformations import Vec
 from walls import doubles
 
-width, height, depth = 164, 79, 20
+width, height, depth = 146, 79, 2
 
 header = binascii.unhexlify("""
 53544c422041544620372e362e302e32353120434f4c4f523da0a0a0ff202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020
@@ -66,23 +66,30 @@ def gen_triangles():
 
         yield triangle
 
-    yield [
-        -1, 0, 0,
-        0, 0, 0,
-        0, height, depth,
-        0, height, 0,
-    ]
-
-    yield [
-        -1, 0, 0,
-        0, 0, 0,
-        0, 0, depth,
-        0, height, depth,
-    ]
-
     t0, t1 = build_wall(
         (width, 0),
         (width, height),
+    )
+    yield t0
+    yield t1
+
+    t0, t1 = build_wall(
+        (0, height),
+        (0, 0),
+    )
+    yield t0
+    yield t1
+
+    t0, t1 = build_wall(
+        (0, 0),
+        (width, 0),
+    )
+    yield t0
+    yield t1
+
+    t0, t1 = build_wall(
+        (width, height),
+        (0, height),
     )
     yield t0
     yield t1
