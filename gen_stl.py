@@ -1,4 +1,5 @@
 import binascii
+import math
 import struct
 
 from transformations import Vec
@@ -95,8 +96,59 @@ def gen_triangles():
     yield t1
 
 
+def wave():
+    num_points = 50
+
+    X = list(range(num_points))
+
+    Y1 = [
+        -10 + 30 * math.sin(0.05 * x) for x in X
+    ]
+
+    Y2 = [
+        +10 + 30 * math.sin(0.05 * x) for x in X
+    ]
+
+    # sides
+    for i in range(num_points - 1):
+        t0, t1 = build_wall(
+            (X[i + 0], Y1[i + 0]),
+            (X[i + 1], Y1[i + 1])
+        )
+
+        yield t0
+        yield t1
+
+        t0, t1 = build_wall(
+            (X[i + 1], Y2[i + 1]),
+            (X[i + 0], Y2[i + 0])
+        )
+
+        yield t0
+        yield t1
+
+    # ends 0
+    t0, t1 = build_wall(
+        (X[0], Y2[0]),
+        (X[0], Y1[0])
+    )
+
+    yield t0
+    yield t1
+
+    # ends 0
+    t0, t1 = build_wall(
+        (X[-1], Y1[-1]),
+        (X[-1], Y2[-1])
+    )
+
+    yield t0
+    yield t1
+
+
+
 def main():
-    triangles = list(gen_triangles())
+    triangles = list(wave())
 
     with open("out.stl", "wb") as f:
         f.write(header)
