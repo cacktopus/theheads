@@ -97,20 +97,21 @@ def gen_triangles():
 
 
 def wave():
-    num_points = 50
+    num_points = 4000
 
     X = list(range(num_points))
+    X = [0.03 * x for x in X]
 
     Y1 = [
-        -10 + 30 * math.sin(0.05 * x) for x in X
+        -10 + 10 * math.sin(0.1 * x) for x in X
     ]
 
     Y2 = [
-        +10 + 30 * math.sin(0.05 * x) for x in X
+        +10 + 10 * math.sin(0.1 * x) for x in X
     ]
 
-    # sides
     for i in range(num_points - 1):
+        # sides
         t0, t1 = build_wall(
             (X[i + 0], Y1[i + 0]),
             (X[i + 1], Y1[i + 1])
@@ -127,7 +128,37 @@ def wave():
         yield t0
         yield t1
 
-    # ends 0
+        # bottom
+        yield [
+            0, 0, -1,
+            X[i + 0], Y1[i + 0], 0,
+            X[i + 0], Y2[i + 0], 0,
+            X[i + 1], Y1[i + 1], 0,
+        ]
+
+        yield [
+            0, 0, -1,
+            X[i + 0], Y2[i + 0], 0,
+            X[i + 1], Y2[i + 1], 0,
+            X[i + 1], Y1[i + 1], 0,
+        ]
+
+        # top
+        yield [
+            0, 0, 1,
+            X[i + 0], Y1[i + 0], depth,
+            X[i + 1], Y1[i + 1], depth,
+            X[i + 0], Y2[i + 0], depth,
+        ]
+
+        yield [
+            0, 0, 1,
+            X[i + 0], Y2[i + 0], depth,
+            X[i + 1], Y1[i + 1], depth,
+            X[i + 1], Y2[i + 1], depth,
+        ]
+
+        # ends 0
     t0, t1 = build_wall(
         (X[0], Y2[0]),
         (X[0], Y1[0])
@@ -144,7 +175,6 @@ def wave():
 
     yield t0
     yield t1
-
 
 
 def main():
