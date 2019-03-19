@@ -1,3 +1,4 @@
 env/
 __pycache__/
 svg.js
+.DS_Store
