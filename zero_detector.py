@@ -1,3 +1,4 @@
+import os
 import time
 from collections import deque
 
@@ -12,12 +13,14 @@ class GPIO:
     def __init__(self, pin):
         self._pin = pin
         self._gpio_dir = "/sys/class/gpio"
+        self._gpio_pin_dir = "/sys/class/gpio/gpio{}".format(self._pin)
         self._export = "/sys/class/gpio/export"
         self._direction = "/sys/class/gpio/gpio{}/direction".format(self._pin)
         self._value = "/sys/class/gpio/gpio{}/value".format(self._pin)
 
-        with open(self._export, "w") as f:
-            print(GPIO_PIN, file=f)
+        if not os.path.exists(self._gpio_pin_dir):
+            with open(self._export, "w") as f:
+                print(GPIO_PIN, file=f)
 
         with open(self._direction, "w") as f:
             print("in", file=f)
@@ -51,7 +54,8 @@ class ZeroDetector:
             self.step(direction)
 
     def find_zero(self):
-        pass
+        self.step_until(MotorHAT.FORWARD, 1, 50)
+        self.step_until(MotorHAT.BACKWARD, 1, 25)
 
     def step(self, direction):
         self.remaining_steps -= 1
