@@ -7,6 +7,7 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 import motors
 
 GPIO_PIN = 21
+STEPS = 200
 
 
 class GPIO:
@@ -47,7 +48,7 @@ class ZeroDetector:
 
         while True:
             v = self.read_value()
-            print(v)
+            print(v, self.remaining_steps)
             values.append(v)
             if len(values) == count and all(v == target_value for v in values):
                 return True
@@ -56,6 +57,24 @@ class ZeroDetector:
     def find_zero(self):
         self.step_until(MotorHAT.FORWARD, 1, 50)
         self.step_until(MotorHAT.BACKWARD, 1, 25)
+        steps_to_zero = self.scan()
+
+        for i in range(steps_to_zero):
+            self.step(MotorHAT.FORWARD)
+
+    def scan(self):
+        print("scan")
+        values = deque(maxlen=STEPS)
+        for i in range(STEPS):
+            v = self.read_value()
+            print(v)
+            if v == 0:
+                values.append(i)
+            self.step(MotorHAT.FORWARD)
+
+        zero_pos = sum(values) / len(values)
+        steps = int(zero_pos)
+        return steps
 
     def step(self, direction):
         self.remaining_steps -= 1
