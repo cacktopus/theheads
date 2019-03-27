@@ -156,11 +156,11 @@ export default class Menu extends React.Component {
             );
         }
 
-        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
-        const standName = stand.get("name");
+        const isStandRotatesHidden = this.props.menu.get("isStandRotatesHidden");
+        const isForceShowStandRotatesOnSelect = this.props.menu.get("isForceShowStandRotatesOnSelect");
+        const isShowStandRotator = !isStandRotatesHidden || (isSelected && isForceShowStandRotatesOnSelect);
 
-        const StandRotateHandle = <div>jim</div>;//<NoTouchMove className=""><div>Hi</div>></NoTouchMove>
-        // const StandRotateHandle = noTouchMove(<div/>);
+        const standName = stand.get("name");
 
         return (
             <Draggable
@@ -207,7 +207,7 @@ export default class Menu extends React.Component {
                                 Info
                             </div>
 
-                            {areRotatesHidden ? null :
+                            { !isShowStandRotator ? null :
                                 <div className="Stand-rotate noselect">
                                     {/* offset is used for the drag's reference */}
                                     <DraggableCore

@@ -1,94 +1,198 @@
 {
-    "name": "office",
-    "stands": [
-        {
-            "heads": [
-                {
-                    "url": "http://192.168.42.30:8080",
-                    "rot": 0,
-                    "pos": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "name": "head0"
-                }
-            ],
+    "name": "export",
+    "stands": [{
+        "cameras": [{
+            "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+            "fov": 64.33,
+            "name": "camera0",
             "pos": {
-                "x": -0.75,
+                "x": 0.1,
                 "y": 0
             },
-            "cameras": [
-                {
-                    "rot": 0,
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "fov": 64.33,
-                    "name": "camera0",
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
-                }
-            ],
-            "name": "stand0",
-            "rot": -90
-        },
-        {
-            "heads": [],
-            "enabled": true,
+            "rot": 0
+        }],
+        "heads": [{
+            "name": "vhead-00",
             "pos": {
                 "x": 0,
                 "y": 0
             },
-            "cameras": [
-                {
-                    "rot": 0,
-                    "pos": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "fov": 60,
-                    "name": "camera2",
-                    "description": "Mac built-in"
-                }
-            ],
-            "name": "stand2",
-            "rot": -90
+            "rot": 0
+        }],
+        "name": "stand-00",
+        "pos": {
+            "x": -6.852484389061746,
+            "y": -1.2105492976067787
         },
-        {
-            "heads": [
-                {
-                    "url": "http://192.168.42.31:8080",
-                    "rot": 0,
-                    "pos": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "name": "head1"
-                }
-            ],
+        "rot": -69.96316341721777
+    }, {
+        "cameras": [{
+            "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+            "fov": 64.33,
+            "name": "camera1",
             "pos": {
-                "x": 0.75,
+                "x": 0.1,
                 "y": 0
             },
-            "cameras": [
-                {
-                    "rot": 0,
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "fov": 64.33,
-                    "name": "camera1",
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
-                }
-            ],
-            "name": "stand1",
-            "rot": -90
-        }
-    ],
-    "scale": 200,
-    "translate": {
-        "x": 300,
-        "y": 100
-    }
+            "rot": 0
+        }],
+        "heads": [{
+            "name": "vhead-01",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-01",
+        "pos": {
+            "x": -4.9440479878800705,
+            "y": -0.6207226787596873
+        },
+        "rot": -75.68797386944127
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-02",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-02",
+        "pos": {
+            "x": -2.986294399786872,
+            "y": -0.2242055593763439
+        },
+        "rot": -81.41278432166476
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-03",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-03",
+        "pos": {
+            "x": -0.9987523388778446,
+            "y": -0.024953222443105716
+        },
+        "rot": -87.13759477388825
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-04",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-04",
+        "pos": {
+            "x": 0.9987523388778446,
+            "y": -0.024953222443105716
+        },
+        "rot": -92.86240522611175
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-05",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-05",
+        "pos": {
+            "x": 2.986294399786872,
+            "y": -0.2242055593763439
+        },
+        "rot": -98.58721567833524
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-06",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-06",
+        "pos": {
+            "x": 4.9440479878800705,
+            "y": -0.6207226787596873
+        },
+        "rot": -104.31202613055873
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-07",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-07",
+        "pos": {
+            "x": 6.852484389061746,
+            "y": -1.2105492976067787
+        },
+        "rot": -110.03683658278223
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-08",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-08",
+        "pos": {
+            "x": -1.5920595043359824,
+            "y": -4.0794049566401736
+        },
+        "rot": -90
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-09",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-09",
+        "pos": {
+            "x": 1.5920595043359824,
+            "y": -4.0794049566401736
+        },
+        "rot": -90
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-10",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-10",
+        "pos": {
+            "x": 0,
+            "y": -7
+        },
+        "rot": -90
+    }]
 }

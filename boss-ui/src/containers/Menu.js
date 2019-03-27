@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { menuToggleHideRotates, sceneFetchFromUrl, cameraAddNew, cameraRemoveByIndex, standAdd, menuSelectStand, menuSelectCamera, menuSelectHead, standSetFieldByIndex, standSetInFieldsByIndex, menuSetScale, menuSetTranslateX, menuSetTranslateY, websocketConnect, websocketDisconnect } from '../actions';
+import { menuDisableForceShowAllRotatesOnSelect, menuEnableForceShowAllRotatesOnSelect, menuToggleForceShowRotatesOnSelect, menuHideAllRotates, menuShowAllRotates, menuToggleHideRotates, sceneFetchFromUrl, cameraAddNew, cameraRemoveByIndex, standAdd, menuSelectStand, menuSelectCamera, menuSelectHead, standSetFieldByIndex, standSetInFieldsByIndex, menuSetScale, menuSetTranslateX, menuSetTranslateY, websocketConnect, websocketDisconnect } from '../actions';
 
 import Menu from '../components/Menu'
 
@@ -31,7 +31,17 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     setTranslateX : x => dispatch(menuSetTranslateX(x)),
     setTranslateY : y => dispatch(menuSetTranslateY(y)),
 
-    menuToggleHideRotates: () => dispatch(menuToggleHideRotates()),
+    menuToggleHideCameraRotates: () => dispatch(menuToggleHideRotates("camera")),
+    menuToggleHideStandRotates: () => dispatch(menuToggleHideRotates("stand")),
+    menuToggleHideHeadRotates: () => dispatch(menuToggleHideRotates("head")),
+    menuHideAllRotates: () => dispatch(menuHideAllRotates()),
+    menuShowAllRotates: () => dispatch(menuShowAllRotates()),
+
+    menuToggleForceShowCameraRotatesOnSelect: () => dispatch(menuToggleForceShowRotatesOnSelect("camera")),
+    menuToggleForceShowStandRotatesOnSelect: () => dispatch(menuToggleForceShowRotatesOnSelect("stand")),
+    menuToggleForceShowHeadRotatesOnSelect: () => dispatch(menuToggleForceShowRotatesOnSelect("head")),
+    menuDisableForceShowAllRotatesOnSelect: () => dispatch(menuDisableForceShowAllRotatesOnSelect()),
+    menuEnableForceShowAllRotatesOnSelect: () => dispatch(menuEnableForceShowAllRotatesOnSelect()),
 
     websocketConnect : (url) => dispatch(websocketConnect(url)),
     websocketDisconnect : () => dispatch(websocketDisconnect()),

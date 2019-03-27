@@ -111,6 +111,17 @@ export const setCookie = (name, value, days) => {
     }
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
+export const getCookieAsBoolean = cookieName => {
+    const val = getCookie(cookieName);
+
+    if (typeof val === 'boolean') {
+        return val;
+    } else if (val === 'true' || val === 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
 export const getCookie = (name) => {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
@@ -126,7 +137,9 @@ export const eraseCookie = (name) => {
 }
 
 export const noTouchMove = (elem) => {
-    elem.addEventListener('touchmove', function (e) {
-        e.preventDefault();
-    }, false);
+    if (elem && elem.addEventListener) {
+        elem.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+        }, false);
+    }
 }

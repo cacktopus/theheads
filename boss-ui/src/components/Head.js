@@ -93,7 +93,9 @@ export default class Menu extends React.Component {
 
         const isSelected = selectedStandIndex === this.props.standIndex && selectedHeadIndex === this.props.headIndex;
 
-        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+        const isHeadRotatesHidden = this.props.menu.get("isHeadRotatesHidden");
+        const isForceShowHeadRotatesOnSelect = this.props.menu.get("isForceShowHeadRotatesOnSelect");
+        const isShowHeadRotator = !isHeadRotatesHidden || (isSelected && isForceShowHeadRotatesOnSelect);
 
         return (
             <div className={cn("Head noselect", { "Head--selected": isSelected })}>
@@ -106,7 +108,7 @@ export default class Menu extends React.Component {
                     <div className="Head-container">
                         {/* <img alt="head" className="Head-img" src="./media/head-arrow.png" draggable="false" /> */}
 
-                        {areRotatesHidden ? null :
+                        {!isShowHeadRotator ? null :
                             <div className="Head-rotate noselect">
                                 {/* offset is used for the drag's reference */}
                                 <DraggableCore

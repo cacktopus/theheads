@@ -1,65 +1,94 @@
 {
-    "name": "living-room",
+    "name": "office",
     "stands": [
         {
-            "name": "stand0",
-            "pos": {
-                "x": -1.5,
-                "y": 0
-            },
-            "rot": 300,
-            "cameras": [
-                {
-                    "name": "camera0",
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
-                    "rot": 0,
-                    "fov": 60,
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
-                }
-            ],
             "heads": [
                 {
-                    "name": "head0",
+                    "url": "http://192.168.42.30:8080",
+                    "rot": 0,
                     "pos": {
                         "x": 0,
                         "y": 0
                     },
-                    "rot": 0
+                    "name": "head0"
                 }
-            ]
+            ],
+            "pos": {
+                "x": -0.75,
+                "y": 0
+            },
+            "cameras": [
+                {
+                    "rot": 0,
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "fov": 64.33,
+                    "name": "camera0",
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "name": "stand0",
+            "rot": -90
         },
         {
-            "name": "stand1",
+            "heads": [],
+            "enabled": true,
             "pos": {
-                "x": 1.5,
+                "x": 0,
                 "y": 0
             },
-            "rot": 240,
             "cameras": [
                 {
-                    "name": "camera1",
-                    "pos": {
-                        "x": 0.1,
-                        "y": 0
-                    },
                     "rot": 0,
-                    "fov": 60,
-                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
-                }
-            ],
-            "heads": [
-                {
-                    "name": "head1",
                     "pos": {
                         "x": 0,
                         "y": 0
                     },
-                    "rot": 0
+                    "fov": 60,
+                    "name": "camera2",
+                    "description": "Mac built-in"
                 }
-            ]
+            ],
+            "name": "stand2",
+            "rot": -90
+        },
+        {
+            "heads": [
+                {
+                    "url": "http://192.168.42.31:8080",
+                    "rot": 0,
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "name": "head1"
+                }
+            ],
+            "pos": {
+                "x": 0.75,
+                "y": 0
+            },
+            "cameras": [
+                {
+                    "rot": 0,
+                    "pos": {
+                        "x": 0.1,
+                        "y": 0
+                    },
+                    "fov": 64.33,
+                    "name": "camera1",
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module"
+                }
+            ],
+            "name": "stand1",
+            "rot": -90
         }
-    ]
+    ],
+    "scale": 200,
+    "translate": {
+        "x": 300,
+        "y": 100
+    }
 }

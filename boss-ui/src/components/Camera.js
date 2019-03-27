@@ -129,9 +129,9 @@ export default class Camera extends React.Component {
             pointerEvents: "none" // https://stackoverflow.com/questions/3680429/click-through-a-div-to-underlying-elements
         }
 
-        // window.c_fov = {fovHeight, fovLength, fov, fovStyle};
-
-        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+        const isCameraRotatesHidden = this.props.menu.get("isCameraRotatesHidden");
+        const isForceShowCameraRotatesOnSelect = this.props.menu.get("isForceShowCameraRotatesOnSelect");
+        const isShowCameraRotator = !isCameraRotatesHidden || (isSelected && isForceShowCameraRotatesOnSelect);
 
         return (
             <div className={cn("Camera", { "Camera--selected": isSelected })} >
@@ -151,7 +151,7 @@ export default class Camera extends React.Component {
                     <div className="Camera-container" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
                         <div className="Camera-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                             { 
-                                areRotatesHidden ? null : 
+                                !isShowCameraRotator ? null : 
                                     <div className="Camera-rotate noselect">
                                         {/* offset is used for the drag's reference */}
                                         <DraggableCore

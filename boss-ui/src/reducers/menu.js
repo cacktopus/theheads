@@ -1,5 +1,5 @@
 import {fromJS} from "immutable";
-import { setCookie, getCookie } from '../helpers';
+import { setCookie, getCookie, getCookieAsBoolean } from '../helpers';
 import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED } from "@giantmachines/redux-websocket";
 // NOTE: WEBSOCKET_MESSAGE is dealt within ../middleware/index.js
 // ... which in turn handles the message and dispatches a specific type of dispatch message
@@ -8,13 +8,20 @@ const scale = getCookie("menu-scale");
 const translateX = getCookie("menu-translateX");
 const translateY = getCookie("menu-translateY");
 
-window.c_34 = {setCookie, getCookie};
+// window.c_34 = {setCookie, getCookie};
+
 
 const initialState = {
     selectedStandIndex : 0,
     selectedCameraIndex : 0,
     selectedHeadIndex : 0,
-    areRotatesHidden : 0,
+    isRotatesHidden : getCookieAsBoolean("menu-isRotatesHidden") || 0,
+    isStandRotatesHidden : getCookieAsBoolean("menu-isStandRotatesHidden") || 0,
+    isHeadRotatesHidden : getCookieAsBoolean("menu-isHeadRotatesHidden") || 0,
+    isCameraRotatesHidden : getCookieAsBoolean("menu-isCameraRotatesHidden") || 0,
+    isForceShowStandRotatesOnSelect : getCookieAsBoolean("menu-isForceShowStandRotatesOnSelect") || 0,
+    isForceShowHeadRotatesOnSelect : getCookieAsBoolean("menu-isForceShowHeadRotatesOnSelect") || 0,
+    isForceShowCameraRotatesOnSelect : getCookieAsBoolean("menu-isForceShowCameraRotatesOnSelect") || 0,
     scale: scale !== null ? scale : 1,
     translate: {
         x: translateX !== null ? translateX : 0,
@@ -46,8 +53,58 @@ const stands = (state = fromJS(initialState), action) => {
                 newState = newState.set("selectedStandIndex", parseInt(action.standIndex));
             }
             return newState;
+        case 'MENU_HIDE_ALL_ROTATES':
+            setCookie("menu-isStandRotatesHidden", true);
+            setCookie("menu-isHeadRotatesHidden", true);
+            setCookie("menu-isCameraRotatesHidden", true);
+            newState = state.set("isStandRotatesHidden", true);
+            newState = newState.set("isHeadRotatesHidden", true);
+            return newState.set("isCameraRotatesHidden", true);
+        case 'MENU_SHOW_ALL_ROTATES':
+            setCookie("menu-isStandRotatesHidden", false);
+            setCookie("menu-isHeadRotatesHidden", false);
+            setCookie("menu-isCameraRotatesHidden", false);
+            newState = state.set("isStandRotatesHidden", false);
+            newState = newState.set("isHeadRotatesHidden", false);
+            return newState.set("isCameraRotatesHidden", false);
         case 'MENU_TOGGLE_HIDE_ROTATES':
-            return state.set("areRotatesHidden", !state.get("areRotatesHidden"));
+            if (action.rotateType === "stand") {
+                setCookie("menu-isStandRotatesHidden", !state.get("isStandRotatesHidden"));
+                return state.set("isStandRotatesHidden", !state.get("isStandRotatesHidden"));
+            } else if (action.rotateType === "head") {
+                setCookie("menu-isHeadRotatesHidden", !state.get("isHeadRotatesHidden"));
+                return state.set("isHeadRotatesHidden", !state.get("isHeadRotatesHidden"));
+            } else if (action.rotateType === "camera") {
+                setCookie("menu-isCameraRotatesHidden", !state.get("isCameraRotatesHidden"));
+                return state.set("isCameraRotatesHidden", !state.get("isCameraRotatesHidden"));
+            }
+            break;
+        case 'MENU_ENABLE_FORCE_SHOW_ALL_ROTATES_ON_SELECT':
+            setCookie("menu-isForceShowStandRotatesOnSelect", true);
+            setCookie("menu-isForceShowHeadRotatesOnSelect", true);
+            setCookie("menu-isForceShowCameraRotatesOnSelect", true);
+            newState = state.set("isForceShowStandRotatesOnSelect", true);
+            newState = newState.set("isForceShowHeadRotatesOnSelect", true);
+            return newState.set("isForceShowCameraRotatesOnSelect", true);
+        case 'MENU_DISABLE_FORCE_SHOW_ALL_ROTATES_ON_SELECT':
+            setCookie("menu-isForceShowStandRotatesOnSelect", false);
+            setCookie("menu-isForceShowHeadRotatesOnSelect", false);
+            setCookie("menu-isForceShowCameraRotatesOnSelect", false);
+            newState = state.set("isForceShowStandRotatesOnSelect", false);
+            newState = newState.set("isForceShowHeadRotatesOnSelect", false);
+            return newState.set("isForceShowCameraRotatesOnSelect", false);           
+        case 'MENU_TOGGLE_FORCE_SHOW_ROTATES_ON_SELECT':
+            if (action.rotateType === "stand") {
+                setCookie("menu-isForceShowStandRotatesOnSelect", !state.get("isForceShowStandRotatesOnSelect"));
+                return state.set("isForceShowStandRotatesOnSelect", !state.get("isForceShowStandRotatesOnSelect"));
+            } else if (action.rotateType === "head") {
+                setCookie("menu-isForceShowHeadRotatesOnSelect", !state.get("isForceShowHeadRotatesOnSelect"));
+                return state.set("isForceShowHeadRotatesOnSelect", !state.get("isForceShowHeadRotatesOnSelect"));
+            } else if (action.rotateType === "camera") {
+                setCookie("menu-isForceShowCameraRotatesOnSelect", !state.get("isForceShowCameraRotatesOnSelect"));
+                return state.set("isForceShowCameraRotatesOnSelect", !state.get("isForceShowCameraRotatesOnSelect"));
+            }
+            break;
         case 'MENU_SET_SCALE':
             setCookie("menu-scale", action.scale);
             return state.set("scale", action.scale);

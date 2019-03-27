@@ -48,8 +48,30 @@ export const menuSelectHead = ({ standIndex, headIndex }) => ({
     headIndex
 })
 
-export const menuToggleHideRotates = () => ({
-    type: 'MENU_TOGGLE_HIDE_ROTATES'
+export const menuHideAllRotates = () => ({
+    type: 'MENU_HIDE_ALL_ROTATES'
+})
+
+export const menuShowAllRotates = () => ({
+    type: 'MENU_SHOW_ALL_ROTATES'
+})
+
+export const menuEnableForceShowAllRotatesOnSelect = () => ({
+    type: 'MENU_ENABLE_FORCE_SHOW_ALL_ROTATES_ON_SELECT'
+})
+
+export const menuDisableForceShowAllRotatesOnSelect = () => ({
+    type: 'MENU_DISABLE_FORCE_SHOW_ALL_ROTATES_ON_SELECT'
+})
+
+export const menuToggleHideRotates = (rotateType) => ({
+    type: 'MENU_TOGGLE_HIDE_ROTATES',
+    rotateType
+})
+
+export const menuToggleForceShowRotatesOnSelect = (rotateType) => ({
+    type: 'MENU_TOGGLE_FORCE_SHOW_ROTATES_ON_SELECT',
+    rotateType
 })
 
 export function sceneFetchFromUrl(sceneUrl) {

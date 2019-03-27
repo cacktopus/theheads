@@ -418,7 +418,13 @@ export default class Menu extends React.Component {
 
         const cameraInputs = getCameraForm();
 
-        const areRotatesHidden = this.props.menu.get("areRotatesHidden");
+        const isStandRotatesHidden = this.props.menu.get("isStandRotatesHidden");
+        const isCameraRotatesHidden = this.props.menu.get("isCameraRotatesHidden");
+        const isHeadRotatesHidden = this.props.menu.get("isHeadRotatesHidden");
+
+        const isForceShowStandRotatesOnSelect = this.props.menu.get("isForceShowStandRotatesOnSelect");
+        const isForceShowHeadRotatesOnSelect = this.props.menu.get("isForceShowHeadRotatesOnSelect");
+        const isForceShowCameraRotatesOnSelect = this.props.menu.get("isForceShowCameraRotatesOnSelect");
 
         const transformLabelStyles = {width: 120};
 
@@ -517,9 +523,26 @@ export default class Menu extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div>
-                    <button onClick={this.props.menuToggleHideRotates}>{areRotatesHidden ? "Show" : "Hide"} Rotates</button>
+                <div style={{display: "inline-block", background: "#FFFFEE", padding: "5px"}}>
+                    Show Rotates:&nbsp;
+                    {/* <button onClick={this.props.menuToggleHideHeadRotates}>{isStandRotatesHidden ? "Show" : "Hide"} Stand</button>
+                    <button onClick={this.props.menuToggleHideCameraRotates}>{isCameraRotatesHidden ? "Show" : "Hide"} Camera</button>
+                    <button onClick={this.props.menuToggleHideStandRotates}>{isHeadRotatesHidden ? "Show" : "Hide"} Head</button>
+                    <button onClick={this.props.menuToggleHideStandRotates}>{isHeadRotatesHidden ? "Show" : "Hide"} Head</button> */}
+                    Stand<input name="Stand" type="checkbox" checked={!isStandRotatesHidden} onChange={this.props.menuToggleHideStandRotates} />&nbsp;
+                    Head<input name="Head" type="checkbox" checked={!isHeadRotatesHidden} onChange={this.props.menuToggleHideHeadRotates} />&nbsp;
+                    Camera<input name="Camera" type="checkbox" checked={!isCameraRotatesHidden} onChange={this.props.menuToggleHideCameraRotates} />&nbsp;
+                    <button onClick={this.props.menuShowAllRotates}>Show All</button>
+                    <button onClick={this.props.menuHideAllRotates}>Hide All</button>
                     {/* <button>Toggle visuals</button> */}
+                </div>
+                <div style={{display: "inline-block", background: "#FFEEFF", padding: "5px"}}>
+                    Force Show On Select:&nbsp;
+                    Stand<input name="Stand" type="checkbox" checked={isForceShowStandRotatesOnSelect} onChange={this.props.menuToggleForceShowStandRotatesOnSelect} />&nbsp;
+                    Head<input name="Head" type="checkbox" checked={isForceShowHeadRotatesOnSelect} onChange={this.props.menuToggleForceShowHeadRotatesOnSelect} />&nbsp;
+                    Camera<input name="Camera" type="checkbox" checked={isForceShowCameraRotatesOnSelect} onChange={this.props.menuToggleForceShowCameraRotatesOnSelect} />&nbsp;
+                    <button onClick={this.props.menuEnableForceShowAllRotatesOnSelect}>Show All</button>
+                    <button onClick={this.props.menuDisableForceShowAllRotatesOnSelect}>Hide All</button>
                 </div>
             </div>
         )
