@@ -1,12 +1,12 @@
 import { connect } from 'react-redux'
-// import { standsActions } from '../actions'
+import { menuDeselectStandAndAll } from '../actions'
 import Scene from '../components/Scene'
 
 const mapStateToProps = (state, ownProps) =>
-({
-  stands: state.stands,
-//   popups: state.popups //ownProps.filter === state.visibilityFilter
-});
+  ({
+    stands: state.stands,
+    //   popups: state.popups //ownProps.filter === state.visibilityFilter
+  });
 
 // const mapStateToProps = (state, ownProps) => ({});
 // // ({
@@ -14,10 +14,10 @@ const mapStateToProps = (state, ownProps) =>
 // // })​;
 
 const mapDispatchToProps = (dispatch, ownProps) => ({
-    // standAdd: () => dispatch(standAdd(ownProps.filter))
+  menuDeselectStandAndAll: () => dispatch(menuDeselectStandAndAll())
 });
 
 export default connect(
-    mapStateToProps,
-    mapDispatchToProps
+  mapStateToProps,
+  mapDispatchToProps
 )(Scene)

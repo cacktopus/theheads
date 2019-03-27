@@ -24,6 +24,10 @@ export const websocketSend = (payload) => {
 }
 
 // MENU
+export const menuDeselectStandAndAll = () => ({
+    type: 'MENU_DESELECT_STAND_AND_ALL',
+})
+
 export const menuSelectStand = index => ({
     type: 'MENU_SELECT_STAND',
     index

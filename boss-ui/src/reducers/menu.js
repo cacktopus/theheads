@@ -12,9 +12,9 @@ const translateY = getCookie("menu-translateY");
 
 
 const initialState = {
-    selectedStandIndex : 0,
-    selectedCameraIndex : 0,
-    selectedHeadIndex : 0,
+    selectedStandIndex : undefined,
+    selectedCameraIndex : undefined,
+    selectedHeadIndex : undefined,
     isRotatesHidden : getCookieAsBoolean("menu-isRotatesHidden") || 0,
     isStandRotatesHidden : getCookieAsBoolean("menu-isStandRotatesHidden") || 0,
     isHeadRotatesHidden : getCookieAsBoolean("menu-isHeadRotatesHidden") || 0,
@@ -34,6 +34,10 @@ const stands = (state = fromJS(initialState), action) => {
     let newState = state;
 
     switch (action.type) {
+        case 'MENU_DESELECT_STAND_AND_ALL':
+            newState = newState.set("selectedStandIndex", undefined);
+            newState = newState.set("selectedHeadIndex", undefined);
+            return newState.set("selectedCameraIndex", undefined);
         case 'MENU_SELECT_STAND':
             return state.set("selectedStandIndex", parseInt(action.index));
         case 'MENU_SELECT_CAMERA':

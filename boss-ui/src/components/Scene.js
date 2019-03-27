@@ -22,6 +22,23 @@ export default class Menu extends React.Component {
         // this.handleDragStart = this.handleDragStart.bind(this);
     }
 
+    componentDidMount() {
+        var html = document.getElementsByTagName("html")[0];
+
+
+        html.addEventListener("mousedown", (e) => {
+            if(e.target.tagName.toUpperCase() === "HTML") {
+                this.props.menuDeselectStandAndAll();
+            }
+        })
+
+        html.addEventListener("touchstart", (e) => {
+            if(e.target.tagName.toUpperCase() === "HTML") {
+                this.props.menuDeselectStandAndAll();
+            }
+        })
+    }
+
     // handleDrag = {this.handleDrag}
     // handleDragEnd = {this.handleDragEnd}
     // handleDragEnter = {this.handleDragEnter}
@@ -31,7 +48,7 @@ export default class Menu extends React.Component {
     // handleDragStart = {this.handleDragStart}
 
     render() {
-        window.c_ko = this;
+        // window.c_ko = this;
 
         const stands = this.props.stands.map((stand, i) => {
             return <Stand key={i} index={i} stand={stand}/>
