@@ -55,7 +55,8 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
             }
         }
         dispatch(websocketSend(websocketPayload));
-    }// rot = radian amount
+    }
+    // rot = radian amount
     // standMoveByIndex: (standIndex, pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     // standRotateByIndex: (standIndex, rot) => dispatch(standRotateByIndex(ownProps.index, rot)) // rot = radian amount
 });

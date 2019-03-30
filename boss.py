@@ -357,6 +357,7 @@ async def setup(
         web.get("/build/{filename}", frontend_handler("boss-ui/build")),
         web.get("/build/json/{filename}", frontend_handler("boss-ui/build/json")),
         web.get("/build/media/{filename}", frontend_handler("boss-ui/build/media")),
+        web.get("/build/js/{filename}", frontend_handler("boss-ui/build/js")),
         web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
         web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
     ])

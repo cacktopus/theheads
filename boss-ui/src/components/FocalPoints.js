@@ -117,21 +117,15 @@ export default class Menu extends React.Component {
     }
 
     componentDidMount() {
-        // noTouchMove(this.FocalPointRotateHandle.current);
-        // noTouchMove(this.FocalPointMoveHandle.current);
-
-        // Initialize the kinect to descript the focal points
-        // setik();
-        // setTimeout(()=> {
-        //     console.log('f');
-        if (window.location.port === "3000") {
+        const locatiobnUrl = new URL(document.location.href);
+        if (locatiobnUrl.searchParams.get("kinect")) {
             this.initKinect();
         }
     }
 
     render() {
         const focalPoints = this.props.focalPoints.map((focalPoint, i) => {
-            return <FocalPoint key={i} index={i} focalPoint={focalPoint} />
+            return <FocalPoint key={i} name={`fp${i}`} index={i} focalPoint={focalPoint} />
         });
 
         return (

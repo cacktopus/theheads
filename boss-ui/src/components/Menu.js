@@ -507,7 +507,6 @@ export default class Menu extends React.Component {
         // Focal Point details
         let focalPointDetails;
 
-
         return (
             <div className="Menu">
                 <div>

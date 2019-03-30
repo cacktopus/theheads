@@ -15,6 +15,7 @@ const initialState = {
     selectedStandIndex : undefined,
     selectedCameraIndex : undefined,
     selectedHeadIndex : undefined,
+    selectedFocalPointIndex : undefined,
     isRotatesHidden : getCookieAsBoolean("menu-isRotatesHidden") || 0,
     isStandRotatesHidden : getCookieAsBoolean("menu-isStandRotatesHidden") || 0,
     isHeadRotatesHidden : getCookieAsBoolean("menu-isHeadRotatesHidden") || 0,
