@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="theme-color" content="#000000">
-    <!--
+
+<head>
+  <meta charset="utf-8">
+  <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
-    <!--
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+  <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
       Only files inside the `public` folder can be referenced from the HTML.
@@ -19,27 +20,110 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
-    <style>
-      /* body,
+  <title>Boss UI</title>
+  <style>
+    /* body,
       html{
           overflow: hidden;
           margin: 0;
           padding: 0;
       } */
 
-      .react-draggable span div {
-        background-color: blue;
-      }
+    .react-draggable span div {
+      background-color: blue;
+    }
+  </style>
 
-    </style>
-  </head>
-  <body>
-    <noscript>
-      You need to enable JavaScript to run this app.
-    </noscript>
-    <div id="root"></div>
-    <!--
+  <script src="/js/socket.io.js"></script>
+  <script>
+    // Join Numbers
+    var JOINT_NUM = {
+      SPINEBASE: 0,
+      SPINEMID: 1,
+      NECK: 2,
+      HEAD: 3,
+      SHOULDERLEFT: 4,
+      ELBOWLEFT: 5,
+      WRISTLEFT: 6,
+      HANDLEFT: 7,
+      SHOULDERRIGHT: 8,
+      ELBOWRIGHT: 9,
+      WRISTRIGHT: 10,
+      HANDRIGHT: 11,
+      HIPLEFT: 12,
+      KNEELEFT: 13,
+      ANKLELEFT: 14,
+      FOOTLEFT: 15,
+      HIPRIGHT: 16,
+      KNEERIGHT: 17,
+      ANKLERIGHT: 18,
+      FOOTRIGHT: 19,
+      SPINESHOULDER: 20,
+      HANDTIPLEFT: 21,
+      THUMBLEFT: 22,
+      HANDTIPRIGHT: 23,
+      THUMBRIGHT: 24
+    }
+
+    // Events to be called.
+    function eventBodyFrame(bodyFrame) {
+      var headPosDiv = document.getElementById("headPos");
+
+      // ctx.clearRect(0, 0, canvas.width, canvas.height);
+      var index = 0;
+      bodyFrame.bodies.forEach(function (body) {
+        if (body.tracked) {
+          for (var jointType in body.joints) {
+            var joint = body.joints[jointType];
+
+            if (parseInt(jointType) === JOINT_NUM.HEAD) {
+              // ctx.fillStyle = colorsForHead[index];
+              headPosDiv.innerHTML = `x: ${joint.cameraX}<br/>y: ${joint.cameraY}<br/>z: ${joint.cameraZ}`;
+            } else {
+              // ctx.fillStyle = colors[index];
+            }
+            // ctx.fillRect(joint.depthX * 512, joint.depthY * 424, 10, 10);
+          }
+          //draw hand states
+          // updateHandState(body.leftHandState, body.joints[7]);
+          // updateHandState(body.rightHandState, body.joints[11]);
+          index++;
+        }
+      });
+    }
+
+    // short form for initializing kinect.
+    window.ik = () => {
+      initKinect({
+        socketUrl: 'http://10.0.1.38:8000/',
+        events: {
+          bodyFrame: eventBodyFrame
+        }
+      });
+    }
+
+    window.initKinect = (options) => {
+      const {
+        socketUrl,
+        events
+      } = options;
+      const socket = io(socketUrl);
+      var headPosDiv = document.getElementById("headPos");
+
+      for (var eventName in events) {
+        socket.on(eventName, events[eventName]);
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <noscript>
+    You need to enable JavaScript to run this app.
+  </noscript>
+  <div id="headPos"></div>
+  <div id="root"></div>
+  <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
 
@@ -49,5 +133,6 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-  </body>
+</body>
+
 </html>

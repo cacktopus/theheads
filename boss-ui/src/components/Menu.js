@@ -546,10 +546,9 @@ export default class Menu extends React.Component {
                     </div>
                     <div style={{ display: "inline-block", background: "#BBF", padding: "5px" }}>
                         <div className="Menu-websocket">
-                            <label>Websocket Url:</label><span id="websocket-msg"></span>
+                            <label>Websocket Url:</label><span id="websocket-msg"></span><br/>
                             <input type="text" style={{ width: 200 }} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl} />&nbsp;
-                        </div>
-                        <div className="Menu-websocket">
+                        
                             {websocketConnectionButton}&nbsp;
                             <button onClick={this.websocketLoadLocalhostUrl}>Autofill localhost:8081</button>&nbsp;
                             {/* <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp; */}

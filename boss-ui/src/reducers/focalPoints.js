@@ -3,7 +3,6 @@ import { fromJS } from "immutable";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 // import { WEBSOCKET_CONNECTING, WEBSOCKET_OPEN, WEBSOCKET_CLOSED, WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
-
 // Returns a new immutable object for a new focalPoint
 const createNewFocalPoint = ({
     name = undefined,

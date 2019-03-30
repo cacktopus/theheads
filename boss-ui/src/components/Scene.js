@@ -2,7 +2,8 @@ import React from 'react'
 //import Heads from '../containers/Heads'
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 import Stand from '../containers/Stand';
-import FocalPoint from '../containers/FocalPoint';
+// import FocalPoint from '../containers/FocalPoint';
+import FocalPoints from '../containers/FocalPoints';
 // import Popups from '../components/Popups';
 import UnderVisuals from '../containers/UnderVisuals';
 
@@ -40,14 +41,6 @@ export default class Menu extends React.Component {
         })
     }
 
-    // handleDrag = {this.handleDrag}
-    // handleDragEnd = {this.handleDragEnd}
-    // handleDragEnter = {this.handleDragEnter}
-    // handleDragExit = {this.handleDragExit}
-    // handleDragLeave = {this.handleDragLeave}
-    // handleDragOver = {this.handleDragOver}
-    // handleDragStart = {this.handleDragStart}
-
     render() {
         // window.c_ko = this;
 
@@ -59,10 +52,6 @@ export default class Menu extends React.Component {
             position: "relative"
         }
 
-        const focalPoints = this.props.focalPoints.map((focalPoint, i) => {
-            return <FocalPoint key={i} index={i} focalPoint={focalPoint}/>
-        });
-
         return (
             <div id="Scene" className="Scene">
                 <div style={standsContainerStyle}>
@@ -70,9 +59,7 @@ export default class Menu extends React.Component {
                     <div className="Stands">
                         {stands}
                     </div>
-                    <div className="FocalPoints">
-                        {focalPoints}
-                    </div>
+                    <FocalPoints/>
                     {/* <Popups popups={this.props.popups}/> */}
                 </div>
             </div>
