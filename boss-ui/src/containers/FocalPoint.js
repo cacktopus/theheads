@@ -27,9 +27,9 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     dispatch(focalPointMoveByIndex(ownProps.index, pos));
 
     const websocketPayload = {
-      "type": "fp-location",
+      "type": "focal-point-location",
       "data": {
-        "fpName": ownProps.name,
+        "focalPointName": ownProps.name,
         "location": pos
       }
     }
