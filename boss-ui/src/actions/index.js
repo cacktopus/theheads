@@ -52,6 +52,11 @@ export const menuSelectHead = ({ standIndex, headIndex }) => ({
     headIndex
 })
 
+export const menuSelectFocalPoint = index => ({
+    type: 'MENU_SELECT_FOCALPOINT',
+    index
+})
+
 export const menuHideAllRotates = () => ({
     type: 'MENU_HIDE_ALL_ROTATES'
 })
@@ -87,7 +92,7 @@ export function sceneFetchFromUrl(sceneUrl) {
                 if (typeof json === "object") {
                     if (json.scale) {
                         dispatch(menuSetScale(json.scale));
-                    } 
+                    }
                     if (json.translate && json.translate.x && json.translate.y) {
                         dispatch(menuSetTranslateX(json.translate.x));
                         dispatch(menuSetTranslateY(json.translate.y));
@@ -213,7 +218,7 @@ export const cameraAddNew = (standIndex) => ({
 })
 
 export const cameraRemoveByIndex = (standIndex, cameraIndex) => ({
-    type: 'CAMERA_REMOVE',
+    type: 'CAMERA_REMOVE_BY_INDEX',
     standIndex,
     cameraIndex
 })
@@ -239,6 +244,49 @@ export const popupInfoRemove = (standIndex) => ({
     type: 'POPUP_INFO_REMOVE',
     standIndex
 })
+
+// FOCAL POINTS
+
+export const focalPointAdd = options => ({
+    type: 'FOCALPOINT_ADD',
+    options
+})
+
+// export const focalPointSetFieldByIndex = (focalPointIndex, fieldName, value) => ({
+//     type: 'FOCALPOINT_SET_FIELD_BY_INDEX',
+//     index: focalPointIndex,
+//     fieldName,
+//     value
+// });
+
+// export const focalPointSetInFieldsByIndex = (focalPointIndex, fieldNames, value) => ({
+//     type: 'FOCALPOINT_SETIN_FIELDS_BY_INDEX',
+//     index: focalPointIndex,
+//     fieldNames,
+//     value
+// });
+
+export const focalPointMoveByIndex = (focalPointIndex, pos) => ({
+    type: 'FOCALPOINT_MOVE_BY_INDEX',
+    index: focalPointIndex,
+    pos
+})
+
+export const focalPointRemoveByIndex = index => ({
+    type: 'FOCALPOINT_REMOVE_BY_INDEX',
+    index
+})
+
+export const focalPointSetIsActive = (headName) => ({
+    type: 'FOCALPOINT_SET_IS_ACTIVE',
+    headName
+})
+
+export const focalPointSetIsNotActive = (headName) => ({
+    type: 'FOCALPOINT_SET_IS_NOT_ACTIVE',
+    headName
+})
+
 
 // export const standRemoveByIndex = index => ({
 //     type: 'STAND_REMOVE_BY_INDEX',

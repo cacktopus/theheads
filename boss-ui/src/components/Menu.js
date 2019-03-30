@@ -21,14 +21,15 @@ export default class Menu extends React.Component {
         super(props);
 
         this.state = {
-            sceneUrl : defaultSceneUrl,
+            sceneUrl: defaultSceneUrl,
             // sceneUrl : "/build/json/temp.json",
-            websocketUrl : defaultWebsocketUrl, //"ws://localhost:8081/ws"
+            websocketUrl: defaultWebsocketUrl, //"ws://localhost:8081/ws"
             // sceneUrl : "/json/temp.json"
             // sceneUrl : "/json/temp2.json"
         };
 
         this.addStand = this.addStand.bind(this);
+        this.addFocalPoint = this.addFocalPoint.bind(this);
         this.setLoadSceneUrl = this.setLoadSceneUrl.bind(this);
         this.loadScene = this.loadScene.bind(this);
         this.loadTempSceneJson = this.loadTempSceneJson.bind(this);
@@ -41,7 +42,10 @@ export default class Menu extends React.Component {
         this.setTranslateX = e => { props.setTranslateX(e.target.value) };
         this.setTranslateY = e => { props.setTranslateY(e.target.value) };
 
-        this.setWebsocketUrl = e => { this.setState({websocketUrl : e.target.value}) };
+        // Focal Point
+        this.addFocalPoint = this.addFocalPoint.bind(this);
+
+        this.setWebsocketUrl = e => { this.setState({ websocketUrl: e.target.value }) };
         this.websocketConnect = this.websocketConnect.bind(this);
         this.websocketDisconnect = this.websocketDisconnect.bind(this);
         this.websocketLoadLocalhostUrl = this.websocketLoadLocalhostUrl.bind(this);
@@ -57,9 +61,13 @@ export default class Menu extends React.Component {
         this.props.addStand({})
     }
 
+    addFocalPoint() {
+        this.props.addFocalPoint({})
+    }
+
     setLoadSceneUrl(e) {
         const sceneUrl = e.target.value;
-        this.setState({sceneUrl});
+        this.setState({ sceneUrl });
     }
 
     exportSceneToJSON() {
@@ -103,9 +111,11 @@ export default class Menu extends React.Component {
     }
 
     removeCurrentCamera() {
+        console.log('c_ 12');
         this.props.cameraRemove(this.props.selectedStandIndex, this.props.selectedCameraIndex);
     }
 
+    // Web socket connection
     websocketConnect() {
         this.props.websocketConnect(this.state.websocketUrl);
     }
@@ -113,13 +123,13 @@ export default class Menu extends React.Component {
     websocketDisconnect() {
         this.props.websocketDisconnect();
     }
-    
+
     websocketLoadLocalhostUrl() {
         this.setState({
             websocketUrl: "ws://localhost:8081/ws"
         })
     }
-    
+
     websocketLoadOtherUrl() {
 
     }
@@ -213,7 +223,7 @@ export default class Menu extends React.Component {
 
         // `fieldNames` param is of type array. e.g. fieldNames = [0, "heads", 0, "rot"]
         const inputHandler = fieldNames => {
-            
+
             return (e) => {
                 const value = e.target.value;
 
@@ -252,7 +262,7 @@ export default class Menu extends React.Component {
         }
 
         const getPosInput = ({ fieldName, fieldVal, parentFieldNames }) => {
-            const { x, y } = fieldVal && fieldVal.toJS ? fieldVal.toJS() : {x: 0, y: 0};
+            const { x, y } = fieldVal && fieldVal.toJS ? fieldVal.toJS() : { x: 0, y: 0 };
             const fieldNameX = `${fieldName}.x`;
             const fieldNameY = `${fieldName}.y`;
 
@@ -262,9 +272,9 @@ export default class Menu extends React.Component {
 
             return (
                 <div className="Menu-form-posType">
-                    <label htmlFor={fieldNameX}>X</label>
+                    <label >X</label>
                     <input className="Menu-form-posType-X" name={fieldNameX} type="number" onChange={posHandler(fieldNames, "x")} value={x} />
-                    <label htmlFor={fieldNameY} style={{minWidth: 0}}>Y</label>
+                    <label style={{ minWidth: 0 }}>Y</label>
                     <input className="Menu-form-posType-Y" name={fieldNameY} type="number" onChange={posHandler(fieldNames, "y")} value={y} />
                 </div>
             );
@@ -378,9 +388,13 @@ export default class Menu extends React.Component {
 
         const { selectedStand, cameras, heads } = getStandInfo();
 
-        const standOptions = stands.map((stand, i) => {
+        let standOptions = stands.map((stand, i) => {
             return <option key={i} value={i}>{i} - {stand.get("name")}</option>
         });
+
+        let defaultStandOption = <option key={"no selection"} value="">None selected</option>;
+
+        standOptions = ([defaultStandOption]).concat(standOptions);
 
         const cameraOptions = cameras.map((camera, i) => {
             return <option key={i} value={i}>{i} - {camera.get("name")}</option>
@@ -402,7 +416,7 @@ export default class Menu extends React.Component {
                 return undefined;
             }
         }
-        
+
         const getCameraForm = () => {
             const selectedCamera = cameras && cameras.get ? cameras.get(selectedCameraIndex) : undefined;
             if (selectedCamera !== undefined) {
@@ -426,7 +440,7 @@ export default class Menu extends React.Component {
         const isForceShowHeadRotatesOnSelect = this.props.menu.get("isForceShowHeadRotatesOnSelect");
         const isForceShowCameraRotatesOnSelect = this.props.menu.get("isForceShowCameraRotatesOnSelect");
 
-        const transformLabelStyles = {width: 120};
+        const transformLabelStyles = { width: 120 };
 
         // Websocket connection buttons
         const websocketStatus = this.props.menu.get("websocketStatus");
@@ -440,12 +454,12 @@ export default class Menu extends React.Component {
             websocketConnectionButton = <button onClick={this.websocketConnect}>Connect</button>
         }
 
-        return (
-            <div className="Menu">
+        // Inputs for stand, head, camera
+        let standDetails;
+
+        if (selectedStandIndex >= 0) {
+            standDetails = (
                 <div>
-                    <div className="Menu-section">
-                        <div className="Menu-addStandButton" onClick={this.addStand}>Add Stand</div>
-                    </div>
                     <div className="Menu-section Menu-section--stand">
                         <div>
                             <label className="Menu-form-label">Stand</label><br />
@@ -465,7 +479,7 @@ export default class Menu extends React.Component {
                             </select>
                         </div>
                         <div>
-                            <button onClick={this.addNewCamera}>Add New</button><br/><br/>
+                            <button onClick={this.addNewCamera}>Add New</button><br /><br />
                         </div>
                         <div>
                             <button onClick={this.removeCurrentCamera}>Remove Current</button>
@@ -486,35 +500,54 @@ export default class Menu extends React.Component {
                     <div className="Menu-section Menu-section--headInputs" >
                         {headInputs}
                     </div>
+                </div>
+            );
+        }
+
+        // Focal Point details
+        let focalPointDetails;
+
+
+        return (
+            <div className="Menu">
+                <div>
+                    <div className="Menu-section">
+                        <div className="Menu-bigButton" onClick={this.addStand}>Add Stand</div>
+                    </div>
+                    <div className="Menu-section">
+                        <div className="Menu-bigButton" onClick={this.addFocalPoint}>Add Focal Point</div>
+                    </div>
+                    {standDetails}
+                    {focalPointDetails}
                     <div style={{ clear: "both" }}></div>
                 </div>
-                <div style={{marginTop: 15}}>
-                    <div style={{display: "inline-block", background: "#FBB", padding: "5px"}}>
+                <div style={{ marginTop: 15 }}>
+                    <div style={{ display: "inline-block", background: "#FBB", padding: "5px" }}>
                         <div className="Menu-loadScene">
                             <label>Import Scene:</label>
-                            <input style={{width: 200}} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl}/>&nbsp;
+                            <input style={{ width: 200 }} placeholder="Scene Url" value={this.state.sceneUrl} onChange={this.setLoadSceneUrl} />&nbsp;
                             <button onClick={this.loadScene}>Load</button>&nbsp;<button onClick={this.loadTempSceneJson}>Temp</button>&nbsp;<button onClick={this.loadRegSceneJson}>Reg</button>
                         </div><div className="Menu-getScene">
                             <label>Export Scene:</label>
-                            <input id="clipboard-input" style={{width: 200}} placeholder="This will be populated on 'Copy to clipboard'." />&nbsp;
+                            <input id="clipboard-input" style={{ width: 200 }} placeholder="This will be populated on 'Copy to clipboard'." />&nbsp;
                             <button onClick={this.exportSceneToJSON}>Copy to clipboard</button>
                             <span id="clipboard-msg"></span>
                         </div>
                     </div>
-                    <div style={{display: "inline-block", background: "#BFB", padding: "5px"}}>
+                    <div style={{ display: "inline-block", background: "#BFB", padding: "5px" }}>
                         <div className="Menu-loadScene">
                             <label style={transformLabelStyles}>Scale Scene:</label>
-                            <input type="number" style={{width: 100}} placeholder="Scale" value={scale} onChange={this.setScale}/>&nbsp;
+                            <input type="number" style={{ width: 100 }} placeholder="Scale" value={scale} onChange={this.setScale} />&nbsp;
                         </div><div className="Menu-getScene">
                             <label style={transformLabelStyles}>Translate Scene:</label>
-                            <input type="number" style={{width: 45}} placeholder="x" value={translateX} onChange={this.setTranslateX}/>&nbsp;
-                            <input type="number" style={{width: 45}} placeholder="y" value={translateY} onChange={this.setTranslateY}/>&nbsp;
+                            <input type="number" style={{ width: 45 }} placeholder="x" value={translateX} onChange={this.setTranslateX} />&nbsp;
+                            <input type="number" style={{ width: 45 }} placeholder="y" value={translateY} onChange={this.setTranslateY} />&nbsp;
                         </div>
                     </div>
-                    <div style={{display: "inline-block", background: "#BBF", padding: "5px"}}>
+                    <div style={{ display: "inline-block", background: "#BBF", padding: "5px" }}>
                         <div className="Menu-websocket">
                             <label>Websocket Url:</label><span id="websocket-msg"></span>
-                            <input type="text" style={{width: 200}} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl}/>&nbsp;
+                            <input type="text" style={{ width: 200 }} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl} />&nbsp;
                         </div>
                         <div className="Menu-websocket">
                             {websocketConnectionButton}&nbsp;
@@ -523,7 +556,7 @@ export default class Menu extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div style={{display: "inline-block", background: "#FFFFEE", padding: "5px"}}>
+                <div style={{ display: "inline-block", background: "#FFFFEE", padding: "5px" }}>
                     Show Rotates:&nbsp;
                     {/* <button onClick={this.props.menuToggleHideHeadRotates}>{isStandRotatesHidden ? "Show" : "Hide"} Stand</button>
                     <button onClick={this.props.menuToggleHideCameraRotates}>{isCameraRotatesHidden ? "Show" : "Hide"} Camera</button>
@@ -536,7 +569,7 @@ export default class Menu extends React.Component {
                     <button onClick={this.props.menuHideAllRotates}>Hide All</button>
                     {/* <button>Toggle visuals</button> */}
                 </div>
-                <div style={{display: "inline-block", background: "#FFEEFF", padding: "5px"}}>
+                <div style={{ display: "inline-block", background: "#FFEEFF", padding: "5px" }}>
                     Force Show On Select:&nbsp;
                     Stand<input name="Stand" type="checkbox" checked={isForceShowStandRotatesOnSelect} onChange={this.props.menuToggleForceShowStandRotatesOnSelect} />&nbsp;
                     Head<input name="Head" type="checkbox" checked={isForceShowHeadRotatesOnSelect} onChange={this.props.menuToggleForceShowHeadRotatesOnSelect} />&nbsp;

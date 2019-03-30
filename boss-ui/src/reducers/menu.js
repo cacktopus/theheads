@@ -39,9 +39,10 @@ const stands = (state = fromJS(initialState), action) => {
             newState = newState.set("selectedHeadIndex", undefined);
             return newState.set("selectedCameraIndex", undefined);
         case 'MENU_SELECT_STAND':
-            return state.set("selectedStandIndex", parseInt(action.index));
+            newState = newState.set("selectedStandIndex", parseInt(action.index));
+            newState = newState.set("selectedHeadIndex", 0);
+            return newState.set("selectedCameraIndex", 0);
         case 'MENU_SELECT_CAMERA':
-            console.log(action);
             newState = state.set("selectedCameraIndex", parseInt(action.cameraIndex));
 
             // If standIndex is defined set that as well

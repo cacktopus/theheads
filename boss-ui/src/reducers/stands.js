@@ -226,6 +226,7 @@ const stands = (state = fromJS([]), action) => {
             let camerasList = state.getIn([action.standIndex, "cameras"]).toJS();
             return state.updateIn([action.standIndex, "cameras"], cameras => cameras.push(fromJS(createNewCamera({}, camerasList))))
         case 'CAMERA_REMOVE_BY_INDEX':
+            console.log("rem", action.standIndex, action.cameraIndex);
             return state.removeIn([action.standIndex, "cameras", action.cameraIndex]);
         case 'STAND_SET_SCENE':
             if (action.sceneData && action.sceneData.stands && action.sceneData.stands.length > 0) {
