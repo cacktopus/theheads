@@ -565,6 +565,23 @@ body {
 }
 
 /* Motion Lines */
+.GridLines {    
+  display: none;
+  position: absolute;
+  height: 100px;
+  width: 100px;
+  /* background: blue; */
+}
+.GridLines table {
+  border-collapse: collapse;
+  width: 100%;
+  height: 100%;
+}
+.GridLines table td {
+  border: 1px solid #000;
+}
+
+/* Motion Lines */
 .MotionLine {
   opacity: 1;
   /* -webkit-transition: opacity 1500ms;

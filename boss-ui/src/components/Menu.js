@@ -517,17 +517,16 @@ export default class Menu extends React.Component {
                             max={400}
                             vertical={true}
                             onChange={this.props.setScale}
-                            value={scale}
+                            value={parseFloat(scale)}
                         />
                     </div>
                     <div className="Menu-zoomer-translateY">
-                        { /* Use the inverse for the value */ }
                         <Slider
                             min={-1000}
                             max={1000}
                             vertical={true}
                             onChange={val => this.props.setTranslateY(val)}
-                            value={translateY}
+                            value={parseFloat(translateY)}
                         />
                     </div>
                     <div className="Menu-zoomer-translateX">
@@ -535,7 +534,7 @@ export default class Menu extends React.Component {
                             min={-500}
                             max={2000}
                             onChange={this.props.setTranslateX}
-                            value={translateX}
+                            value={parseFloat(translateX)}
                         />
                     </div>
                 </div>
