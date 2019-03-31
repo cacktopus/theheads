@@ -32,18 +32,22 @@ class WebsocketConnection:
             "data": {},
         })
 
+        # {"type":"focal-point-location","data":{"focalPointName":"fp0","location":{"x":-0.26666666666666217,"y":-2.3066666666666666}}}
+
         async for msg in self._ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 if msg.data == 'close':
                     await self._ws.close()
                 else:
                     payload = json.loads(msg.data)
+                    data = payload['data']
                     if payload['type'] == 'head-rotation':
-                        data = payload['data']
                         self._head_manager.send(
                             head_name=data['headName'],
                             rotation=data['rotation'],
                         )
+                    elif payload['type'] == 'focal-point-location':
+                        print(json.dumps(data))
 
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
