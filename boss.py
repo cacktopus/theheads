@@ -21,6 +21,7 @@ from head_manager import HeadManager
 from health import health_check
 from installation import build_installation, Installation
 from metrics import handle_metrics
+from orchestrator import Orchestrator
 from transformations import Mat, Vec
 
 REDIS_MESSAGE_RECEIVED = prometheus_client.Counter(
@@ -74,6 +75,7 @@ async def motion_detected(
         inst: Installation,
         ws_manager: ws.WebsocketManager,
         head_manager: HeadManager,
+        orchestrator: Orchestrator,
         msg: Dict
 ):
     data = msg['data']
@@ -107,33 +109,11 @@ async def motion_detected(
         pos_y += dy
 
     focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-
-    for head in inst.heads.values():
-        m = head.stand.m * head.m
-        m_inv = m.inv()
-
-        f = m_inv * focus
-        f = f.unit()
-
-        theta = math.atan2(f.y, f.x) * 180 / math.pi
-
-        print(head.name, theta)
-
-        p0 = m * Vec(0.0, 0.0)
-        p1 = m * Mat.rotz(theta) * Vec(5, 0, 0.0)
-
-        ws_manager.send({
-            "type": "draw",
-            "data": {
-                "shape": "line",
-                "coords": [p0.x, p0.y, p1.x, p1.y],
-            }
-        })
-
-        head_manager.send(head.name, theta)
+    orchestrator.focus = focus
+    orchestrator.act()
 
 
-async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadManager):
+async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadManager, orchestrator: Orchestrator):
     print("Connecting to redis:", redis_hostport)
     host, port = redis_hostport.split(":")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
@@ -155,7 +135,7 @@ async def run_redis(redis_hostport, ws_manager, inst: Installation, hm: HeadMana
         ).inc()
 
         if msg['type'] == "motion-detected":
-            await motion_detected(inst, ws_manager, hm, msg)
+            await motion_detected(inst, ws_manager, hm, orchestrator, msg)
 
         if msg['type'] == "head-positioned":
             await head_positioned(inst, ws_manager, hm, msg)
@@ -362,8 +342,16 @@ async def setup(
         web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
     ])
 
+    orchestrator = Orchestrator(
+        inst=inst,
+        ws_manager=ws_manager,
+        head_manager=hm,
+    )
+
     for redis in cfg['redis_servers']:
-        asyncio.ensure_future(run_redis(redis, ws_manager, inst, hm))
+        asyncio.ensure_future(run_redis(redis, ws_manager, inst, hm, orchestrator))
+
+    app['orchestrator'] = orchestrator
 
     return app
 

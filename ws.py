@@ -7,6 +7,8 @@ from aiohttp import web
 
 from head_manager import HeadManager
 from installation import Installation
+from orchestrator import Orchestrator
+from transformations import Vec
 
 
 class Closed:
@@ -14,12 +16,13 @@ class Closed:
 
 
 class WebsocketConnection:
-    def __init__(self, inst: Installation, head_manager: HeadManager):
+    def __init__(self, inst: Installation, head_manager: HeadManager, orchestrator: Orchestrator):
         self._ws = None
         self._send_queue = asyncio.Queue()
         self._send_stuff_coro = asyncio.ensure_future(self._send_loop())
         self._inst = inst
         self._head_manager = head_manager
+        self._orchestator = orchestrator
 
     async def handle(self, request):
         print("Websocket connect")
@@ -47,7 +50,10 @@ class WebsocketConnection:
                             rotation=data['rotation'],
                         )
                     elif payload['type'] == 'focal-point-location':
-                        print(json.dumps(data))
+                        location = data['location']
+                        self._orchestator.focus = Vec(x=location['x'], y=location['y'])
+                        self._orchestator.act()
+
 
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
@@ -93,7 +99,7 @@ class WebsocketManager:
         self._clients = set()
 
     async def websocket_handler(self, request):
-        conn = WebsocketConnection(request.app['inst'], request.app['head_manager'])
+        conn = WebsocketConnection(request.app['inst'], request.app['head_manager'], request.app['orchestrator'])
         self._clients.add(conn)
         ws = await conn.handle(request)
         self._clients.remove(conn)
