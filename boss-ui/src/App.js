@@ -2,6 +2,8 @@ import React from 'react'
 import Menu from './containers/Menu'
 import Scene from './containers/Scene'
 import './App.css';
+import 'rc-slider/assets/index.css';
+
 // import {scale, rotate, translate, compose, applyToPoint} from 'transformation-matrix';
 // window.c_tm = {scale, rotate, translate, compose, applyToPoint};
 

@@ -118,7 +118,6 @@ export default class Menu extends React.Component {
     }
 
     render() {
-        window.c_STN = this;
         const stand = this.props.stand;
         const isActive = stand.get("isActive");
         // let pos = {x: 0, y:0};
@@ -162,6 +161,16 @@ export default class Menu extends React.Component {
 
         const standName = stand.get("name");
 
+        // Given the stand is 100px 
+        // and the actual stand is 0.381 m (15')
+        // When the scene scale is 100
+        // set the transform:scale(X); to X = 0.381
+        // When the scene scale is 200 (100 * 2)
+        // set the transform:scale(X); to X = 0.381 * 2 = 0.762
+        const standContainerScale = 0.381 * this.props.menu.get("scale") / 100
+        const styleStandContainer = {
+            transform: `scale(${standContainerScale})`
+        }
         return (
             <Draggable
                 handle=".Stand-move"
@@ -190,7 +199,8 @@ export default class Menu extends React.Component {
                 <div ref={this.refStand} id={`Stand-${standName}`} className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.props.standSelect}>
                     {popupInfo}
                     <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
-                        <div className="Stand-container">
+                        <div style={styleStandContainer} className="Stand-container">
+                            <div className="Stand-octagon"></div>
                             <div className="Stand-name noselect">
                                 {stand.get("name")} : {stand.getIn(["heads",0,"name"])}
                             </div>

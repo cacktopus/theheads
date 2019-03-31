@@ -30,6 +30,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -37,17 +38,77 @@ body {
 
 /* Menu */
 .Menu {
+  z-index: 20;
+  /* Higher than the Scene */
+  position: relative;
   background: #EEE;
   padding-bottom: 10px;
   border-bottom: 1px solid black;
-  padding: 10px;
+  padding: 30px 10px 10px 60px;
+
+  /* padding-left: 60px; */
+  /* 30px + 10px */
+}
+
+.Menu-zoomer {
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 25px;
+  height: 100%;
+  background: grey;
+  bottom: 0;
+  /* padding: 20px 5px; */
+  box-sizing: border-box;
+}
+
+/* Hide this because we don't need it */
+.Menu-zoomer .rc-slider-mark {
+  display: none;
+}
+
+.Menu-zoomer .Menu-zoomer-scale .rc-slider-handle {
+  border-color: #006e80;
+}
+
+.Menu-zoomer .Menu-zoomer-scale .rc-slider-track {
+  background-color: #006e80;
+}
+
+.Menu-zoomer .Menu-zoomer-scale,
+.Menu-zoomer .Menu-zoomer-translateY {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  height: 100%;
+  width: 25px;
+  background: grey;
+  padding: 15px 5px;
+}
+
+.Menu-zoomer .Menu-zoomer-translateY {
+  left: 25px;
+}
+
+.Menu-zoomer .Menu-zoomer-translateX {
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: calc(100vw - 50px);
+  height: 25px;
+  background: grey;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
 .Menu label,
 .Menu-form-label {
   display: inline-block;
   margin-right: 10px;
-  min-width: 40px;  
+  min-width: 40px;
   font-size: 14px;
 }
 
@@ -62,7 +123,7 @@ body {
   padding: 20px;
   border: 1px solid black;
   cursor: pointer;
-  box-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .Menu-form-posType-X,
@@ -82,6 +143,56 @@ body {
   background : grey; */
 }
 
+.Stand-octagon {
+  box-sizing: border-box;
+  width: 100px;
+  height: 100px;
+  background: #6a6a6a;
+  position: relative;
+  border-right: 5px solid blue;
+}
+
+.Stand-octagon:before {
+  display: none;
+  box-sizing: border-box;
+  content: "";
+  width: 100px;
+  height: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-bottom: 29px solid #6a6a6a;
+  border-left: 29px solid #fff;
+  border-right: 29px solid #fff;
+}
+
+.Stand-octagon:after {
+  display: none;
+  box-sizing: border-box;
+  content: "";
+  width: 100px;
+  height: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border-top: 29px solid #6a6a6a;
+  border-left: 29px solid #fff;
+  border-right: 29px solid #fff;
+}
+
+.Stand--selected .Stand-octagon {
+  background: #a52a79;
+  border-right: 5px solid #3333EE;
+}
+
+.Stand--selected .Stand-octagon:before {
+  border-bottom-color: #a52a79;
+}
+
+.Stand--selected .Stand-octagon:after {
+  border-top-color: #a52a79;
+}
+
 .Stand--active {
   opacity: 1;
 }
@@ -95,7 +206,7 @@ body {
   width: 100px;
   height: 100px;
   /* Use this so the origin is in the center */
-  margin-left: -50px; 
+  margin-left: -50px;
   margin-top: -50px;
 }
 
@@ -103,14 +214,15 @@ body {
   position: absolute;
   width: 100px;
   height: 100px;
-  transform: translate(0px,0px);
-  border: 5px solid #444;
-  background: #999;
-  border-right: 5px solid blue;
+  transform: translate(0px, 0px);
+  /* border: 5px solid #444; */
+  /* background: #999; */
+  /* border-right: 5px solid blue; */
 }
+
 .Stand--selected .Stand-container {
-  border: 5px solid #f25;
-  border-right: 5px solid blue;
+  /* border: 5px solid #f25; */
+  /* border-right: 5px solid blue; */
 }
 
 .Stand-name {
@@ -119,8 +231,8 @@ body {
   transform: rotate(-90deg) translate(-70px,-60px); Transform them to the top */
   position: absolute;
   top: 0;
-  -webkit-transform: rotate(-90deg) translate(-38px,-80px);
-  transform: rotate(-90deg) translate(-38px,-80px);
+  -webkit-transform: rotate(-90deg) translate(-38px, -80px);
+  transform: rotate(-90deg) translate(-38px, -80px);
   left: 1px;
   width: 120px;
 }
@@ -132,6 +244,7 @@ body {
   cursor: pointer;
   border: 1px solid black;
 }
+
 /* .Stand-select {
   position: absolute;
   right: 0;
@@ -168,6 +281,7 @@ body {
   border: 1px solid black;
   cursor: pointer; */
 }
+
 .PopupInfo-closeButton {
   position: absolute;
   /* bottom: 0;
@@ -310,7 +424,7 @@ body {
 
 /* CAMERAS */
 .Camera {
-  
+
   /* width: 80px;
   position: absolute;
   top: 15px;
@@ -323,8 +437,10 @@ body {
   height: 0;
   top: 50%;
   left: 50%;
-  margin-left: -5px; /* To make camera centered, via 1/2 size of camImg */
-  margin-top: -10px; /* To make camera centered, via 1/2 size of camImg */
+  margin-left: -5px;
+  /* To make camera centered, via 1/2 size of camImg */
+  margin-top: -10px;
+  /* To make camera centered, via 1/2 size of camImg */
 }
 
 .Camera-rotateContainer {
@@ -393,7 +509,8 @@ body {
 .Camera-rotate-handle {
   width: 40px;
   height: 40px;
-  background-color: GREEN; /*#840d00;*/
+  background-color: GREEN;
+  /*#840d00;*/
   border-radius: 50%;
   position: relative;
   top: 0;
@@ -432,7 +549,8 @@ body {
   align-items: center;
   width: 40px;
   height: 40px;
-  background-color: #840dF0; /*#840d00;*/
+  background-color: #840dF0;
+  /*#840d00;*/
   border-radius: 50%;
   position: relative;
   top: 0;
@@ -443,7 +561,7 @@ body {
   margin-left: -20px;
   margin-top: -20px;
   /* top: -100px; */
-  color: white!important;
+  color: white !important;
 }
 
 /* Motion Lines */
@@ -455,7 +573,8 @@ body {
 
 .MotionLine.fadeOut {
   animation-name: fadeOutMotionLine;
-  animation-duration: 1500ms; /* NOTE: this 1500ms should be the same value as what's in ./middleware/index.js => customWebsocketMiddleware, for the setTimeout duration of the removal for the MotionLine */
+  animation-duration: 1500ms;
+  /* NOTE: this 1500ms should be the same value as what's in ./middleware/index.js => customWebsocketMiddleware, for the setTimeout duration of the removal for the MotionLine */
 }
 
 @keyframes fadeOutMotionLine {
@@ -470,11 +589,17 @@ body {
 
 /* UTILS */
 .noselect {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-    -khtml-user-select: none; /* Konqueror HTML */
-      -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+  -webkit-touch-callout: none;
+  /* iOS Safari */
+  -webkit-user-select: none;
+  /* Safari */
+  -khtml-user-select: none;
+  /* Konqueror HTML */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* Internet Explorer/Edge */
+  user-select: none;
+  /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
 }
