@@ -1,13 +1,10 @@
 import asyncio
 import json
-from typing import Dict
+from typing import Dict, Callable
 
 import aiohttp
 from aiohttp import web
 
-from head_manager import HeadManager
-from installation import Installation
-from orchestrator import Orchestrator
 from transformations import Vec
 
 
@@ -16,13 +13,11 @@ class Closed:
 
 
 class WebsocketConnection:
-    def __init__(self, inst: Installation, head_manager: HeadManager, orchestrator: Orchestrator):
+    def __init__(self, broadcast: Callable):
         self._ws = None
         self._send_queue = asyncio.Queue()
         self._send_stuff_coro = asyncio.ensure_future(self._send_loop())
-        self._inst = inst
-        self._head_manager = head_manager
-        self._orchestator = orchestrator
+        self._broadcast = broadcast
 
     async def handle(self, request):
         print("Websocket connect")
@@ -35,8 +30,6 @@ class WebsocketConnection:
             "data": {},
         })
 
-        # {"type":"focal-point-location","data":{"focalPointName":"fp0","location":{"x":-0.26666666666666217,"y":-2.3066666666666666}}}
-
         async for msg in self._ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 if msg.data == 'close':
@@ -44,15 +37,13 @@ class WebsocketConnection:
                 else:
                     payload = json.loads(msg.data)
                     data = payload['data']
+                    # TODO: should be more command-focused, e.g., set-head-rotation
                     if payload['type'] == 'head-rotation':
-                        self._head_manager.send(
-                            head_name=data['headName'],
-                            rotation=data['rotation'],
-                        )
+                        self._broadcast('head-rotation', head_name=data['headName'], rotation=data['rotation'])
+
                     elif payload['type'] == 'focal-point-location':
                         location = data['location']
-                        self._orchestator.focus = Vec(x=location['x'], y=location['y'])
-                        self._orchestator.act()
+                        self._broadcast('focal-point-location', pos=Vec(location['x'], location['y']))
 
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
@@ -94,11 +85,12 @@ class WebsocketConnection:
 
 
 class WebsocketManager:
-    def __init__(self):
+    def __init__(self, broadcast):
         self._clients = set()
+        self.broadcast = broadcast
 
     async def websocket_handler(self, request):
-        conn = WebsocketConnection(request.app['inst'], request.app['head_manager'], request.app['orchestrator'])
+        conn = WebsocketConnection(broadcast=self.broadcast)
         self._clients.add(conn)
         ws = await conn.handle(request)
         self._clients.remove(conn)
@@ -107,3 +99,7 @@ class WebsocketManager:
     def send(self, msg):
         for client in self._clients:
             client.send(msg)
+
+    def notify(self, subject, **kw):
+        if subject in ("head-positioned", "active"):
+            self.send(kw['msg'])
