@@ -54,7 +54,6 @@ class WebsocketConnection:
                         self._orchestator.focus = Vec(x=location['x'], y=location['y'])
                         self._orchestator.act()
 
-
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       self._ws.exception())

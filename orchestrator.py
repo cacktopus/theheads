@@ -35,12 +35,12 @@ class Orchestrator:
             p0 = m * Vec(0.0, 0.0)
             p1 = m * Mat.rotz(theta) * Vec(5, 0, 0.0)
 
-            self.ws_manager.send({
-                "type": "draw",
-                "data": {
-                    "shape": "line",
-                    "coords": [p0.x, p0.y, p1.x, p1.y],
-                }
-            })
+            # self.ws_manager.send({
+            #     "type": "draw",
+            #     "data": {
+            #         "shape": "line",
+            #         "coords": [p0.x, p0.y, p1.x, p1.y],
+            #     }
+            # })
 
             self.head_manager.send(head.name, theta)
