@@ -1,18 +1,13 @@
-import binascii
 import math
-import struct
 
+from stl_io import write_stl
 from transformations import Vec
-from walls import doubles
+from util import doubles
 
 width, height, depth = 146, 79, 2
 
-header = binascii.unhexlify("""
-53544c422041544620372e362e302e32353120434f4c4f523da0a0a0ff202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020
-""".strip())
 
-
-def build_wall(p0, p1):
+def build_wall(p0, p1, depth):
     v0, v1 = Vec(*p0), Vec(*p1)
     to = v1 - v0
 
@@ -179,15 +174,7 @@ def wave():
 
 def main():
     triangles = list(wave())
-
-    with open("out.stl", "wb") as f:
-        f.write(header)
-
-        f.write(len(triangles).to_bytes(4, 'little'))
-
-        for t in triangles:
-            f.write(struct.pack("12f2x", *t))
-            print(t)
+    write_stl("out.stl", triangles)
 
 
 if __name__ == '__main__':
