@@ -179,6 +179,13 @@ export const headMoveByIndex = (standIndex, headIndex, pos) => ({
     pos
 })
 
+// Note this is similar to getting "head-positioned" from the websocket
+export const headRotateByHeadName = (headName, rotation) => ({
+    type: 'HEAD_ROTATE_BY_HEADNAME',
+    headName,
+    rotation
+})
+
 export const headRotateByIndex = (standIndex, headIndex, rot) => ({
     type: 'HEAD_ROTATE_BY_INDEX',
     standIndex,
@@ -277,14 +284,14 @@ export const focalPointRemoveByIndex = index => ({
     index
 })
 
-export const focalPointSetIsActive = (headName) => ({
+export const focalPointSetIsActive = (focalPointName) => ({
     type: 'FOCALPOINT_SET_IS_ACTIVE',
-    headName
+    focalPointName
 })
 
-export const focalPointSetIsNotActive = (headName) => ({
+export const focalPointSetIsNotActive = (focalPointName) => ({
     type: 'FOCALPOINT_SET_IS_NOT_ACTIVE',
-    headName
+    focalPointName
 })
 
 

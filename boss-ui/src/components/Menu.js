@@ -3,7 +3,8 @@
 
 import React from 'react'
 // import { fromJS } from 'immutable';
-import Slider, { Range } from 'rc-slider';
+// import Slider, { Range } from 'rc-slider';
+import Slider from 'rc-slider';
 
 let exportSceneMsgTimeout;
 
@@ -136,7 +137,6 @@ export default class Menu extends React.Component {
     }
 
     render() {
-
         // {
         //     "name": "stand0",
         //     "pos": {
@@ -522,8 +522,8 @@ export default class Menu extends React.Component {
                     </div>
                     <div className="Menu-zoomer-translateY">
                         <Slider
-                            min={-1000}
-                            max={1000}
+                            min={-3000}
+                            max={3000}
                             vertical={true}
                             onChange={val => this.props.setTranslateY(val)}
                             value={parseFloat(translateY)}
@@ -531,8 +531,8 @@ export default class Menu extends React.Component {
                     </div>
                     <div className="Menu-zoomer-translateX">
                         <Slider
-                            min={-500}
-                            max={2000}
+                            min={-1500}
+                            max={3000}
                             onChange={this.props.setTranslateX}
                             value={parseFloat(translateX)}
                         />

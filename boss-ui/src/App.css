@@ -153,7 +153,7 @@ body {
 }
 
 .Stand-octagon:before {
-  display: none;
+  /* display: none; */
   box-sizing: border-box;
   content: "";
   width: 100px;
@@ -167,7 +167,7 @@ body {
 }
 
 .Stand-octagon:after {
-  display: none;
+  /* display: none; */
   box-sizing: border-box;
   content: "";
   width: 100px;
@@ -565,20 +565,28 @@ body {
 }
 
 /* Motion Lines */
-.GridLines {    
-  display: none;
+.GridLines {
   position: absolute;
-  height: 100px;
-  width: 100px;
-  /* background: blue; */
+  top: 0;
+  transform-origin: top center;
 }
+
 .GridLines table {
   border-collapse: collapse;
   width: 100%;
   height: 100%;
 }
+
 .GridLines table td {
-  border: 1px solid #000;
+  border: 2px solid #efefef
+}
+
+.GridLines table td.GridLines-td--thickRight {
+  border-right: 2px solid #300!important;
+}
+
+.GridLines table td.GridLines-td--thickBottom {
+  border-bottom: 2px solid #300!important;
 }
 
 /* Motion Lines */
