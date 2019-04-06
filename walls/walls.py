@@ -53,7 +53,19 @@ inner = Config(
     depth=1.75,
 )
 
-cfg = inner
+outer = Config(
+    r=9,
+    line_width=1.75,
+    pad_x=8,
+    pad_y=4,
+
+    width=146,
+    height=79,
+    depth=1.5,
+)
+
+
+cfg = outer
 
 
 class DebugSVG:
