@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"log"
 	"math"
@@ -97,7 +96,6 @@ func main() {
 		u := Vec2{math.Cos(theta), math.Sin(theta)}
 		u = u.Scale(ledRingRadius * 3.333)
 		positions[i] = u
-		fmt.Println(n, theta, N, u)
 	}
 
 	// reset state. TODO: gradually turn this to zero.
@@ -128,8 +126,5 @@ func main() {
 		send(c, leds)
 
 		time.Sleep(time.Millisecond * 30)
-		if t%10 == 0 {
-			fmt.Println(leds[numLeds/2])
-		}
 	}
 }
