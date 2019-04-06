@@ -1,0 +1,4 @@
+github.com/larspensjo/Go-simplex-noise v0.0.0-20121005164837-bfdcb9fc4b93 h1:Cez//BoEZ8ZYxTZq6ZrnhZGZxjGywQ87JQX1HsxXNzQ=
+github.com/larspensjo/Go-simplex-noise v0.0.0-20121005164837-bfdcb9fc4b93/go.mod h1:Q6YiXYMVV0eiIQ99VlYANrQLZqN2YIITWlZ82Grnw+Y=
+periph.io/x/periph v3.4.0+incompatible h1:5gzxE4ryPq52cdqSw0mErR6pyJK8cBF2qdUAcOWh0bo=
+periph.io/x/periph v3.4.0+incompatible/go.mod h1:EWr+FCIU2dBWz5/wSWeiIUJTriYv9v2j2ENBmgYyy7Y=
