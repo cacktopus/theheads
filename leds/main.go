@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"math"
+	"net/http"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
@@ -67,7 +69,7 @@ type led struct {
 	r, g, b float64
 }
 
-func main() {
+func runLeds() {
 	// Make sure periph is initialized.
 	if _, err := host.Init(); err != nil {
 		log.Fatal(err)
@@ -127,4 +129,18 @@ func main() {
 
 		time.Sleep(time.Millisecond * 30)
 	}
+}
+
+func main() {
+	go func() {
+		addr := ":8082"
+
+		http.Handle("/metrics", promhttp.Handler())
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("OK\n"))
+		})
+		http.ListenAndServe(addr, nil)
+	}()
+
+	runLeds()
 }
