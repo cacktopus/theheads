@@ -56,7 +56,7 @@ async def run_redis(redis_hostport, broadcast):
         if msg['type'] == "motion-detected":
             broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
-        if msg['type'] in ("head-positioned", "active"):
+        if msg['type'] in ("head-positioned", "active", "kinect"):
             broadcast(msg['type'], msg=msg)
 
 
