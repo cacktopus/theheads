@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"math"
+	"net/http"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
@@ -68,7 +69,7 @@ type led struct {
 	r, g, b float64
 }
 
-func main() {
+func runLeds() {
 	// Make sure periph is initialized.
 	if _, err := host.Init(); err != nil {
 		log.Fatal(err)
@@ -97,7 +98,6 @@ func main() {
 		u := Vec2{math.Cos(theta), math.Sin(theta)}
 		u = u.Scale(ledRingRadius * 3.333)
 		positions[i] = u
-		fmt.Println(n, theta, N, u)
 	}
 
 	// reset state. TODO: gradually turn this to zero.
@@ -128,8 +128,19 @@ func main() {
 		send(c, leds)
 
 		time.Sleep(time.Millisecond * 30)
-		if t%10 == 0 {
-			fmt.Println(leds[numLeds/2])
-		}
 	}
+}
+
+func main() {
+	go func() {
+		addr := ":8082"
+
+		http.Handle("/metrics", promhttp.Handler())
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("OK\n"))
+		})
+		http.ListenAndServe(addr, nil)
+	}()
+
+	runLeds()
 }
