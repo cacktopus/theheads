@@ -25,7 +25,10 @@
         </span>
         <span class="smaller">
             {{ node.ServicePort }} {{node.ServiceTags | join(", ")}}
-            (<a href="http://{{ node.Address }}:{{ node.ServicePort }}">ip</a>)
+            (<a href="http://{{ node.Address }}:{{ node.ServicePort }}">ip</a>,
+            <a href="http://{{ node.Address }}{{ home_port }}/start?service={{ node.ServiceName }}">start</a>,
+            <a href="http://{{ node.Address }}{{ home_port }}/restart?service={{ node.ServiceName }}">restart</a>,
+            <a href="http://{{ node.Address }}{{ home_port }}/stop?service={{ node.ServiceName }}">stop</a>)
         </span>
     </li>
     {% endfor %}

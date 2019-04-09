@@ -79,13 +79,16 @@ async def handle(request):
     jinja_env = request.app['jinja_env']
     template = jinja_env.get_template('home.html')
 
+    port = int(request.app['cfg']['port'])
+    port_str = "" if port == 80 else f":{port}"
+
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
 
     services = [s for s in services if "frontend" in s['tags']]
 
     hostname = platform.node()
-    result = template.render(services=services, hostname=hostname)
+    result = template.render(services=services, hostname=hostname, home_port=port_str)
 
     return web.Response(text=result, content_type="text/html")
 
