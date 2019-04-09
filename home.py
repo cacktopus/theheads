@@ -92,19 +92,19 @@ async def handle(request):
 
 async def stop(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "systemctl", "stop", service)
+    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "stop", service)
     return web.Response(text="OK\n", content_type="text/plain")
 
 
 async def start(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "systemctl", "start", service)
+    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "start", service)
     return web.Response(text="OK\n", content_type="text/plain")
 
 
 async def restart(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "systemctl", "restart", service)
+    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "restart", service)
     return web.Response(text="OK\n", content_type="text/plain")
 
 
