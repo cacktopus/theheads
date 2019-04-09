@@ -80,7 +80,7 @@ async def handle(request):
     template = jinja_env.get_template('home.html')
 
     port = int(request.app['cfg']['port'])
-    port_str = "" if port == 80 else f":{port}"
+    port_str = "" if port == 80 else ":{}".format(port)
 
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
