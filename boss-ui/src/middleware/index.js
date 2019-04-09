@@ -1,4 +1,4 @@
-import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive } from "../actions";
+import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive, headRotateByHeadName } from "../actions";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
 
@@ -37,10 +37,18 @@ export const customWebsocketMiddleware = store => next => action => {
                         break;
                     case "active":
                         try {
-                            var headName = payloadDataChunk.data.name
-                        
-                            // Send message that the head is active.
-                            store.dispatch(standSetIsActive(headName));
+                            var headName;
+                            var rotation;
+
+                            try {
+                                headName = payloadDataChunk.data.name;
+                                store.dispatch(standSetIsActive(headName));
+                            } catch(e) {}
+
+                            try {
+                                rotation = payloadDataChunk.data.extra.rotation;
+                                store.dispatch(headRotateByHeadName(headName, rotation));
+                            } catch(e) {}                            
 
                             clearTimeout(timeoutSetActive[headName]);
 

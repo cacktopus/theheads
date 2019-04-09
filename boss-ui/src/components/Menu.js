@@ -3,6 +3,8 @@
 
 import React from 'react'
 // import { fromJS } from 'immutable';
+// import Slider, { Range } from 'rc-slider';
+import Slider from 'rc-slider';
 
 let exportSceneMsgTimeout;
 
@@ -135,7 +137,6 @@ export default class Menu extends React.Component {
     }
 
     render() {
-
         // {
         //     "name": "stand0",
         //     "pos": {
@@ -479,7 +480,7 @@ export default class Menu extends React.Component {
                             </select>
                         </div>
                         <div>
-                            <button onClick={this.addNewCamera}>Add New</button><br /><br />
+                            <button onClick={this.addNewCamera}>Add New</button>
                         </div>
                         <div>
                             <button onClick={this.removeCurrentCamera}>Remove Current</button>
@@ -509,6 +510,34 @@ export default class Menu extends React.Component {
 
         return (
             <div className="Menu">
+                <div className="Menu-zoomer">
+                    <div className="Menu-zoomer-scale">
+                        <Slider
+                            min={1}
+                            max={400}
+                            vertical={true}
+                            onChange={this.props.setScale}
+                            value={parseFloat(scale)}
+                        />
+                    </div>
+                    <div className="Menu-zoomer-translateY">
+                        <Slider
+                            min={-3000}
+                            max={3000}
+                            vertical={true}
+                            onChange={val => this.props.setTranslateY(val)}
+                            value={parseFloat(translateY)}
+                        />
+                    </div>
+                    <div className="Menu-zoomer-translateX">
+                        <Slider
+                            min={-1500}
+                            max={3000}
+                            onChange={this.props.setTranslateX}
+                            value={parseFloat(translateX)}
+                        />
+                    </div>
+                </div>
                 <div>
                     <div className="Menu-section">
                         <div className="Menu-bigButton" onClick={this.addStand}>Add Stand</div>
@@ -534,10 +563,11 @@ export default class Menu extends React.Component {
                         </div>
                     </div>
                     <div style={{ display: "inline-block", background: "#BFB", padding: "5px" }}>
-                        <div className="Menu-loadScene">
+                        <div className="Menu-scaleScene">
                             <label style={transformLabelStyles}>Scale Scene:</label>
                             <input type="number" style={{ width: 100 }} placeholder="Scale" value={scale} onChange={this.setScale} />&nbsp;
-                        </div><div className="Menu-getScene">
+                    </div>
+                        <div className="Menu-translateScene">
                             <label style={transformLabelStyles}>Translate Scene:</label>
                             <input type="number" style={{ width: 45 }} placeholder="x" value={translateX} onChange={this.setTranslateX} />&nbsp;
                             <input type="number" style={{ width: 45 }} placeholder="y" value={translateY} onChange={this.setTranslateY} />&nbsp;
@@ -545,9 +575,9 @@ export default class Menu extends React.Component {
                     </div>
                     <div style={{ display: "inline-block", background: "#BBF", padding: "5px" }}>
                         <div className="Menu-websocket">
-                            <label>Websocket Url:</label><span id="websocket-msg"></span><br/>
+                            <label>Websocket Url:</label><span id="websocket-msg"></span><br />
                             <input type="text" style={{ width: 200 }} placeholder="Websocket Url" value={this.state.websocketUrl} onChange={this.setWebsocketUrl} />&nbsp;
-                        
+
                             {websocketConnectionButton}&nbsp;
                             <button onClick={this.websocketLoadLocalhostUrl}>Autofill localhost:8081</button>&nbsp;
                             {/* <button onClick={this.websocketLoadOtherUrl}>Other URL</button>&nbsp; */}

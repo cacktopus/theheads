@@ -12,7 +12,6 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
   focalPointSelect: () => dispatch(menuSelectFocalPoint(ownProps.index)),
   // focalPointMove: (pos) => dispatch(focalPointMoveByIndex(ownProps.index, pos)),
   focalPointMove: (pos) => {
-    console.log(pos);
     // dispatch(headRotateByIndex(ownProps.standIndex, ownProps.headIndex, rot));
     // const websocketPayload = {
     //   "type": "fp-location",

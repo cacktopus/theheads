@@ -1,6 +1,7 @@
 
 import React from 'react'
 import MotionLines from '../containers/MotionLines'
+import GridLines from '../containers/GridLines'
 
 export default class UnderVisuals extends React.Component {
     constructor(props) {
@@ -17,6 +18,7 @@ export default class UnderVisuals extends React.Component {
         return (
             <div>
                 <MotionLines/>
+                <GridLines/>
             </div>
         );
     }

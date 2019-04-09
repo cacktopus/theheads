@@ -39,7 +39,8 @@ You can view the redis monitor with:
 
 Download consul from https://www.consul.io/downloads.html, verify the checksums, and unzip.
 In another window:
-
+    ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1
+    or in dev
     ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1 -dev
     
 You can browse the ui at http://localhost:8500.

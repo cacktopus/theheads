@@ -109,6 +109,43 @@ const getStandIndexFromHeadName = (state, headName) => {
     return temp;
 };
 
+function rotateHeadByHeadName({state, headName, rotation}) {
+    let heads, standIndex, headIndex;
+    let newState = state;
+
+    standIndex = state.findIndex(stand => {
+        heads = stand.get("heads");
+
+        if (heads && heads.size > 0) {
+            headIndex = heads.findIndex((head, i) => {
+                return head.get("name") === headName;
+            })
+        }
+
+        if (headIndex >= 0) {
+            return true;
+        } else {
+            headIndex = undefined;
+            return false;
+        }
+    })
+
+    if (standIndex >= 0 && headIndex >= 0) {
+        // Convert position (0-200) to degrees (0 - 360)
+        // rotation = 360 * position / 200;
+
+        newState = state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
+
+        // If the head isn't manually moving, do not move the virtual rotation of the head.
+        if (!newState.getIn([standIndex, "isManualHeadMove"])) {
+            return newState.setIn([standIndex, "heads", headIndex, "vRot"], rotation);
+        } else {
+            // Ignore the messages if head is manually being rotated within the UI
+            return newState;
+        }
+    }    
+}
+
 const processWebsocketData = (state, payloadDataChunk) => {
     let { type, data } = payloadDataChunk;
     let headName, heads, standIndex, headIndex, rotation;
@@ -119,45 +156,41 @@ const processWebsocketData = (state, payloadDataChunk) => {
         case "head-positioned":
             headName = data.headName;
             rotation = data.rotation;
+
+            return rotateHeadByHeadName({state, headName, rotation})
             // position = data.position;
 
-            standIndex = state.findIndex(stand => {
+            // standIndex = state.findIndex(stand => {
 
-                heads = stand.get("heads");
-                if (heads && heads.size > 0) {
-                    headIndex = heads.findIndex((head, i) => {
-                        return head.get("name") === headName;
-                    })
-                }
+            //     heads = stand.get("heads");
+            //     if (heads && heads.size > 0) {
+            //         headIndex = heads.findIndex((head, i) => {
+            //             return head.get("name") === headName;
+            //         })
+            //     }
 
-                if (headIndex >= 0) {
+            //     if (headIndex >= 0) {
+            //         return true;
+            //     } else {
+            //         headIndex = undefined;
+            //         return false;
+            //     }
+            // })
 
-                    return true;
-                } else {
-                    headIndex = undefined;
-                    return false;
-                }
-            })
+            // if (standIndex >= 0 && headIndex >= 0) {
+            //     // Convert position (0-200) to degrees (0 - 360)
+            //     // rotation = 360 * position / 200;
 
-            if (standIndex >= 0 && headIndex >= 0) {
-                // Convert position (0-200) to degrees (0 - 360)
-                // rotation = 360 * position / 200;
+            //     newState = state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
 
-                newState = state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
-
-                // If the head isn't manually moving, do not move the virtual rotation of the head.
-                if (!newState.getIn([standIndex, "isManualHeadMove"])) {
-                    return newState.setIn([standIndex, "heads", headIndex, "vRot"], rotation);
-                } else {
-                    // Ignore the messages if head is manually being rotated within the UI
-                    return newState;
-                }
-            }
-    // case 'HEAD_ROTATE_STOP_BY_INDEX':
-    //     return state.setIn([action.standIndex, "heads", action.headIndex, "isManualHeadMove"], false);
-    //             return state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
-    //         }
-
+            //     // If the head isn't manually moving, do not move the virtual rotation of the head.
+            //     if (!newState.getIn([standIndex, "isManualHeadMove"])) {
+            //         return newState.setIn([standIndex, "heads", headIndex, "vRot"], rotation);
+            //     } else {
+            //         // Ignore the messages if head is manually being rotated within the UI
+            //         return newState;
+            //     }
+            // }
             break;
         default:
             break;
@@ -207,6 +240,16 @@ const stands = (state = fromJS([]), action) => {
         // Head
         case 'HEAD_MOVE_BY_INDEX':
             return state.setIn([action.standIndex, "heads", action.headIndex, "pos"], fromJS(action.pos));
+        case 'HEAD_ROTATE_BY_HEADNAME':
+            return rotateHeadByHeadName({state, headName : action.headName, rotation: action.rotation});
+            // console.log('HEAD_ROTATE_BY_HEADNAME');
+            // // Get stand and head index with the headname
+            // let standIndex = getStandIndexFromHeadName(state, action.headName);
+            // let headIndex = 0;
+
+            // return newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
+            // // newState = newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
+            // // return newState.setIn([standIndex, "heads", headIndex, "rot"], fromJS(action.rot));
         case 'HEAD_ROTATE_BY_INDEX':
             return state.setIn([action.standIndex, "heads", action.headIndex, "vRot"], fromJS(action.rot));
             // newState = state.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));

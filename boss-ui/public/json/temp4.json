@@ -1,0 +1,70 @@
+{
+    "name": "export",
+    "stands": [{
+        "cameras": [{
+            "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+            "fov": 64.33,
+            "name": "camera0",
+            "pos": {
+                "x": 0.1,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "heads": [{
+            "name": "vhead-00",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-00",
+        "pos": {
+            "x": 0,
+            "y": 0
+        },
+        "rot": -90
+    }, {
+        "cameras": [{
+            "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+            "fov": 64.33,
+            "name": "camera1",
+            "pos": {
+                "x": 0.1,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "heads": [{
+            "name": "vhead-01",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-01",
+        "pos": {
+            "x": 1,
+            "y": -1
+        },
+        "rot": -90
+    }, {
+        "cameras": [],
+        "heads": [{
+            "name": "vhead-02",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0
+        }],
+        "name": "stand-02",
+        "pos": {
+            "x": 2,
+            "y": -2
+        },
+        "rot": -90
+    }]
+}
