@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import platform
+from asyncio import subprocess
 from typing import Tuple, Dict, Optional
 
 import aiohttp
@@ -89,6 +90,24 @@ async def handle(request):
     return web.Response(text=result, content_type="text/html")
 
 
+async def stop(request):
+    service = request.query['service']
+    await asyncio.create_subprocess_exec("sudo", "systemctl", "stop", service)
+    return web.Response(text="OK\n", content_type="text/plain")
+
+
+async def start(request):
+    service = request.query['service']
+    await asyncio.create_subprocess_exec("sudo", "systemctl", "start", service)
+    return web.Response(text="OK\n", content_type="text/plain")
+
+
+async def restart(request):
+    service = request.query['service']
+    await asyncio.create_subprocess_exec("sudo", "systemctl", "restart", service)
+    return web.Response(text="OK\n", content_type="text/plain")
+
+
 async def setup(
         port: int,
         consul_host: Optional[str] = "127.0.0.1",
@@ -136,6 +155,9 @@ async def setup(
         web.get('/', handle),
         web.get('/health', health.health_check),
         web.get('/metrics', handle_metrics),
+        web.get('/stop', stop),
+        web.get('/start', start),
+        web.get('/restart', restart),
     ])
 
     return app
