@@ -133,7 +133,6 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
-        installation=args.installation,
         config_endpoint=args.config_endpoint,
         port=args.port,
     ))
