@@ -123,7 +123,6 @@ async def get_config(config_endpoint: str, instance: str, port: int):
     assert port is not None
 
     head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
-    assert head_cfg['name'] == instance
 
     redis_server = _DEFAULT_REDIS  # TODO
 
