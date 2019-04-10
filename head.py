@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import platform
 from typing import Optional
 
 import asyncio_redis
@@ -240,8 +241,8 @@ async def home(request):
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
 
-    parser.add_argument('instance', type=str,
-                        help='Instance name for this head')
+    parser.add_argument('--instance', type=str,
+                        help='Instance name override for this head')
 
     parser.add_argument('--port', type=int, default=None,
                         help='Port override')
@@ -254,7 +255,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
-        instance=args.instance,
+        instance=args.instance or platform.node(),
         config_endpoint=args.endpoint,
         port_override=args.port,
     ))
