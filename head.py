@@ -242,7 +242,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
-        instance=args.instance or platform.node(),
+        instance=args.instance,
         config_endpoint=args.endpoint,
         port_override=args.port or 8080,
     ))
