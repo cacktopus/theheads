@@ -7,7 +7,6 @@ from string import Template
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from grid import the_grid
 from health import health_check
 from installation import build_installation
 from metrics import handle_metrics
