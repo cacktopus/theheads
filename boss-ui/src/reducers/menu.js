@@ -112,8 +112,9 @@ const stands = (state = fromJS(initialState), action) => {
             }
             break;
         case 'MENU_SET_SCALE':
-            setCookie("menu-scale", action.scale);
-            return state.set("scale", action.scale);
+            const scaleVal = Math.max(1, action.scale);
+            setCookie("menu-scale", scaleVal);
+            return state.set("scale", scaleVal);
         case 'MENU_SET_TRANSLATE_X':
             setCookie("menu-translateX", action.x);
             return state.setIn(["translate","x"], action.x);
