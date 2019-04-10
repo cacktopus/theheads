@@ -7,6 +7,7 @@ import (
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
+	"os"
 	"time"
 )
 
@@ -55,7 +56,9 @@ func fromRaspi(frames chan []byte) frameGrabber {
 }
 
 func main() {
-	cfg := getConfig()
+	instance := os.Args[1]
+
+	cfg := getConfig(instance)
 
 	go serve()
 
