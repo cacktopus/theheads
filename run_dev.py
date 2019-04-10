@@ -8,8 +8,8 @@ import util
 
 async def run():
     heads = []
-    for i in range(11):
-        app = await head.setup(instance="vhead-{:02}".format(i))
+    for i in range(1, 11 + 1):
+        app = await head.setup(instance="head-{:02}".format(i))
         heads.append(util.run_app(app))
 
     app2 = await boss.setup(installation="dev", port=8081)
@@ -19,6 +19,7 @@ async def run():
         util.run_app(app2),
         util.run_app(app3),
     ])
+
 
 def main():
     loop = asyncio.get_event_loop()

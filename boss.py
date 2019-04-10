@@ -67,7 +67,7 @@ async def get_config(
 ):
     endpoint = ConsulBackend(config_endpoint)
     cfg = await Config(endpoint).setup(
-        instance_name="boss-00",
+        instance_name="boss-01",
         installation_override=installation,
     )
 

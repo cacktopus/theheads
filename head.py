@@ -121,7 +121,7 @@ async def get_config(config_endpoint: str, instance: str, port: Optional[int]):
 
     if port is None:
         # TODO: should this be using the agent endpoints?
-        resp, text = await consul_backend.get_nodes_for_service("heads", tags=[instance])
+        resp, text = await consul_backend.get_nodes_for_service("head", tags=[instance])
         assert resp.status == 200
         instances = json.loads(text)
         if len(instances) == 0:

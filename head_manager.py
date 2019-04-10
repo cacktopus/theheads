@@ -28,7 +28,7 @@ class HeadQueue:
 
             position = item
 
-            resp, text = await self._consul.get_nodes_for_service("heads", tags=[self._head_name])
+            resp, text = await self._consul.get_nodes_for_service("head", tags=[self._head_name])
             assert resp.status == 200
             msg = json.loads(text)
 
