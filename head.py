@@ -114,25 +114,13 @@ async def zero(request):
     return web.Response(text=result + "\n", content_type="application/json")
 
 
-async def get_config(config_endpoint: str, instance: str, port: Optional[int]):
+async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
     # TODO: this is going to read "installation", which doesn't fit the new paradigm
     cfg = await Config(consul_backend).setup(instance)
 
-    if port is None:
-        # TODO: should this be using the agent endpoints?
-        resp, text = await consul_backend.get_nodes_for_service("head", tags=[instance])
-        assert resp.status == 200
-        instances = json.loads(text)
-        if len(instances) == 0:
-            raise ConfigError("No head service defined for {}".format(instance))
-
-        if len(instances) > 1:
-            raise ConfigError("Multiple head services defined for {}".format(instance))
-
-        print(instances[0])
-        port = instances[0]['ServicePort']
+    assert port is not None
 
     head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
     assert head_cfg['name'] == instance
@@ -257,7 +245,7 @@ def main():
     app = loop.run_until_complete(setup(
         instance=args.instance or platform.node(),
         config_endpoint=args.endpoint,
-        port_override=args.port,
+        port_override=args.port or 8080,
     ))
 
     loop.run_until_complete(run_app(app))
