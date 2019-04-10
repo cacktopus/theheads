@@ -85,7 +85,10 @@ async def handle(request):
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
 
-    services = [s for s in services if "frontend" in s['tags']]
+    frontend = [s for s in services if "frontend" in s['tags']]
+    backend = [s for s in services if "frontend" not in s['tags']]
+
+    services = frontend + backend
 
     hostname = platform.node()
     result = template.render(services=services, hostname=hostname, home_port=port_str)
