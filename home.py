@@ -107,8 +107,17 @@ async def start(request):
 
 async def restart(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "restart", service)
-    return web.Response(text="OK\n", content_type="text/plain")
+    proc = await asyncio.create_subprocess_exec(
+        "sudo", "--non-interactive", "systemctl", "restart", service,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+
+    if proc.returncode == 0:
+        return web.Response(text="OK\n", content_type="text/plain")
+    else:
+        return web.Response(text=f"{stderr.decode()}\n", content_type="text/plain", status=500)
 
 
 async def setup(
