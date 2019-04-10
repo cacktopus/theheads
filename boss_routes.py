@@ -64,27 +64,6 @@ def static_binary_handler(extension):
     return handler
 
 
-def random_png(request):
-    # width, height = 256 * 2, 256 * 2
-    #
-    # t0 = time.time()
-    #
-    # a = np.zeros((height, width, 4), dtype=np.uint8)
-    # a[..., 1] = np.random.randint(50, 200, size=(height, width), dtype=np.uint8)
-    # a[..., 3] = 255
-    #
-    # print(time.time() - t0)
-    #
-    # t0 = time.time()
-    # body = png.write_png(a.tobytes(), width, height)
-    # print(time.time() - t0)
-    #
-    # print(len(body))
-    body = the_grid.to_png()
-
-    return web.Response(body=body, content_type="image/png")
-
-
 async def installation_handler(request):
     cfg = request.app['cfg']
 
@@ -149,12 +128,18 @@ def setup_routes(app: web.Application, ws_manager: WebsocketManager):
         web.get('/health', health_check),
         web.get('/metrics', handle_metrics),
         web.get('/ws', ws_manager.websocket_handler),
+        web.get("/tasks", task_handler),
+
+        web.get('/installation/scene.json', installation_handler),
+        web.get('/installation/{name}.html', html_handler),
+        web.get('/installation/{name}.js', static_text_handler("js")),
+        web.get('/installation/{name}.png', static_binary_handler("png")),
+
+        # deprecated, use don't use above instead
         web.get('/installation/{installation}/scene.json', installation_handler),
         web.get('/installation/{installation}/{name}.html', html_handler),
         web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
-        web.get('/installation/{installation}/{seed}/random.png', random_png),
         web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
-        web.get("/tasks", task_handler),
 
         # Jenkins' frontend
         web.get("/build/{filename}", frontend_handler("boss-ui/build")),
