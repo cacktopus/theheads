@@ -93,22 +93,9 @@ async def handle(request):
     return web.Response(text=result, content_type="text/html")
 
 
-async def stop(request):
-    service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "stop", service)
-    return web.Response(text="OK\n", content_type="text/plain")
-
-
-async def start(request):
-    service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "start", service)
-    return web.Response(text="OK\n", content_type="text/plain")
-
-
-async def restart(request):
-    service = request.query['service']
+async def sudo(*cmd):
     proc = await asyncio.create_subprocess_exec(
-        "sudo", "--non-interactive", "systemctl", "restart", service,
+        "sudo", *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -118,6 +105,25 @@ async def restart(request):
         return web.Response(text="OK\n", content_type="text/plain")
     else:
         return web.Response(text=f"{stderr.decode()}\n", content_type="text/plain", status=500)
+
+
+async def stop(request):
+    service = request.query['service']
+    return await sudo("--non-interactive", "systemctl", "stop", service)
+
+
+async def start(request):
+    service = request.query['service']
+    return await sudo("--non-interactive", "systemctl", "start", service)
+
+
+async def restart(request):
+    service = request.query['service']
+    return await sudo("--non-interactive", "systemctl", "restart", service)
+
+
+async def restart_host(request):
+    return await sudo("--non-interactive", "shutdown", "-r", "now")
 
 
 async def setup(
@@ -170,6 +176,7 @@ async def setup(
         web.get('/stop', stop),
         web.get('/start', start),
         web.get('/restart', restart),
+        web.get('/restart-host', restart_host),
     ])
 
     return app
