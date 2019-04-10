@@ -61,14 +61,12 @@ async def run_redis(redis_hostport, broadcast):
 
 
 async def get_config(
-        installation: str,
         port: int,
         config_endpoint: str,
 ):
     endpoint = ConsulBackend(config_endpoint)
     cfg = await Config(endpoint).setup(
         instance_name="boss-01",
-        installation_override=installation,
     )
 
     resp, text = await endpoint.get_nodes_for_service("redis")
@@ -81,22 +79,19 @@ async def get_config(
 
     result = dict(
         endpoint=config_endpoint,
-        installation=cfg.installation,
         redis_servers=redis_servers,
         cfg=cfg,
         port=port,
     )
 
-    print("Using installation:", result['installation'])
     return result
 
 
 async def setup(
-        installation: str,
         port: int,
         config_endpoint: Optional[str] = "http://127.0.0.1:8500",
 ):
-    cfg = await get_config(installation, port, config_endpoint)
+    cfg = await get_config(port, config_endpoint)
 
     app = web.Application()
     app['cfg'] = cfg
@@ -108,7 +103,7 @@ async def setup(
 
     asyncio.ensure_future(the_grid.decay())
 
-    json_inst = await build_installation(cfg['installation'], cfg['cfg'])
+    json_inst = await build_installation(cfg['cfg'])
     inst = Installation.unmarshal(json_inst)
 
     app['inst'] = inst

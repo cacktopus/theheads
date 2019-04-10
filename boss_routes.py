@@ -15,18 +15,12 @@ from ws import WebsocketManager
 
 
 async def home(request):
-    cfg = request.app['cfg']['cfg']
-
-    keys = await cfg.get_keys("/the-heads/installation/")
-
-    installations = set(k.split("/")[2] for k in keys)
-
     jinja_env = request.app['jinja_env']
 
     template = jinja_env.get_template('boss.html')
 
     hostname = platform.node()
-    result = template.render(installations=installations, hostname=hostname)
+    result = template.render(hostname=hostname)
 
     return web.Response(text=result, content_type="text/html")
 

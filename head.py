@@ -70,7 +70,6 @@ class Stepper:
             pos = await self.queue.get()
             msg = {
                 "type": "head-positioned",
-                "installation": self.cfg['installation'],
                 "data": {
                     "headName": self.cfg['head']['name'],
                     "stepPosition": pos,
@@ -117,18 +116,16 @@ async def zero(request):
 async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
-    # TODO: this is going to read "installation", which doesn't fit the new paradigm
     cfg = await Config(consul_backend).setup(instance)
 
     assert port is not None
 
-    head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
+    head_cfg = await cfg.get_config_yaml("/the-heads/heads/{instance}.yaml")
 
     redis_server = _DEFAULT_REDIS  # TODO
 
     result = dict(
         condig_endpoint=config_endpoint,
-        installation=cfg.installation,
         redis_server=redis_server,
         instance=instance,
         port=port,
@@ -147,7 +144,6 @@ async def publish_active(app):
         return {
             "component": "head",
             "name": cfg['head']['name'],
-            "installation": cfg['installation'],
             "extra": {
                 "headName": cfg['head']['name'],
                 "stepPosition": stepper.pos,

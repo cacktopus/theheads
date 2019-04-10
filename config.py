@@ -18,9 +18,6 @@ def get_args():
     parser.add_argument('--config-endpoint', type=str, default=DEFAULT_CONSUL_ENDPOINT,
                         help="URL for config service (e.g., consul)")
 
-    parser.add_argument('--installation', type=str,
-                        help="Override installation name")
-
     parser.add_argument('--port', type=int, default=BOSS_PORT,
                         help="Port override")
 
@@ -54,11 +51,8 @@ class Config:
         self._backend = backend
         self._params = {}
 
-    async def setup(self, instance_name, installation_override=None):
+    async def setup(self, instance_name):
         self._params['instance'] = instance_name
-        self._params['installation'] = installation_override or await self.get_config_str(
-            "/the-heads/assignment/{instance}"
-        )
         return self
 
     async def get_config_str(self, key_template: str) -> str:
@@ -93,13 +87,9 @@ class Config:
 
         return await self._backend.get_keys(key)
 
-    @property
-    def installation(self):
-        return self._params['installation']
-
 
 async def get_redis(cfg):
-    result = await cfg.get_prefix("/the-heads/installation/{installation}/redis/")
+    result = await cfg.get_prefix("/the-heads/redis/")
     redis_servers = []
     for k, v in sorted(result.items()):
         rs = v.decode().strip()
@@ -108,7 +98,3 @@ async def get_redis(cfg):
     print("Found {} redis servers".format(len(redis_servers)))
     assert len(redis_servers) > 0
     return redis_servers
-
-
-async def list_installations(cfg):
-    result = await cfg.get_prefix("/the-heads/installation/")
