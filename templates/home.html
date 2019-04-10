@@ -12,8 +12,6 @@
     </style>
 </head>
 <body>
-<div class="smaller">(running on {{hostname}} -
-    <a href="http://{{ hostname }}{{ home_port }}/restart-host">reboot</a>)</div>
 <h1>Home</h1>
 <ul>
     {% for service in services %}
@@ -35,5 +33,8 @@
     {% endfor %}
     {% endfor %}
 </ul>
+<hr/>
+<div class="smaller">(running on {{hostname}} -
+    <a href="http://{{ hostname }}{{ home_port }}/restart-host">reboot</a>)</div>
 </body>
 </html>
