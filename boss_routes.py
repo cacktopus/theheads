@@ -86,10 +86,9 @@ def random_png(request):
 
 
 async def installation_handler(request):
-    name = request.match_info.get('installation')
     cfg = request.app['cfg']
 
-    result = await build_installation(name, cfg['cfg'])
+    result = await build_installation(cfg['cfg'])
 
     return web.Response(text=json.dumps(result), content_type="application/json")
 
