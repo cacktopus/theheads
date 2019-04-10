@@ -170,8 +170,7 @@ func main() {
 
 				msg := MotionDetected{
 					MessageHeader{
-						Type:         "motion-detected",
-						Installation: cfg.Installation,
+						Type: "motion-detected",
 					},
 					MotionDetectedData{
 						Position:   float64(pos2),
