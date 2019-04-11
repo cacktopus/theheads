@@ -158,10 +158,13 @@ async def publish_active(app):
 
     while True:
         await asyncio.sleep(5)
-        await redis.publish(THE_HEADS_EVENTS, json.dumps({
-            "type": "active",
-            "data": data(),
-        }))
+        try:
+            await redis.publish(THE_HEADS_EVENTS, json.dumps({
+                "type": "active",
+                "data": data(),
+            }))
+        except asyncio_redis.NotConnectedError:
+            print("Not connected")
 
 
 async def setup(
