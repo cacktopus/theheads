@@ -54,14 +54,14 @@ inner = Config(
 )
 
 outer = Config(
-    r=9,
-    line_width=1.75,
+    r=8,
+    line_width=2,
     pad_x=8,
     pad_y=4,
 
     width=146,
     height=79,
-    depth=1.5,
+    depth=1.75,
 )
 
 
