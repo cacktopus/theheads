@@ -98,27 +98,27 @@ class Installation:
         return inst
 
 
-async def build_installation(inst_name: str, cfg: Config):
+async def build_installation(cfg: Config):
     cameras = {}
     heads = {}
     stands = {}
 
     for name, body in (await cfg.get_prefix(
-            "/the-heads/installation/{installation}/cameras/"
+            "/the-heads/cameras/"
     )).items():
         if name.endswith(b".yaml"):
             camera = yaml.safe_load(body)
             cameras[camera['name']] = camera
 
     for name, body in (await cfg.get_prefix(
-            "/the-heads/installation/{installation}/heads/"
+            "/the-heads/heads/"
     )).items():
         if name.endswith(b".yaml"):
             head = yaml.safe_load(body)
             heads[head['name']] = head
 
     for name, body in (await cfg.get_prefix(
-            "/the-heads/installation/{installation}/stands/"
+            "/the-heads/stands/"
     )).items():
         if name.endswith(b".yaml"):
             stand = yaml.safe_load(body)
@@ -130,7 +130,6 @@ async def build_installation(inst_name: str, cfg: Config):
         stand['heads'] = [heads[h] for h in stand['heads']]
 
     result = dict(
-        name=inst_name,
         stands=list(stands.values()),
         scale=75,
         translate={

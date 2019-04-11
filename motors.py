@@ -24,7 +24,7 @@ def _setup():
 
 class FakeStepper:
     def oneStep(self, *args):
-        print("Warning: not a real motor")
+        pass
 
 
 setup = _setup if platform.machine().startswith("arm") else FakeStepper

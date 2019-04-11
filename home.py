@@ -85,7 +85,10 @@ async def handle(request):
     consul_host = request.app['consul_host']
     services = await(get_services(consul_host))
 
-    services = [s for s in services if "frontend" in s['tags']]
+    frontend = [s for s in services if "frontend" in s['tags']]
+    backend = [s for s in services if "frontend" not in s['tags']]
+
+    services = frontend + backend
 
     hostname = platform.node()
     result = template.render(services=services, hostname=hostname, home_port=port_str)
@@ -93,22 +96,37 @@ async def handle(request):
     return web.Response(text=result, content_type="text/html")
 
 
+async def sudo(*cmd):
+    proc = await asyncio.create_subprocess_exec(
+        "sudo", *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+
+    if proc.returncode == 0:
+        return web.Response(text="OK\n", content_type="text/plain")
+    else:
+        return web.Response(text=f"{stderr.decode()}\n", content_type="text/plain", status=500)
+
+
 async def stop(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "stop", service)
-    return web.Response(text="OK\n", content_type="text/plain")
+    return await sudo("--non-interactive", "systemctl", "stop", service)
 
 
 async def start(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "start", service)
-    return web.Response(text="OK\n", content_type="text/plain")
+    return await sudo("--non-interactive", "systemctl", "start", service)
 
 
 async def restart(request):
     service = request.query['service']
-    await asyncio.create_subprocess_exec("sudo", "--non-interactive", "systemctl", "restart", service)
-    return web.Response(text="OK\n", content_type="text/plain")
+    return await sudo("--non-interactive", "systemctl", "restart", service)
+
+
+async def restart_host(request):
+    return await sudo("--non-interactive", "shutdown", "-r", "now")
 
 
 async def setup(
@@ -161,6 +179,7 @@ async def setup(
         web.get('/stop', stop),
         web.get('/start', start),
         web.get('/restart', restart),
+        web.get('/restart-host', restart_host),
     ])
 
     return app

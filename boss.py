@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 from typing import Optional
 
@@ -57,18 +58,17 @@ async def run_redis(redis_hostport, broadcast):
             broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
         if msg['type'] in ("head-positioned", "active"):
+            # print(datetime.datetime.now(), host, msg['type'])
             broadcast(msg['type'], msg=msg)
 
 
 async def get_config(
-        installation: str,
         port: int,
         config_endpoint: str,
 ):
     endpoint = ConsulBackend(config_endpoint)
     cfg = await Config(endpoint).setup(
-        instance_name="boss-00",
-        installation_override=installation,
+        instance_name="boss-01",
     )
 
     resp, text = await endpoint.get_nodes_for_service("redis")
@@ -81,22 +81,19 @@ async def get_config(
 
     result = dict(
         endpoint=config_endpoint,
-        installation=cfg.installation,
         redis_servers=redis_servers,
         cfg=cfg,
         port=port,
     )
 
-    print("Using installation:", result['installation'])
     return result
 
 
 async def setup(
-        installation: str,
         port: int,
         config_endpoint: Optional[str] = "http://127.0.0.1:8500",
 ):
-    cfg = await get_config(installation, port, config_endpoint)
+    cfg = await get_config(port, config_endpoint)
 
     app = web.Application()
     app['cfg'] = cfg
@@ -108,7 +105,7 @@ async def setup(
 
     asyncio.ensure_future(the_grid.decay())
 
-    json_inst = await build_installation(cfg['installation'], cfg['cfg'])
+    json_inst = await build_installation(cfg['cfg'])
     inst = Installation.unmarshal(json_inst)
 
     app['inst'] = inst
@@ -138,7 +135,6 @@ def main():
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
-        installation=args.installation,
         config_endpoint=args.config_endpoint,
         port=args.port,
     ))
