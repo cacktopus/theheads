@@ -79,6 +79,7 @@ class Stepper:
             try:
                 await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
             except asyncio_redis.NotConnectedError:
+                # TODO: emit stats/log
                 print("Not connected")
 
 
@@ -167,6 +168,7 @@ async def publish_active(app):
                 "data": data(),
             }))
         except asyncio_redis.NotConnectedError:
+            # TODO: emit stats/log
             print("Not connected")
 
 
