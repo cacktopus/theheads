@@ -90,6 +90,4 @@ class ConsulBackend:
             query_string,
         )
 
-        print(url)
-
         return await get(url)

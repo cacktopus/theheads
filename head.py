@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import platform
 from typing import Optional
 
 import asyncio_redis
@@ -69,14 +70,17 @@ class Stepper:
             pos = await self.queue.get()
             msg = {
                 "type": "head-positioned",
-                "installation": self.cfg['installation'],
                 "data": {
                     "headName": self.cfg['head']['name'],
                     "stepPosition": pos,
                     "rotation": self.current_rotation(),
                 }
             }
-            await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
+            try:
+                await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
+            except asyncio_redis.NotConnectedError:
+                # TODO: emit stats/log
+                print("Not connected")
 
 
 def adjust_position(request, speed, target):
@@ -113,34 +117,19 @@ async def zero(request):
     return web.Response(text=result + "\n", content_type="application/json")
 
 
-async def get_config(config_endpoint: str, instance: str, port: Optional[int]):
+async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
-    # TODO: this is going to read "installation", which doesn't fit the new paradigm
     cfg = await Config(consul_backend).setup(instance)
 
-    if port is None:
-        # TODO: should this be using the agent endpoints?
-        resp, text = await consul_backend.get_nodes_for_service("heads", tags=[instance])
-        assert resp.status == 200
-        instances = json.loads(text)
-        if len(instances) == 0:
-            raise ConfigError("No head service defined for {}".format(instance))
+    assert port is not None
 
-        if len(instances) > 1:
-            raise ConfigError("Multiple head services defined for {}".format(instance))
-
-        print(instances[0])
-        port = instances[0]['ServicePort']
-
-    head_cfg = await cfg.get_config_yaml("/the-heads/installation/{installation}/heads/{instance}.yaml")
-    assert head_cfg['name'] == instance
+    head_cfg = await cfg.get_config_yaml("/the-heads/heads/{instance}.yaml")
 
     redis_server = _DEFAULT_REDIS  # TODO
 
     result = dict(
         condig_endpoint=config_endpoint,
-        installation=cfg.installation,
         redis_server=redis_server,
         instance=instance,
         port=port,
@@ -159,7 +148,6 @@ async def publish_active(app):
         return {
             "component": "head",
             "name": cfg['head']['name'],
-            "installation": cfg['installation'],
             "extra": {
                 "headName": cfg['head']['name'],
                 "stepPosition": stepper.pos,
@@ -174,10 +162,14 @@ async def publish_active(app):
 
     while True:
         await asyncio.sleep(5)
-        await redis.publish(THE_HEADS_EVENTS, json.dumps({
-            "type": "active",
-            "data": data(),
-        }))
+        try:
+            await redis.publish(THE_HEADS_EVENTS, json.dumps({
+                "type": "active",
+                "data": data(),
+            }))
+        except asyncio_redis.NotConnectedError:
+            # TODO: emit stats/log
+            print("Not connected")
 
 
 async def setup(
@@ -240,8 +232,8 @@ async def home(request):
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
 
-    parser.add_argument('instance', type=str,
-                        help='Instance name for this head')
+    parser.add_argument('--instance', type=str,
+                        help='Instance name override for this head')
 
     parser.add_argument('--port', type=int, default=None,
                         help='Port override')
@@ -256,7 +248,7 @@ def main():
     app = loop.run_until_complete(setup(
         instance=args.instance,
         config_endpoint=args.endpoint,
-        port_override=args.port,
+        port_override=args.port or 8080,
     ))
 
     loop.run_until_complete(run_app(app))

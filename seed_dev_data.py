@@ -64,13 +64,13 @@ async def main(inst_name: str):
         for i, stand in enumerate(inst_data['stands']):
             for camera in stand.get('cameras', []):
                 await put(
-                    "/the-heads/installation/{}/cameras/{}.yaml".format(inst_name, camera['name']),
+                    "/the-heads/cameras/{}.yaml".format(camera['name']),
                     yaml.dump(camera, encoding='utf-8'),
                 )
 
             for head in stand['heads']:
                 await put(
-                    "/the-heads/installation/{}/heads/{}.yaml".format(inst_name, head['name']),
+                    "/the-heads/heads/{}.yaml".format(head['name']),
                     yaml.dump(head, encoding='utf-8'),
                 )
 
@@ -82,22 +82,20 @@ async def main(inst_name: str):
             stand['pos'] = {"x": pos.x, "y": pos.y}
             stand['rot'] = rot
 
-            key = "/the-heads/installation/{}/stands/{}.yaml".format(inst_name, stand['name'])
+            key = "/the-heads/stands/{}.yaml".format(stand['name'])
             value = yaml.dump(stand, encoding='utf-8')
             await put(key, value)
 
     async def setup_instances():
-        for i in range(11):
-            name = "vhead-{:02}".format(i)
-            await consul_backend.register_service_with_agent("heads", 18080 + i, ID=name, tags=[name, "frontend"])
-            await put("/the-heads/assignment/{}".format(name), inst_name.encode())
+        for i in range(1, 11 + 1):
+            name = "head-{:02}".format(i)
+            await consul_backend.register_service_with_agent("head", 18080 + i, ID=name, tags=[name, "frontend"])
 
         # redis
         await consul_backend.register_service_with_agent("redis", 6379)
 
         # boss
-        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-00", tags=["boss-00", "frontend"])
-        await put("/the-heads/assignment/boss-00", inst_name.encode())
+        await consul_backend.register_service_with_agent("boss", 8081, ID="boss-01", tags=["boss-01", "frontend"])
 
         # consul-fe
         await consul_backend.register_service_with_agent("consul-fe", 8500, tags=["frontend"])

@@ -1,102 +1,102 @@
 name: dev
 stands:
 
-- name: stand-00
+- name: stand-01
   cameras:
   - description: Raspberry Pi PiNoir Camera V2 Video Module
     fov: 64.33
-    name: camera0
+    name: camera-01
     pos: {x: 0.1, y: 0}
     rot: 0
   heads:
-  - name: vhead-00
+  - name: head-01
     pos: {x: 0, y: 0}
     rot: 0
   pos: {x: 0, y: 0}
   rot: -90
 
-- name: stand-01
+- name: stand-02
   pos: {x: 2, y: 0}
   rot: -90
   cameras:
   - description: Raspberry Pi PiNoir Camera V2 Video Module
     fov: 64.33
-    name: camera1
+    name: camera-02
     pos: {x: 0.1, y: 0}
     rot: 0
   heads:
-  - name: vhead-01
-    pos: {x: 0, y: 0}
-    rot: 0
-
-- name: stand-02
-  pos: {x: 4, y: 0}
-  rot: -90
-  heads:
-  - name: vhead-02
+  - name: head-02
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-03
-  pos: {x: 6, y: 0}
+  pos: {x: 4, y: 0}
   rot: -90
   heads:
-  - name: vhead-03
+  - name: head-03
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-04
-  pos: {x: 8, y: 0}
+  pos: {x: 6, y: 0}
   rot: -90
   heads:
-  - name: vhead-04
+  - name: head-04
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-05
-  pos: {x: 10, y: 0}
+  pos: {x: 8, y: 0}
   rot: -90
   heads:
-  - name: vhead-05
+  - name: head-05
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-06
-  pos: {x: 12, y: 0}
+  pos: {x: 10, y: 0}
   rot: -90
   heads:
-  - name: vhead-06
+  - name: head-06
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-07
-  pos: {x: 14, y: 0}
+  pos: {x: 12, y: 0}
   rot: -90
   heads:
-  - name: vhead-07
+  - name: head-07
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-08
-  pos: {x: 16, y: 0}
+  pos: {x: 14, y: 0}
   rot: -90
   heads:
-  - name: vhead-08
+  - name: head-08
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-09
-  pos: {x: 18, y: 0}
+  pos: {x: 16, y: 0}
   rot: -90
   heads:
-  - name: vhead-09
+  - name: head-09
     pos: {x: 0, y: 0}
     rot: 0
 
 - name: stand-10
+  pos: {x: 18, y: 0}
+  rot: -90
+  heads:
+  - name: head-10
+    pos: {x: 0, y: 0}
+    rot: 0
+
+- name: stand-11
   pos: {x: 20, y: 0}
   rot: -90
   heads:
-  - name: vhead-10
+  - name: head-11
     pos: {x: 0, y: 0}
     rot: 0

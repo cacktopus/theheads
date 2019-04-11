@@ -11,7 +11,6 @@ import (
 )
 
 type Config struct {
-	Installation string
 	RedisServer  string
 	CameraName   string
 }
@@ -78,17 +77,10 @@ func getCfgClient() (*api.Client, error) {
 	return client, nil
 }
 
-func getConfig() *Config {
-	cfgClient, err := getCfgClient()
-	if err != nil {
-		panic(err)
-	}
-
+func getConfig(instance string) *Config {
 	var cfg Config
-	cfg.Installation = mustGetString(cfgClient, "/the-heads/machines/{{.hostname}}/installation", nil)
-	extraArgs := map[string]string{"installation": cfg.Installation}
-	cfg.RedisServer = getWithDefault(cfgClient, "/the-heads/installation/{{.installation}}/redis", extraArgs, "127.0.0.1:6379")
-	cfg.CameraName = mustGetString(cfgClient, "/the-heads/installation/{{.installation}}/cameras/{{.hostname}}", extraArgs)
+	cfg.RedisServer = "127.0.0.1:6379"
+	cfg.CameraName = instance
 	return &cfg
 
 }
