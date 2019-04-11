@@ -58,7 +58,7 @@ async def run_redis(redis_hostport, broadcast):
             broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
         if msg['type'] in ("head-positioned", "active"):
-            print(datetime.datetime.now(), host, msg['type'])
+            # print(datetime.datetime.now(), host, msg['type'])
             broadcast(msg['type'], msg=msg)
 
 

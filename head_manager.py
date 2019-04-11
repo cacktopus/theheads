@@ -1,5 +1,8 @@
 import asyncio
 import json
+import sys
+
+from aiohttp import ClientConnectorError
 
 from config import get
 from consul_config import ConsulBackend
@@ -41,7 +44,11 @@ class HeadQueue:
             else:
                 base_url = "http://{}:{}".format(msg[0]['Address'], msg[0]['ServicePort'])
                 url = base_url + "/rotation/{:f}".format(position)
-                await get(url)
+                try:
+                    await get(url)
+                except ClientConnectorError as e:
+                    # TODO: stats/logging/etc
+                    print(e, file=sys.stderr)
 
             await asyncio.sleep(_SEND_DELAY)
 
