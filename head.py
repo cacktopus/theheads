@@ -76,7 +76,10 @@ class Stepper:
                     "rotation": self.current_rotation(),
                 }
             }
-            await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
+            try:
+                await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
+            except asyncio_redis.NotConnectedError:
+                print("Not connected")
 
 
 def adjust_position(request, speed, target):
