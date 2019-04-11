@@ -27,6 +27,9 @@ class Orchestrator:
         if subject == "motion-detected":
             self.motion_detected(**kw)
 
+        if subject == "kinect":
+            print(kw['msg'])
+
     def act(self):
         if self.focus is None:
             return

@@ -101,5 +101,5 @@ class WebsocketManager:
             client.send(msg)
 
     def notify(self, subject, **kw):
-        if subject in ("head-positioned", "active"):
+        if subject in ("head-positioned", "active", "kinect"):
             self.send(kw['msg'])
