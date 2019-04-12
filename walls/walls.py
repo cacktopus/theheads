@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import Polygon
+import Polygon, Polygon.IO
 import matplotlib.pyplot as plt
 import svgwrite
 import svgwrite.container
@@ -16,10 +16,10 @@ from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
 from gen_stl import build_wall
-from stl_io import write_stl
+from geom import circle
 from line import Line2D
+from stl_io import write_stl
 from transformations import Vec
-
 # Ideas
 # Cull small or narrow cells
 # Leave some cells filled in
@@ -63,7 +63,6 @@ outer = Config(
     height=79,
     depth=1.75,
 )
-
 
 cfg = outer
 
@@ -257,18 +256,66 @@ def distance(p0, p1):
     return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
 
 
+def circle_points(center: Vec, radius: float, steps: int):
+    result = []
+    for i in range(steps):
+        t = i / steps
+        result.append(circle(center, radius, t))
+    return result
+
+
 def fun_circles(svg):
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
+    x0, y0 = 25, 25
+    x1, y1 = x0 + cfg.width, y0 + cfg.height
+
+    wall = Polygon.Polygon([
+        (x0, y0),
+        (x1, y0),
+        (x1, y1),
+        (x0, y1),
+    ])
+
+    window = [
+        (x0 + cfg.pad_x, y0 + cfg.pad_y),
+        (x1 - cfg.pad_x, y0 + cfg.pad_y),
+        (x1 - cfg.pad_x, y1 - cfg.pad_y),
+        (x0 + cfg.pad_x, y1 - cfg.pad_y),
+    ]
+    window_p = Polygon.Polygon(window)
+
+    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r * 0.80)
 
     radii = {}
     for i in range(len(points)):
         radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
 
+    result = Polygon.Polygon()
+
     for i, point in enumerate(points):
-        r = radii[i] - 0.66
-        svg.debug(
-            svg.svg.circle(point, r, fill='black', stroke='black', fill_opacity=1.0, stroke_opacity=1.0,
-                           stroke_width=0.5))
+        r = radii[i] * 0.95
+        center = Vec(*point)
+        points = circle_points(center, r, 20)
+
+        # for p0, p1 in doubles(points):
+        #     svg.debug(svg.svg.line(
+        #         p0.point2, p1.point2, stroke='black', stroke_width=0.5
+        #     ))
+
+        poly = Polygon.Polygon([p.point2 for p in points]) & window_p
+        result = result + poly
+
+    # a_circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(75, 75), 10, 20)])
+    #
+    result = wall - result
+
+    for i in range(len(result)):
+        cont = result[i]
+        print(result.orientation(i), cont)
+
+        for p0, p1 in doubles(cont):
+            svg.debug(svg.svg.line(
+                p0, p1, stroke='black', stroke_width=0.5
+            ))
 
 
 def tess(name, polys, depth):
@@ -441,6 +488,10 @@ def make_wall(name):
 
 
 def main():
+    # svg = DebugSVG(f"fun-circles.svg")
+    # fun_circles(svg)
+    # svg.save()
+
     for i in (1, 2):
         make_wall(f"wall{i}")
 

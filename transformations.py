@@ -1,4 +1,5 @@
 import math
+import numbers
 
 from math import sin, cos, pi
 import numpy as np
@@ -42,6 +43,10 @@ class Vec:
     def __add__(self, other):
         a, b = self, other
         return Vec(a.x + b.x, a.y + b.y, a.z + b.z)
+
+    def __rmul__(self, other):
+        if isinstance(other, numbers.Number):
+            return self.scale(float(other))
 
     def unit(self):
         return self.scale(1.0 / self.abs())
