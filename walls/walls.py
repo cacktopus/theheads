@@ -41,6 +41,9 @@ class Config:
     pad_x: float
     pad_y: float
 
+    max_x: float
+    max_y: float
+
 
 inner = Config(
     r=13.5,
@@ -51,6 +54,9 @@ inner = Config(
     width=106,
     height=79,
     depth=1.75,
+
+    max_x=500,
+    max_y=500,
 )
 
 outer = Config(
@@ -62,6 +68,9 @@ outer = Config(
     width=146,
     height=79,
     depth=1.75,
+
+    max_x=500,
+    max_y=500,
 )
 
 cfg = outer
@@ -351,7 +360,6 @@ def tess(name, polys, depth):
 
     B = tr.triangulate(A, opts="pq")
     tr.compare(plt, A, B)
-    plt.savefig('tri.png')
 
     svg = DebugSVG(f"{name}-new.svg")
     svg._prod_g.scale(3)
@@ -421,7 +429,7 @@ def make_wall(name):
     svg = DebugSVG(f"{name}-test.svg")
 
     try:
-        points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
+        points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
 
         for point in points:
             svg.debug(
@@ -492,7 +500,7 @@ def main():
     # fun_circles(svg)
     # svg.save()
 
-    for i in (1, 2):
+    for i in (1,):
         make_wall(f"wall{i}")
 
 
