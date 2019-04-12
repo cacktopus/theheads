@@ -27,9 +27,6 @@ from util import doubles
 
 EPSILON = 1E-9
 
-MAX_X = 500
-MAX_Y = 500
-
 
 @dataclass
 class Config:
@@ -41,6 +38,8 @@ class Config:
     pad_x: float
     pad_y: float
 
+    x0: float
+    y0: float
     max_x: float
     max_y: float
 
@@ -55,6 +54,8 @@ inner = Config(
     height=79,
     depth=1.75,
 
+    x0=100,
+    y0=100,
     max_x=500,
     max_y=500,
 )
@@ -69,8 +70,26 @@ outer = Config(
     height=79,
     depth=1.75,
 
+    x0=100,
+    y0=100,
     max_x=500,
     max_y=500,
+)
+
+circles_cfg = Config(
+    r=8,
+    line_width=2,
+    pad_x=8,
+    pad_y=4,
+
+    width=146,
+    height=79,
+    depth=1.75,
+
+    x0=25,
+    y0=25,
+    max_x=50 + 146,
+    max_y=50 + 146,
 )
 
 cfg = outer
@@ -186,7 +205,7 @@ def inset(svg, points, offset: float):
 
 
 def good(p):
-    return 0 < p[0] < MAX_X and 0 < p[1] < MAX_Y
+    return 0 < p[0] < cfg.max_x and 0 < p[1] < cfg.max_y
 
 
 def centroid(triangle: List[Tuple]):
@@ -292,7 +311,7 @@ def fun_circles(svg):
     ]
     window_p = Polygon.Polygon(window)
 
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r * 0.80)
+    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 0.80)
 
     radii = {}
     for i in range(len(points)):
@@ -444,7 +463,7 @@ def make_wall(name):
                                           stroke_width=0.5))
 
         # width = 146
-        x0, y0 = 100, 100
+        x0, y0 = cfg.x0, cfg.y0
         x1, y1 = x0 + cfg.width, y0 + cfg.height
 
         wall = [
@@ -496,10 +515,13 @@ def make_wall(name):
 
 
 def main():
-    # svg = DebugSVG(f"fun-circles.svg")
-    # fun_circles(svg)
-    # svg.save()
+    global cfg
+    cfg = circles_cfg
+    svg = DebugSVG(f"fun-circles.svg")
+    fun_circles(svg)
+    svg.save()
 
+    cfg = outer
     for i in (1,):
         make_wall(f"wall{i}")
 
