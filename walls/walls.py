@@ -293,7 +293,7 @@ def circle_points(center: Vec, radius: float, steps: int):
 
 
 def fun_circles(svg):
-    x0, y0 = 25, 25
+    x0, y0 = cfg.x0, cfg.y0
     x1, y1 = x0 + cfg.width, y0 + cfg.height
 
     wall = Polygon.Polygon([
