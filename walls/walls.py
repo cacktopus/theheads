@@ -336,21 +336,29 @@ def fun_circles(svg):
     #
     result = wall - result
 
+    holes = []
+    contours = []
     for i in range(len(result)):
         cont = result[i]
+        contours.append(cont)
         print(result.orientation(i), cont)
+
+        if result.isHole(i):
+            h = centroid(cont)
+            holes.append(h)
 
         for p0, p1 in doubles(cont):
             svg.debug(svg.svg.line(
                 p0, p1, stroke='black', stroke_width=0.5
             ))
 
+    tess("fun-circles", contours, holes, cfg.depth)
 
-def tess(name, polys, depth):
+
+def tess(name, polys, holes, depth):
     indices = {}
     vertices = []
     segments = []
-    holes = []
 
     for i, poly in enumerate(polys):
         for v in poly:
@@ -366,10 +374,6 @@ def tess(name, polys, depth):
             index1 = indices[v1]
 
             segments.append((index0, index1))
-
-        if i > 0:
-            hole = centroid(poly)
-            holes.append(hole)
 
     A = dict(
         vertices=vertices,
@@ -421,13 +425,13 @@ def tess(name, polys, depth):
     outer, holes = polys[0], polys[1:]
     for v0, v1 in doubles(outer):
         svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-        wall = build_wall(v0, v1, depth)
+        wall = build_wall(v1, v0, depth)
         stl.extend(wall)
 
     for hole in holes:
         for v0, v1 in doubles(hole):
             svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-            wall = build_wall(v0, v1, depth)
+            wall = build_wall(v1, v0, depth)
             stl.extend(wall)
 
     svg.save()
@@ -510,8 +514,13 @@ def make_wall(name):
     finally:
         svg.save()
 
+    holes = []
+    for poly in results[1:]:
+        hole = centroid(poly)
+        holes.append(hole)
+
     # print(results)
-    tess(name, results, cfg.depth)
+    tess(name, results, holes, cfg.depth)
 
 
 def main():
