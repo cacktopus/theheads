@@ -36,7 +36,7 @@ def circle_points(center: Vec, radius: float, steps: int):
     return result
 
 
-def tess(name, polys, holes, depth):
+def tess(polys, holes):
     indices = {}
     vertices = []
     segments = []
@@ -64,19 +64,21 @@ def tess(name, polys, holes, depth):
         A['holes'] = holes
 
     B = tr.triangulate(A, opts="pq")
-    tr.compare(plt, A, B)
 
+    return B, A
+    # make_stl(A, B, depth, holes, polys)
+
+
+def make_stl(name, polys, B, A, depth):
+    tr.compare(plt, A, B)
     svg = DebugSVG(f"{name}-new.svg")
     svg._prod_g.scale(3)
     svg._debug_g.scale(3)
-
     verts = B['vertices']
     tris = B['triangles']
     segs = B['segments']
-
-    for h in holes:
+    for h in A.get('holes', []):
         svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
-
     stl = []
     for tri in tris:
         poly = [verts[i] for i in tri]
@@ -109,12 +111,10 @@ def tess(name, polys, holes, depth):
         svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
         wall = build_wall(v1, v0, depth)
         stl.extend(wall)
-
     for hole in holes:
         for v0, v1 in doubles(hole):
             svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
             wall = build_wall(v1, v0, depth)
             stl.extend(wall)
-
     svg.save()
     write_stl(f"{name}.stl", stl)

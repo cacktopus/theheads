@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from typing import Tuple, List
 import re
 
-from geom import cubic_bezier, tess
+from geom import cubic_bezier, tess, make_stl
 from transformations import Vec
 from debug_svg import DebugSVG
 
@@ -300,7 +300,10 @@ def main():
     while poly[-1] == poly[0]:  # TODO: fix this properly
         poly.pop()
 
-    tess("none", [poly], [], 2)
+    polys = [poly]
+
+    B, A = tess(polys, [])
+    make_stl("none", polys, B, A, 1.75)
 
 
 if __name__ == '__main__':
