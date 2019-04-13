@@ -35,12 +35,17 @@ class SVG:
         self.finish_shape()
 
     def line(self, p0: Vec, p1: Vec, stroke='black'):
+        if p0.point2 == p1.point2:
+            return
+
         self.svg.debug(self.svg.svg.line(
             (p0 + Vec(5.0, 5.0)).point2,
             (p1 + Vec(5.0, 5.0)).point2,
             stroke=stroke,
             stroke_width=0.5,
         ))
+
+        self.svg.debug(self.svg.svg.circle(p1.point2, 0.25, fill='magenta'))
 
         if len(self._current_shape) == 0:
             self._current_shape.append(p0)
@@ -290,8 +295,12 @@ def main():
 
     svg.svg.save()
 
-    poly = [[v.point2 for v in shape[1:]]]
-    tess("none", poly, [], 2)
+    poly = [v.point2 for v in shape]
+
+    while poly[-1] == poly[0]:  # TODO: fix this properly
+        poly.pop()
+
+    tess("none", [poly], [], 2)
 
 
 if __name__ == '__main__':
