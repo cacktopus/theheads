@@ -1,24 +1,18 @@
 import itertools
 import math
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Tuple
 
 import Polygon, Polygon.IO
-import matplotlib.pyplot as plt
-import svgwrite
-import svgwrite.container
-import triangle as tr
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
-from gen_stl import build_wall
-from geom import circle
+from debug_svg import DebugSVG
+from geom import tess, circle_points
 from line import Line2D
-from stl_io import write_stl
 from transformations import Vec
 # Ideas
 # Cull small or narrow cells
@@ -93,37 +87,6 @@ circles_cfg = Config(
 )
 
 cfg = outer
-
-
-class DebugSVG:
-    def __init__(self, filename):
-        base, ext = os.path.splitext(filename)
-        self._prod = svgwrite.Drawing(base + ext, profile='tiny')
-        self._debug = svgwrite.Drawing(base + "-debug" + ext, profile='tiny')
-        self._prod_g = svgwrite.container.Group()
-        self._debug_g = svgwrite.container.Group()
-        # self._prod_g.scale(1.7)
-        # self._prod_g.translate(-250, -200 + 12.5 + 12.5 / 2)
-        self._prod.add(self._prod_g)
-        self._debug.add(self._debug_g)
-
-    def save(self):
-        self._prod.save()
-        self._debug.save()
-
-    def add(self, *args):
-        self._prod_g.add(*args)
-        self._debug_g.add(*args)
-
-    @property
-    def svg(self):
-        return self._prod
-
-    def prod(self, *args):
-        self._prod_g.add(*args)
-
-    def debug(self, *args):
-        self._debug_g.add(*args)
 
 
 def winding(polys: List[Vec]):
@@ -284,14 +247,6 @@ def distance(p0, p1):
     return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
 
 
-def circle_points(center: Vec, radius: float, steps: int):
-    result = []
-    for i in range(steps):
-        t = i / steps
-        result.append(circle(center, radius, t))
-    return result
-
-
 def fun_circles(svg):
     x0, y0 = cfg.x0, cfg.y0
     x1, y1 = x0 + cfg.width, y0 + cfg.height
@@ -353,89 +308,6 @@ def fun_circles(svg):
             ))
 
     tess("fun-circles", contours, holes, cfg.depth)
-
-
-def tess(name, polys, holes, depth):
-    indices = {}
-    vertices = []
-    segments = []
-
-    for i, poly in enumerate(polys):
-        for v in poly:
-            assert isinstance(v, tuple)
-            if v not in indices:
-                pos = len(vertices)
-                indices[v] = pos
-                vertices.append(v)
-
-        for v0, v1 in doubles(poly):
-            # TODO: check for duplicate segment
-            index0 = indices[v0]
-            index1 = indices[v1]
-
-            segments.append((index0, index1))
-
-    A = dict(
-        vertices=vertices,
-        segments=segments,
-        holes=holes,
-    )
-
-    B = tr.triangulate(A, opts="pq")
-    tr.compare(plt, A, B)
-
-    svg = DebugSVG(f"{name}-new.svg")
-    svg._prod_g.scale(3)
-    svg._debug_g.scale(3)
-
-    verts = B['vertices']
-    tris = B['triangles']
-    segs = B['segments']
-
-    for h in holes:
-        svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
-
-    stl = []
-    for tri in tris:
-        poly = [verts[i] for i in tri]
-        svg.add(svg.svg.polygon(
-            poly,
-            fill_opacity=0.0,
-            stroke_opacity=1.00,
-            stroke='black',
-            stroke_width=0.2,
-        ))
-
-        p0, p1, p2 = poly
-
-        stl.append([
-            0, 0, -1,
-            p0[0], p0[1], depth,
-            p1[0], p1[1], depth,
-            p2[0], p2[1], depth,
-        ])
-
-        stl.append([
-            0, 0, 1,
-            p2[0], p2[1], 0,
-            p1[0], p1[1], 0,
-            p0[0], p0[1], 0,
-        ])
-
-    outer, holes = polys[0], polys[1:]
-    for v0, v1 in doubles(outer):
-        svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-        wall = build_wall(v1, v0, depth)
-        stl.extend(wall)
-
-    for hole in holes:
-        for v0, v1 in doubles(hole):
-            svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-            wall = build_wall(v1, v0, depth)
-            stl.extend(wall)
-
-    svg.save()
-    write_stl(f"{name}.stl", stl)
 
 
 def bounding_box(poly):

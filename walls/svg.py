@@ -3,9 +3,9 @@ import xml.etree.ElementTree as ET
 from typing import Tuple, List
 import re
 
-from geom import cubic_bezier
+from geom import cubic_bezier, tess
 from transformations import Vec
-from walls import DebugSVG
+from debug_svg import DebugSVG
 
 
 # TODO: handle quadratic bezier
@@ -132,7 +132,6 @@ class SVG:
             self.line(p0, p1)
 
             self.finish_shape()
-
 
         elif cmd in 'h':
             dx = args[0]
@@ -279,17 +278,20 @@ def main():
         d = path.attrib['d']
 
         for cmd in list(parse(d)):
-            if svg.shape_count >= 10:
+            if svg.shape_count >= 4:
                 break
 
             svg.process(cmd[0], *cmd[1:])
 
-    for i, shape in enumerate(svg._shapes):
-        print(i)
-        for v in shape:
-            print(v)
+    shape = svg._shapes[-1]
+    for v in shape:
+        svg.svg.debug(svg.svg.svg.circle(v.point2, 1, fill='magenta'))
+        print(v)
 
     svg.svg.save()
+
+    poly = [[v.point2 for v in shape[1:]]]
+    tess("none", poly, [], 2)
 
 
 if __name__ == '__main__':

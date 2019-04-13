@@ -67,11 +67,11 @@ class Vec:
 
     @property
     def point2(self):
-        return [self.x, self.y]
+        return (self.x, self.y)
 
     @property
     def point3(self):
-        return [self.x, self.y, self.z]
+        return (self.x, self.y, self.z)
 
 
 class Mat:
