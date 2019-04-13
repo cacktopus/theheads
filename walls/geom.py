@@ -71,25 +71,25 @@ def tess(polys, holes):
 
 
 def make_stl(name, polys, B, A, depth):
-    tr.compare(plt, A, B)
-    svg = DebugSVG(f"{name}-new.svg")
-    svg._prod_g.scale(3)
-    svg._debug_g.scale(3)
+    # tr.compare(plt, A, B)
+    # svg = DebugSVG(f"{name}-new.svg")
+    # svg._prod_g.scale(3)
+    # svg._debug_g.scale(3)
     verts = B['vertices']
     tris = B['triangles']
     segs = B['segments']
-    for h in A.get('holes', []):
-        svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
+    # for h in A.get('holes', []):
+    #     svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
     stl = []
     for tri in tris:
         poly = [verts[i] for i in tri]
-        svg.add(svg.svg.polygon(
-            poly,
-            fill_opacity=0.0,
-            stroke_opacity=1.00,
-            stroke='black',
-            stroke_width=0.2,
-        ))
+        # svg.add(svg.svg.polygon(
+        #     poly,
+        #     fill_opacity=0.0,
+        #     stroke_opacity=1.00,
+        #     stroke='black',
+        #     stroke_width=0.2,
+        # ))
 
         p0, p1, p2 = poly
 
@@ -109,15 +109,15 @@ def make_stl(name, polys, B, A, depth):
 
     outer, holes = polys[0], polys[1:]
     for v0, v1 in doubles(outer):
-        svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
+        # svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
         wall = build_wall(v0, v1, depth)
         stl.extend(wall)
     for hole in holes:
         for v0, v1 in doubles(hole):
-            svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
+            # svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
             wall = build_wall(v0, v1, depth)
             stl.extend(wall)
-    svg.save()
+    # svg.save()
     write_stl(f"{name}.stl", stl)
 
 

@@ -283,9 +283,6 @@ def main():
         d = path.attrib['d']
 
         for cmd in list(parse(d)):
-            if svg.shape_count >= 4:
-                break
-
             svg.process(cmd[0], *cmd[1:])
 
     polys = [[v.point2 for v in s] for s in svg._shapes]
@@ -312,7 +309,7 @@ def main():
     svg.svg.save()
 
     B, A = tess(polys, holes)
-    make_stl("none", polys, B, A, 1.75)
+    make_stl("none", polys, B, A, 2.83 * 1.75)
 
 
 if __name__ == '__main__':
