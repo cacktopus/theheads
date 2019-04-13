@@ -110,12 +110,12 @@ def make_stl(name, polys, B, A, depth):
     outer, holes = polys[0], polys[1:]
     for v0, v1 in doubles(outer):
         svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-        wall = build_wall(v1, v0, depth)
+        wall = build_wall(v0, v1, depth)
         stl.extend(wall)
     for hole in holes:
         for v0, v1 in doubles(hole):
             svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-            wall = build_wall(v1, v0, depth)
+            wall = build_wall(v0, v1, depth)
             stl.extend(wall)
     svg.save()
     write_stl(f"{name}.stl", stl)
