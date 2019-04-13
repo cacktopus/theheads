@@ -27,11 +27,12 @@ def random_color():
 
 class SVG:
     def __init__(self, name):
-        self._pos = None
-        self._first = None
         self.svg = DebugSVG(f"{name}.svg")
-        self._color = random_color()
-        self._shape_count = 0
+        self._first = None
+        self._color = None
+        self._current_shape = []
+        self._shapes = []
+        self.finish_shape()
 
     def line(self, p0: Vec, p1: Vec, stroke='black'):
         self.svg.debug(self.svg.svg.line(
@@ -41,21 +42,36 @@ class SVG:
             stroke_width=0.5,
         ))
 
+        if len(self._current_shape) == 0:
+            self._current_shape.append(p0)
+        self._current_shape.append(p1)
+
+    def finish_shape(self):
+        self.set_pos(None)
+        self._first = None
+        self._color = random_color()
+        if len(self._current_shape):
+            self._shapes.append(self._current_shape)
+        self._current_shape = []
+
+    @property
+    def pos(self):
+        return self._pos
+
+    def set_pos(self, p):
+        if self._first is None:
+            self._first = p
+        self._pos = p
+
+    @property
+    def shape_count(self):
+        return len(self._shapes)
+
     def process(self, cmd, *args):
-        # svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
+        print(cmd, " ".join(str(a) for a in args))
+
         if cmd == 'M':
             p1 = Vec(*args)
-
-            # self.svg.debug(
-            #     self.svg.svg.circle(
-            #         p1.point2,
-            #         1.0,
-            #         fill='red',
-            #         stroke='red',
-            #         fill_opacity=1.0,
-            #         stroke_opacity=1.0,
-            #         stroke_width=0.5))
-
             self.set_pos(p1)
 
         elif cmd == 'c':
@@ -115,18 +131,8 @@ class SVG:
             p1 = self._first
             self.line(p0, p1)
 
-            # self.svg.debug(
-            #     self.svg.svg.circle(
-            #         p1.point2,
-            #         1.0,
-            #         fill='blue',
-            #         stroke='blue',
-            #         fill_opacity=1.0,
-            #         stroke_opacity=1.0,
-            #         stroke_width=0.5))
+            self.finish_shape()
 
-            self.set_pos(None)
-            self._first = None
 
         elif cmd in 'h':
             dx = args[0]
@@ -158,21 +164,6 @@ class SVG:
 
         else:
             assert 0, f"unknown command {cmd}"
-
-    @property
-    def pos(self):
-        return self._pos
-
-    def set_pos(self, p):
-        if self._first is None:
-            self._first = p
-            self._color = random_color()
-            self._shape_count += 1
-        self._pos = p
-
-    @property
-    def shape_count(self):
-        return self._shape_count
 
 
 def get_paths(filename):
@@ -277,7 +268,7 @@ def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    paths = list(get_paths("brain-2-orig.svg"))[1:2]
+    paths = list(get_paths("brain-2 new.svg"))[:1]
 
     for num, path in enumerate(paths):
         print(f" {num} ".center(80, '='))
@@ -288,11 +279,15 @@ def main():
         d = path.attrib['d']
 
         for cmd in list(parse(d)):
-            if svg.shape_count > 1:
+            if svg.shape_count >= 10:
                 break
 
-            print(cmd)
             svg.process(cmd[0], *cmd[1:])
+
+    for i, shape in enumerate(svg._shapes):
+        print(i)
+        for v in shape:
+            print(v)
 
     svg.svg.save()
 
