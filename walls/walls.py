@@ -11,7 +11,7 @@ from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
 from debug_svg import DebugSVG
-from geom import tess, circle_points
+from geom import tess, circle_points, centroid
 from line import Line2D
 from transformations import Vec
 # Ideas
@@ -169,14 +169,6 @@ def inset(svg, points, offset: float):
 
 def good(p):
     return 0 < p[0] < cfg.max_x and 0 < p[1] < cfg.max_y
-
-
-def centroid(triangle: List[Tuple]):
-    assert len(triangle) >= 3
-    x = sum(p[0] for p in triangle) / len(triangle)
-    y = sum(p[1] for p in triangle) / len(triangle)
-
-    return x, y
 
 
 def circumcenter(triangle: List[Tuple]):

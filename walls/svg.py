@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from typing import Tuple, List
 import re
 
-from geom import cubic_bezier, tess, make_stl
+from geom import cubic_bezier, tess, make_stl, centroid
 from transformations import Vec
 from debug_svg import DebugSVG
 
@@ -288,19 +288,30 @@ def main():
 
             svg.process(cmd[0], *cmd[1:])
 
-    polys = [[v.point2 for v in s] for s in svg._shapes[1:]]
+    polys = [[v.point2 for v in s] for s in svg._shapes]
 
+    holes = []
     for poly in polys:
         while poly[-1] == poly[0]:  # TODO: fix this properly
             poly.pop()
 
+    for poly in polys[1:]:
         for v in poly:
-            svg.svg.debug(svg.svg.svg.circle(v, 1, fill='magenta'))
+            svg.svg.debug(svg.svg.svg.circle(v, 0.25, fill='magenta'))
             print(v)
+
+        B, A = tess([poly], [])
+        indices = B['triangles'][0]
+        triangle = [tuple(B['vertices'][i]) for i in indices]
+        print(triangle)
+        hole = centroid(triangle)
+        print(hole)
+        holes.append(hole)
+        svg.svg.debug(svg.svg.svg.circle(hole, 1, fill='blue'))
 
     svg.svg.save()
 
-    B, A = tess(polys, [])
+    B, A = tess(polys, holes)
     make_stl("none", polys, B, A, 1.75)
 
 

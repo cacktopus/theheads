@@ -1,4 +1,5 @@
 from math import cos, pi, sin
+from typing import List, Tuple
 
 import triangle as tr
 from matplotlib import pyplot as plt
@@ -118,3 +119,11 @@ def make_stl(name, polys, B, A, depth):
             stl.extend(wall)
     svg.save()
     write_stl(f"{name}.stl", stl)
+
+
+def centroid(triangle: List[Tuple]):
+    assert len(triangle) >= 3
+    x = sum(p[0] for p in triangle) / len(triangle)
+    y = sum(p[1] for p in triangle) / len(triangle)
+
+    return x, y
