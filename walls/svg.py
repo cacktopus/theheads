@@ -288,19 +288,17 @@ def main():
 
             svg.process(cmd[0], *cmd[1:])
 
-    shape = svg._shapes[-1]
-    for v in shape:
-        svg.svg.debug(svg.svg.svg.circle(v.point2, 1, fill='magenta'))
-        print(v)
+    polys = [[v.point2 for v in s] for s in svg._shapes[1:]]
+
+    for poly in polys:
+        while poly[-1] == poly[0]:  # TODO: fix this properly
+            poly.pop()
+
+        for v in poly:
+            svg.svg.debug(svg.svg.svg.circle(v, 1, fill='magenta'))
+            print(v)
 
     svg.svg.save()
-
-    poly = [v.point2 for v in shape]
-
-    while poly[-1] == poly[0]:  # TODO: fix this properly
-        poly.pop()
-
-    polys = [poly]
 
     B, A = tess(polys, [])
     make_stl("none", polys, B, A, 1.75)
