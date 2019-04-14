@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import os
 import shutil
 import subprocess
-import glob
 
 MIN_FREE_SPACE_RATIO = 0.05
 PROMETHEUS_DATA_DIR = "/mnt/prometheus-data/prometheus-data"
@@ -17,8 +15,7 @@ def main():
             ["/usr/bin/env", "sudo", "systemctl", "stop", "prometheus"]
         )
 
-        for path in glob.glob(os.path.join(PROMETHEUS_DATA_DIR, "*")):
-            shutil.rmtree(path)
+        shutil.rmtree(PROMETHEUS_DATA_DIR, ignore_errors=True)
 
         subprocess.check_call(
             ["/usr/bin/env", "sudo", "systemctl", "start", "prometheus"]
