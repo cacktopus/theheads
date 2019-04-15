@@ -102,6 +102,11 @@ async def build_installation(cfg: Config):
     cameras = {}
     heads = {}
     stands = {}
+    kinects = {}
+    scaleTranslate = {}
+    scale=75
+    translateX=750
+    translateY=100
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/cameras/"
@@ -129,13 +134,31 @@ async def build_installation(cfg: Config):
         stand['cameras'] = [cameras[c] for c in stand['cameras']]
         stand['heads'] = [heads[h] for h in stand['heads']]
 
+    # for scale-translate
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/scale-translate.yaml"
+    )).items():
+        scaleTranslate = yaml.safe_load(body)
+        scale = scaleTranslate["scale"]
+        translate = scaleTranslate["translate"]
+        translateX = translate["x"]
+        translateY = translate["y"]
+
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/kinects/"
+    )).items():
+        if name.endswith(b".yaml"):
+            kinect = yaml.safe_load(body)
+            kinects[kinect['name']] = kinect
+
     result = dict(
         stands=list(stands.values()),
-        scale=75,
+        scale=scale,
         translate={
-            "x": 750,
-            "y": 100,
-        }
+            "x": translateX,
+            "y": translateY,
+        },
+        kinects=list(kinects.values())
     )
 
     return result

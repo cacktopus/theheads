@@ -1,6 +1,44 @@
-import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive, headRotateByHeadName } from "../actions";
+import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive, kinectSetFocalPoints, headRotateByHeadName } from "../actions";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 
+const temp = [{
+    "type": "kinect",
+    "data": {
+        "name": "kinect-01",
+        "simplifiedBodies": [{
+            "bodyIndex": 0,
+            "tracked": false
+        }, {
+            "bodyIndex": 1,
+            "tracked": false
+        }, {
+            "bodyIndex": 2,
+            "tracked": true,
+            "joints": [{
+                "cameraX": -0.3352165222167969,
+                "cameraY": 0.6552982330322266,
+                "cameraZ": 2.0847411155700684,
+                "jointType": 3,
+                "trackingState": 2
+            }]
+        }, {
+            "bodyIndex": 3,
+            "tracked": false
+        }, {
+            "bodyIndex": 4,
+            "tracked": false
+        }, {
+            "bodyIndex": 5,
+            "tracked": false
+        }],
+        "pos0": {
+            "x": 12.5,
+            "y": 12,
+            "z": 34
+        }
+    }
+}];
+const payloadDataChunkData2 = temp[0].data;
 
 // This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
 let timeoutSetActive = {};
@@ -58,29 +96,37 @@ export const customWebsocketMiddleware = store => next => action => {
                                 store.dispatch(standSetIsNotActive(headName));
                             }, setToNotActiveAfterDur);
                         } catch (e) { }
+                        //     break;
+                        // case "kinect":
+                        try {
+                            var JOINT_NUM = { HEAD: 3 };
+                            var kinectName = payloadDataChunkData2.name;
+                            var simplifiedBodies = payloadDataChunkData2.simplifiedBodies;
+                            // var kinectName = payloadDataChunkData.name;
+                            // var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
+                            var validBodies = simplifiedBodies.filter(body => body.tracked);
+                            const focalPoints = validBodies.map(body => {
+                                var joint_pos = {};
+                                if (body.joints && body.joints.length > 0) {
+                                    // This is where we decide which of the joints to use as the 
 
-                        break;
-                    case "kinect":
-                        var JOINT_NUM = { HEAD: 3 };
-                        var kinectName = payloadDataChunkData.name;
-                        var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
-                        var validBodies = simplifiedBodies.filter(body => body.tracked);
-
-                        const focalPoints = validBodies.forEach(body => {
-                            var joint_pos = {};
-                            if (body.joints && body.joints.length > 0) {
-                                var joint_pos = body.joints.filter(joint => joint.jointType === JOINT_NUM.HEAD)[0].map(joint => {
-                                    return {
-                                        x: joint.cameraX,
-                                        y: joint.cameraY,
-                                        z: joint.cameraZ,
-                                    }
-                                });;
-                            }
-                            return joint_pos;
-                        });
-                        window.c_kk = { kinect: true, name: kinectName, focalPoints };
-                        console.log({ kinect: true, nane: kinectName, focalPoints });
+                                    var joint_pos = {};
+                                    body.joints.filter(joint => joint.jointType === JOINT_NUM.HEAD).forEach(joint => {
+                                        joint_pos = {
+                                            x: joint.cameraX,
+                                            y: joint.cameraY,
+                                            z: joint.cameraZ,
+                                            bodyIndex: body.bodyIndex
+                                        }
+                                    });
+                                }
+                                return joint_pos;
+                            });
+                            window.c_kk = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData2 };
+                            // console.log({ focalPoints: JSON.stringify(focalPoints) });
+                            store.dispatch(kinectSetFocalPoints({kinectName, focalPoints}));
+                            // console.log({ kinect: true, nane: kinectName, focalPoints });
+                        } catch (e) { console.log(e) }
                         break;
                     default:
                         break;

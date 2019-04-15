@@ -171,6 +171,18 @@ export const standSetIsNotActive = (headName) => ({
     headName
 })
 
+// KINECT
+export const kinectSetFocalPoints = ({kinectName, focalPoints}) => ({
+    type: 'KINECT_SET_FOCAL_POINTS',
+    focalPoints,
+    kinectName
+})
+
+// export const kinectClearFocalPoints = (kinectName) => ({
+//     type: 'KINECT_CLEAR_FOCAL_POINTS',
+//     kinectName
+// })
+
 // HEAD
 export const headMoveByIndex = (standIndex, headIndex, pos) => ({
     type: 'HEAD_MOVE_BY_INDEX',
