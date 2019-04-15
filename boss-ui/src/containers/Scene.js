@@ -5,6 +5,7 @@ import Scene from '../components/Scene'
 const mapStateToProps = (state, ownProps) =>
   ({
     stands: state.stands,
+    kinects: state.kinects,
     focalPoints: state.focalPoints
     //   popups: state.popups //ownProps.filter === state.visibilityFilter
   });

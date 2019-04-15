@@ -2,12 +2,15 @@ import { fromJS } from "immutable";
 
 const initialState = {
     // e.g. { "kinect-01" : { focalPoints, pos: {x: _, y: _}, rot: -90 }}
+    kinects: {},
+    focalPoints: {}
 }
 
 const kinect = (state = fromJS(initialState), action) => {
     window.c_KK123 = { state, action };
-    // let newState = state; 
+    let newState = state; 
     // let tempFocalPointIndex; 
+
 
     switch (action.type) {
         // Websocket message
@@ -27,8 +30,23 @@ const kinect = (state = fromJS(initialState), action) => {
 
         //     return state;
         case 'KINECT_SET_FOCAL_POINTS':
-            return state.setIn([action.kinectName, "focalPoints"], fromJS(action.focalPoints));
-            // push(createNewFocalPoint({}, state));
+            return state.setIn(["focalPoints", action.kinectName], fromJS(action.focalPoints));
+        case 'KINECT_SET_SCENE':
+            console.log("setting kinect scene");
+            window.c_aa4 = action;
+            try {
+                
+                let kinects = action.sceneData.kinects;
+
+                kinects.forEach(kinect => {
+                    newState = newState.setIn(["kinects",kinect.name], fromJS(kinect))
+                });
+
+                return newState;
+            } catch (e) {
+                console.log(`error with KINECT_SET_SCENE`, e);
+            }
+        // push(createNewFocalPoint({}, state));
         // case 'KINECT_SETIN_FIELDS_BY_INDEX':
         //     // return state.setIn([action.index,"pos"], fromJS(action.pos));
         //     let setInLocation = [action.index];
@@ -52,7 +70,7 @@ const kinect = (state = fromJS(initialState), action) => {
         // // Active or not
         // case 'KINECT_SET_IS_ACTIVE':
         //     tempFocalPointIndex = getFocalPointIndexFromHeadName(state, action.headName);
-            
+
         //     if (tempFocalPointIndex >= 0 ) {
         //         return state.setIn([tempFocalPointIndex, "isActive"], true);
         //     } else {

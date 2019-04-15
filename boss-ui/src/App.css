@@ -538,6 +538,123 @@ body {
   border: 1px solid #f25;
 }
 
+
+/* KINECT */
+.Kinect {
+
+  /* width: 80px;
+  position: absolute;
+  top: 15px;
+  height: 68px;
+  left: 50%;
+  margin-left: -40px; */
+
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 50%;
+  left: 50%;
+  margin-left: -5px;
+  /* To make kinect centered, via 1/2 size of camImg */
+  margin-top: -10px;
+  /* To make kinect centered, via 1/2 size of camImg */
+}
+
+.Kinect-rotateContainer {
+  position: relative;
+  /* top: -10px;
+  left: -5px; */
+  /* border-radius: 50%;
+  border: 1px solid #840d00; */
+}
+
+.Kinect-rotateContainer,
+.Kinect-container {
+  /* width: 100%;
+  height: 100%; */
+}
+
+.Kinect-camImg {
+  position: relative;
+  height: 20px;
+  width: 10px;
+  background-color: green;
+  cursor: pointer;
+}
+
+.Kinect--selected .Kinect-camImg {
+  border: 2px solid #f25;
+  margin-left: -2px;
+  margin-top: -2px;
+}
+
+.Kinect-camImg:after {
+  content: '';
+  position: absolute;
+  height: 10px;
+  width: 3px;
+  background-color: black;
+  top: 5px;
+  right: -2px;
+}
+
+
+.Kinect-img {
+  width: 100%;
+  height: 100%;
+}
+
+.Kinect-rotate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+/* .Stand-rotate-offset {
+  position: absolute;
+  left: -120px;
+  bottom: -20px;
+  background-color: blue;
+  width: 10px;
+  height: 10px;
+} */
+
+.Kinect-rotate {
+  z-index: 10;
+}
+
+.Kinect-rotate-handle {
+  width: 40px;
+  height: 40px;
+  background-color: GREEN;
+  /*#840d00;*/
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  /* transform: translate(-10px, -10px); */
+  border: 1px solid black;
+  cursor: alias;
+  margin-left: -60px;
+  margin-top: -20px;
+  /* top: -100px; */
+  left: 100px;
+
+  /* width: 40px;
+  height: 40px;
+  background-color: blue;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: alias; */
+}
+
+.Kinect--selected .Kinect-rotate-handle {
+  border: 1px solid #f25;
+}
+
 /* Focal Point */
 .FocalPoint {
   position: absolute;
