@@ -15,13 +15,13 @@ export const customWebsocketMiddleware = store => next => action => {
             totalPayload.forEach((payloadDataChunk, i) => {
 
                 const payloadType = payloadDataChunk.type;
+                const payloadDataChunkData = payloadDataChunk.data ? payloadDataChunk.data : {};
 
                 switch (payloadType) {
                     case "draw":
                         let lineId = (new Date()).getTime() + "-" + i;
-                        let tempData = payloadDataChunk.data ? payloadDataChunk.data : {};
-                        let shape = tempData.shape;
-                        let coords = tempData.coords;
+                        let shape = payloadDataChunkData.shape;
+                        let coords = payloadDataChunkData.coords;
 
                         store.dispatch(motionLinesAddLine({
                             lineId,
@@ -43,12 +43,12 @@ export const customWebsocketMiddleware = store => next => action => {
                             try {
                                 headName = payloadDataChunk.data.name;
                                 store.dispatch(standSetIsActive(headName));
-                            } catch(e) {}
+                            } catch (e) { }
 
                             try {
                                 rotation = payloadDataChunk.data.extra.rotation;
                                 store.dispatch(headRotateByHeadName(headName, rotation));
-                            } catch(e) {}                            
+                            } catch (e) { }
 
                             clearTimeout(timeoutSetActive[headName]);
 
@@ -56,9 +56,31 @@ export const customWebsocketMiddleware = store => next => action => {
 
                             timeoutSetActive[headName] = setTimeout(() => {
                                 store.dispatch(standSetIsNotActive(headName));
-                            },setToNotActiveAfterDur);
-                        } catch(e) {}
+                            }, setToNotActiveAfterDur);
+                        } catch (e) { }
 
+                        break;
+                    case "kinect":
+                        var JOINT_NUM = { HEAD: 3 };
+                        var kinectName = payloadDataChunkData.name;
+                        var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
+                        var validBodies = simplifiedBodies.filter(body => body.tracked);
+
+                        const focalPoints = validBodies.forEach(body => {
+                            var joint_pos = {};
+                            if (body.joints && body.joints.length > 0) {
+                                var joint_pos = body.joints.filter(joint => joint.jointType === JOINT_NUM.HEAD)[0].map(joint => {
+                                    return {
+                                        x: joint.cameraX,
+                                        y: joint.cameraY,
+                                        z: joint.cameraZ,
+                                    }
+                                });;
+                            }
+                            return joint_pos;
+                        });
+                        window.c_kk = { kinect: true, name: kinectName, focalPoints };
+                        console.log({ kinect: true, nane: kinectName, focalPoints });
                         break;
                     default:
                         break;
