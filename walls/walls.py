@@ -7,17 +7,18 @@ import Polygon.IO
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
-from pyhull.voronoi import VoronoiTess
 
 from config import Config
 from debug_svg import DebugSVG
 from geom import tess, centroid, make_stl
 from line import Line2D
 from transformations import Vec
+from util import doubles
+
 # Ideas
 # Cull small or narrow cells
 # Leave some cells filled in
-from util import doubles
+
 
 EPSILON = 1E-9
 
@@ -105,7 +106,7 @@ def make_convex(poly: List[Tuple]) -> List[Vec]:
     return result
 
 
-def inset(svg, points, offset: float):
+def inset(points, offset: float):
     result = []
 
     poly = [Vec(*p) for p in points]
@@ -114,22 +115,11 @@ def inset(svg, points, offset: float):
 
     lines = list(generate_offset_lines(poly, signed_offset))
 
-    for line in lines:
-        # svg.debug(svg.svg.circle(line.p.point2, 1, fill='magenta'))
-        p0 = line.p + line.u.scale(0)
-        p1 = line.p + line.u.scale(500)
-        # svg.debug(svg.svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
-
     for l0, l1 in all_pairs(lines):
         p_new = l0.intersect(l1)
 
         if should_include_point(lines, p_new, sign):
-            if good(p_new.point2):
-                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='green'))
             result.append(p_new.point2)
-        else:
-            if good(p_new.point2):
-                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='red'))
 
     return make_convex(result)
 
@@ -184,22 +174,17 @@ def spooky_cells(dely: DelaunayTri):
     return cells
 
 
-def process(svg, window, poly):
+def process(poly):
     if all(good(p) for p in poly):
         print("points", poly)
 
         try:
-            poly = inset(svg, poly, cfg.line_width / 2.0)
+            poly = inset(poly, cfg.line_width / 2.0)
         except Exception as e:
             print(e)
             raise
 
-        result = list(window & Polygon.Polygon(poly))
-        print(result)
-
-        if len(result):
-            assert len(result) == 1
-            yield result[0]
+        yield poly
 
 
 def bounding_box(poly):
@@ -230,28 +215,26 @@ def make_wall(name):
                 svg.debug(svg.svg.polygon(pts, fill='white', stroke='green', stroke_opacity=0.50, fill_opacity=0.0,
                                           stroke_width=0.5))
 
-        # width = 146
         x0, y0 = cfg.x0, cfg.y0
         x1, y1 = x0 + cfg.width, y0 + cfg.height
 
-        wall = [
+        wall = Polygon.Polygon([
             (x0, y0),
             (x1, y0),
             (x1, y1),
             (x0, y1),
-        ]
+        ])
 
-        window = [
+        window = Polygon.Polygon([
             (x0 + cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y1 - cfg.pad_y),
             (x0 + cfg.pad_x, y1 - cfg.pad_y),
-        ]
-        window_p = Polygon.Polygon(window)
+        ])
 
         cells = spooky_cells(dely)
 
-        results = [wall]
+        result = Polygon.Polygon()
 
         for i, cell in sorted(cells.items()):
             if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
@@ -259,18 +242,11 @@ def make_wall(name):
                     svg.debug(svg.svg.circle(point, 1, fill='magenta', stroke='magenta'))
                 fixed = make_convex(cell)
                 svg.debug(svg.svg.polygon(fixed, fill='red', stroke='red', opacity=0.50))
-                for p in process(svg, window_p, fixed):
-                    results.append(p)
-                    add = svg.svg.polygon(p, fill='black', opacity=0.40)
-                    svg.add(add)
+                for p in process(svg, fixed):
+                    poly = Polygon.Polygon(p) & window
+                    result = result + poly
 
-        v = VoronoiTess(points)
-        count = 0
-
-        # for region in v.regions:
-        #     points = [v.vertices[i] for i in region]
-        #     process(svg, window, points)
-        #     count += 1
+        result = wall - result
 
     except:
         raise
@@ -279,20 +255,25 @@ def make_wall(name):
         svg.save()
 
     holes = []
-    for poly in results[1:]:
-        hole = centroid(poly)
-        holes.append(hole)
+    contours = []
+    for i in range(len(result)):
+        cont = result[i]
+        contours.append(list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+        print(result.orientation(i), result.isHole(i), cont)
 
-    # print(results)
-    B, A = tess(results, holes)
-    make_stl(name, results, B, A, cfg.depth)
+        if result.isHole(i):
+            h = centroid(cont)
+            holes.append(h)
+
+    B, A = tess(contours, holes)
+    make_stl(name, contours, B, A, 1.75)
 
 
 def main():
     global cfg
 
-    cfg = outer
-    for i in (1, 2):
+    cfg = inner
+    for i in (1,):
         make_wall(f"wall{i}")
 
 

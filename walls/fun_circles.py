@@ -33,13 +33,12 @@ def fun_circles(cfg):
         (x0, y1),
     ])
 
-    window = [
+    window = Polygon.Polygon([
         (x0 + cfg.pad_x, y0 + cfg.pad_y),
         (x1 - cfg.pad_x, y0 + cfg.pad_y),
         (x1 - cfg.pad_x, y1 - cfg.pad_y),
         (x0 + cfg.pad_x, y1 - cfg.pad_y),
-    ]
-    window_p = Polygon.Polygon(window)
+    ])
 
     points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 0.80)
 
@@ -54,16 +53,9 @@ def fun_circles(cfg):
         center = Vec(*point)
         points = circle_points(center, r, 20)
 
-        # for p0, p1 in doubles(points):
-        #     svg.debug(svg.svg.line(
-        #         p0.point2, p1.point2, stroke='black', stroke_width=0.5
-        #     ))
-
-        poly = Polygon.Polygon([p.point2 for p in points]) & window_p
+        poly = Polygon.Polygon([p.point2 for p in points]) & window
         result = result + poly
 
-    # a_circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(75, 75), 10, 20)])
-    #
     result = wall - result
 
     holes = []
