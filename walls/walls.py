@@ -11,7 +11,7 @@ from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
 from debug_svg import DebugSVG
-from geom import tess, circle_points, centroid
+from geom import tess, circle_points, centroid, make_stl
 from line import Line2D
 from transformations import Vec
 # Ideas
@@ -287,19 +287,15 @@ def fun_circles(svg):
     contours = []
     for i in range(len(result)):
         cont = result[i]
-        contours.append(cont)
-        print(result.orientation(i), cont)
+        contours.append(list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+        print(result.orientation(i), result.isHole(i), cont)
 
         if result.isHole(i):
             h = centroid(cont)
             holes.append(h)
 
-        for p0, p1 in doubles(cont):
-            svg.debug(svg.svg.line(
-                p0, p1, stroke='black', stroke_width=0.5
-            ))
-
-    tess("fun-circles", contours, holes, cfg.depth)
+    B, A = tess(contours, holes)
+    make_stl("fun-circles", contours, B, A, 1.75)
 
 
 def bounding_box(poly):
