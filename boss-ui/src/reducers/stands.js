@@ -112,7 +112,6 @@ const getStandIndexFromHeadName = (state, headName) => {
 };
 
 function rotateHeadByHeadName({ state, headName, rotation }) {
-    console.log("rotateHeadByHeadName");
     let heads, standIndex, headIndex;
     let newState = state;
 
