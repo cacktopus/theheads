@@ -43,6 +43,9 @@ const payloadDataChunkData2 = temp[0].data;
 // This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
 let timeoutSetActive = {};
 
+
+console.log('EDIT THE SHIT HERE... for kinect message');
+
 export const customWebsocketMiddleware = store => next => action => {
     if (action.type === WEBSOCKET_MESSAGE) {
         let totalPayload; // parse through each payload
@@ -96,8 +99,8 @@ export const customWebsocketMiddleware = store => next => action => {
                                 store.dispatch(standSetIsNotActive(headName));
                             }, setToNotActiveAfterDur);
                         } catch (e) { }
-                        //     break;
-                        // case "kinect":
+                        break;
+                    case "kinect":
                         try {
                             var JOINT_NUM = { HEAD: 3 };
                             var kinectName = payloadDataChunkData2.name;
@@ -124,7 +127,7 @@ export const customWebsocketMiddleware = store => next => action => {
                             });
                             window.c_kk = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData2 };
                             // console.log({ focalPoints: JSON.stringify(focalPoints) });
-                            store.dispatch(kinectSetFocalPoints({kinectName, focalPoints}));
+                            store.dispatch(kinectSetFocalPoints({ kinectName, focalPoints }));
                             // console.log({ kinect: true, nane: kinectName, focalPoints });
                         } catch (e) { console.log(e) }
                         break;

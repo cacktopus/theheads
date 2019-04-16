@@ -112,6 +112,7 @@ const getStandIndexFromHeadName = (state, headName) => {
 };
 
 function rotateHeadByHeadName({ state, headName, rotation }) {
+    console.log("rotateHeadByHeadName");
     let heads, standIndex, headIndex;
     let newState = state;
 
@@ -146,6 +147,7 @@ function rotateHeadByHeadName({ state, headName, rotation }) {
             return newState;
         }
     }
+    return state;
 }
 
 const processWebsocketData = (state, payloadDataChunk) => {
