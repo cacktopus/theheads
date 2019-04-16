@@ -380,7 +380,8 @@ def make_wall(name):
         holes.append(hole)
 
     # print(results)
-    tess(name, results, holes, cfg.depth)
+    B, A = tess(results, holes)
+    make_stl(name, results, B, A, cfg.depth)
 
 
 def main():
@@ -391,7 +392,7 @@ def main():
     svg.save()
 
     cfg = outer
-    for i in (1,):
+    for i in (1, 2):
         make_wall(f"wall{i}")
 
 
