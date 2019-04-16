@@ -6,9 +6,10 @@ import Draggable, { DraggableCore } from 'react-draggable';
 import cn from "classnames";
 import Heads from './Heads';
 import Cameras from './Cameras';
+import Kinects from './Kinects';
 import PopupInfo from '../containers/PopupInfo';
 
-import {encodeRot, decodeRot, encodePos, decodePos, noTouchMove} from '../helpers';
+import {STAND_WIDTH, encodeRot, decodeRot, encodePos, decodePos, noTouchMove} from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -137,6 +138,7 @@ export default class Menu extends React.Component {
 
         const heads = stand.get("heads");
         const cameras = stand.get("cameras");
+        const kinects = stand.get("kinects");
 
         // const standStyle = {transform:`translate(${stand.pos.x}px, ${stand.pos.y}px)`}
         // console.log('ren');
@@ -167,7 +169,7 @@ export default class Menu extends React.Component {
         // set the transform:scale(X); to X = 0.381
         // When the scene scale is 200 (100 * 2)
         // set the transform:scale(X); to X = 0.381 * 2 = 0.762
-        const standContainerScale = 0.381 * this.props.menu.get("scale") / 100
+        const standContainerScale = STAND_WIDTH * this.props.menu.get("scale") / 100
         const styleStandContainer = {
             transform: `scale(${standContainerScale})`
         }
@@ -243,6 +245,9 @@ export default class Menu extends React.Component {
                             </div>
                             <div className="Stand-cameras">
                                 <Cameras cameras={cameras} standIndex={this.props.index} />
+                            </div>
+                            <div className="Stand-kinects">
+                                <Kinects kinects={kinects} standIndex={this.props.index} />
                             </div>
                         </div>
                     </div>

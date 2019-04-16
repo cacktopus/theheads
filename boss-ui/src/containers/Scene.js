@@ -6,7 +6,8 @@ const mapStateToProps = (state, ownProps) =>
   ({
     stands: state.stands,
     kinects: state.kinects,
-    focalPoints: state.focalPoints
+    focalPoints: state.focalPoints,
+    menu: state.menu
     //   popups: state.popups //ownProps.filter === state.visibilityFilter
   });
 

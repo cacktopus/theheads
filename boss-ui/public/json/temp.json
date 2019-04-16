@@ -1,232 +1,77 @@
 {
+    "name": "export",
     "stands": [{
-            "cameras": [{
-                "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                "fov": 64.33,
-                "name": "camera-01",
-                "pos": {
-                    "x": 0.1,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "heads": [{
-                "name": "head-01",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-01",
+        "cameras": [],
+        "kinects": [{
+            "fov": 71,
+            "name": "kinect-01",
+            "pos": {
+                "x": -0.3, 
+                "y": -0.3
+            },
+            "rot": -45
+        }],
+        "heads": [{
+            "name": "head-01",
             "pos": {
                 "x": 0,
                 "y": 0
             },
-            "rot": -90
+            "rot": 0,
+            "vRot": 0
+        }],
+        "name": "stand-01",
+        "pos": {
+            "x": -2.7,
+            "y": -0.3
         },
-        {
-            "cameras": [{
-                "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-                "fov": 64.33,
-                "name": "camera-02",
-                "pos": {
-                    "x": 0.1,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "heads": [{
-                "name": "head-02",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-02",
-            "pos": {
-                "x": -4.9440479878800705,
-                "y": -0.6207226787596873
-            },
-            "rot": -75.68797386944127
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-03",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-03",
-            "pos": {
-                "x": -2.986294399786872,
-                "y": -0.2242055593763439
-            },
-            "rot": -81.41278432166476
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-04",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-04",
-            "pos": {
-                "x": -0.9987523388778446,
-                "y": -0.024953222443105716
-            },
-            "rot": -87.13759477388825
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-05",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-05",
-            "pos": {
-                "x": 0.9987523388778446,
-                "y": -0.024953222443105716
-            },
-            "rot": -92.86240522611175
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-06",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-06",
-            "pos": {
-                "x": 2.986294399786872,
-                "y": -0.2242055593763439
-            },
-            "rot": -98.58721567833524
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-07",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-07",
-            "pos": {
-                "x": 4.9440479878800705,
-                "y": -0.6207226787596873
-            },
-            "rot": -104.31202613055873
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-08",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-08",
-            "pos": {
-                "x": 6.852484389061746,
-                "y": -1.2105492976067787
-            },
-            "rot": -110.03683658278223
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-09",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-09",
-            "pos": {
-                "x": -1.5920595043359824,
-                "y": -4.0794049566401736
-            },
-            "rot": -90
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-10",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-10",
-            "pos": {
-                "x": 1.5920595043359824,
-                "y": -4.0794049566401736
-            },
-            "rot": -90
-        },
-        {
-            "cameras": [],
-            "heads": [{
-                "name": "head-11",
-                "pos": {
-                    "x": 0,
-                    "y": 0
-                },
-                "rot": 0
-            }],
-            "name": "stand-11",
+        "rot": 0,
+        "isActive": false
+    }, {
+        "cameras": [],
+        "kinects": [],
+        "heads": [{
+            "name": "head-02",
             "pos": {
                 "x": 0,
-                "y": -7
+                "y": 0
             },
-            "rot": -90
-        }
-    ],
-    "scale": 100,
-    "translate": {
-        "x": 751,
-        "y": 100
-    },
-    "kinects": [{
-            "fov": 71,
-            "name": "kinect-01",
-            "pos": {
-                "x": 0,
-                "y": -1.5
-            },
-            "rot": -45
+            "rot": 0,
+            "vRot": 0
+        }],
+        "name": "stand-02",
+        "pos": {
+            "x": -0.3,
+            "y": -0.3
         },
-        {
+        "rot": 0,
+        "isActive": false
+    }, {
+        "cameras": [],
+        "kinects": [{
             "fov": 71,
             "name": "kinect-02",
             "pos": {
-                "x": -3,
-                "y": 1
+                "x": 0.3,
+                "y": 0.3
             },
             "rot": 135
-        }
-    ]
+        }],
+        "heads": [{
+            "name": "head-03",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 0,
+            "vRot": 0
+        }],
+        "name": "stand-03",
+        "pos": {
+            "x": -0.3,
+            "y": -2.7
+        },
+        "rot": 0,
+        "isActive": false
+    }]
 }

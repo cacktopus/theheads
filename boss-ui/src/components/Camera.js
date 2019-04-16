@@ -7,7 +7,7 @@ import { DraggableCore } from 'react-draggable';
 import { rotateVector } from '../helpers';
 import cn from "classnames";
 
-import {encodeRot, decodeRot, encodePosScale, decodePosScale, noTouchMove} from '../helpers';
+import {encodeRot, decodeRot, encodePosRelativeStand, decodePosRelativeStand, noTouchMove} from '../helpers';
 
 export default class Camera extends React.Component {
     constructor(props) {
@@ -47,16 +47,23 @@ export default class Camera extends React.Component {
 
     handleMoveDrag(e, a) {
         const { x, y } = a;
-        // const origin = this.state.moveRelativeStartPos;
-        // const pos = { x: x - origin.x, y: y - origin.y };
         const pos = { x, y }; //: x - origin.x, y: y - origin.y };
-        // const pos = { x, y }; //: x - origin.x, y: y - origin.y };
         const rot = decodeRot(this.props.stand.get("rot"));
-        
-        const newPos = encodePosScale(this.props.menu, rotateVector(pos, rot));//, origin);
-
+        const newPos = encodePosRelativeStand(this.props.menu, rotateVector(pos, rot));//, origin);
         this.props.cameraMove(newPos);
     }
+
+    // handleMoveDragBLAHJ(e, a) {
+    //     // console.log("h dr", e, a);
+    //     const { x, y } = a;
+    //     const pos = encodePosScale(this.props.menu, { x, y });
+    //     // const pos = encrypt1({ x, y });
+    //     // const pos = { x, y };
+    //     // Convert the values 
+
+    //     this.props.standMove(pos);
+    //     // this.setState({ pos });
+    // }
 
     handleMoveStop(e, a) {
         // this.props.cameraMove(pos);
@@ -85,12 +92,11 @@ export default class Camera extends React.Component {
     }
 
     getCurrentPos() {
-        let pos = this.props.camera.get("pos").toJS();
+        let pos = decodePosRelativeStand(this.props.camera.get("pos").toJS());
         pos.x = isNaN(pos.x) ? 0 : pos.x;
         pos.y = isNaN(pos.y) ? 0 : pos.y;
 
-        return decodePosScale(this.props.menu, pos);
-        // return pos;
+        return pos;
     }
 
     render() {

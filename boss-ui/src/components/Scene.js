@@ -2,7 +2,6 @@ import React from 'react'
 //import Heads from '../containers/Heads'
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 import Stand from '../containers/Stand';
-import Kinect from '../containers/Kinect';
 // import FocalPoint from '../containers/FocalPoint';
 import FocalPoints from '../containers/FocalPoints';
 // import Popups from '../components/Popups';
@@ -53,19 +52,36 @@ export default class Menu extends React.Component {
             position: "relative"
         }
 
-        let kinects = [];
-        try {
-            var tempKinectsImmObj = this.props.kinects.get("kinects");
-            // var tempKinectsJSObj = tempKinectsImmObj.toJS();
+        // let kinects = [];
+        // try {
+        //     var tempKinectsImmObj = this.props.kinects.get("kinects");
+        //     // var tempKinectsJSObj = tempKinectsImmObj.toJS();
             
-            // for (var kinectName in tempKinectsJSObj) {
-            // tempKinectsImmObj.keyName
-            tempKinectsImmObj.keySeq().forEach((kinectName,i) => {
-                kinects.push(<Kinect key={kinectName} kinectName={kinectName} kinect={tempKinectsImmObj.get(kinectName)}/>) 
-            });
-            // kinects = this.props.kinects.get("kinects");
-            // kinects.map((kinect, i) => <Kinect key={i} index={i} kinect={kinect}/>);
-        } catch(e) {}
+        //     // for (var kinectName in tempKinectsJSObj) {
+        //     // tempKinectsImmObj.keyName
+        //     tempKinectsImmObj.keySeq().forEach((kinectName,i) => {
+        //         kinects.push(<Kinect key={kinectName} kinectName={kinectName} kinect={tempKinectsImmObj.get(kinectName)}/>) 
+        //     });
+        //     // kinects = this.props.kinects.get("kinects");
+        //     // kinects.map((kinect, i) => <Kinect key={i} index={i} kinect={kinect}/>);
+        // } catch(e) {}
+
+        
+        // const scale = this.props.menu.get("scale");
+        // const translateX = this.props.menu.getIn(["translate", "x"]);
+        // const translateY = this.props.menu.getIn(["translate", "y"]);
+        
+        // const styleKinects = {
+        //     transform: `translate(${translateX}px, ${translateY}px) scale(${scale/100})`
+        //     // transform: `translate(${translateX*scale/100}px, ${translateY*scale/100}px) scale(${scale/100})`
+        // }
+
+        // window.c_sds = { 
+        //     scale,
+        //     translateX,
+        //     translateY,
+        //     styleKinects
+        // }
 
         return (
             <div id="Scene" className="Scene">
@@ -73,9 +89,6 @@ export default class Menu extends React.Component {
                     <UnderVisuals />
                     <div className="Stands">
                         {stands}
-                    </div>
-                    <div className="Kinects">
-                        {kinects}
                     </div>
                     <FocalPoints />
                     {/* <Popups popups={this.props.popups}/> */}

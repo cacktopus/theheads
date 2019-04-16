@@ -539,7 +539,7 @@ body {
 }
 
 
-/* KINECT */
+/* KINECTS */
 .Kinect {
 
   /* width: 80px;
@@ -576,14 +576,14 @@ body {
 
 .Kinect-camImg {
   position: relative;
-  height: 20px;
-  width: 10px;
-  background-color: green;
+  height: 30px;
+  width: 20px;
+  background-color: rgb(130,0,200);
   cursor: pointer;
 }
 
 .Kinect--selected .Kinect-camImg {
-  border: 2px solid #f25;
+  border: 2px solid rgb(200,0,250);
   margin-left: -2px;
   margin-top: -2px;
 }
@@ -626,7 +626,7 @@ body {
 .Kinect-rotate-handle {
   width: 40px;
   height: 40px;
-  background-color: GREEN;
+  background-color: rgb(130,0,200);
   /*#840d00;*/
   border-radius: 50%;
   position: relative;
@@ -654,6 +654,104 @@ body {
 .Kinect--selected .Kinect-rotate-handle {
   border: 1px solid #f25;
 }
+
+
+/* .Kinects {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.Kinect {
+
+
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 50%;
+  left: 50%;
+  margin-left: -5px;
+  margin-top: -10px;
+}
+
+.Kinect-rotateContainer {
+  position: relative;
+}
+
+.Kinect-rotateContainer,
+.Kinect-container {
+}
+
+.Kinect-camImg {
+  position: relative;
+  height: 20px;
+  width: 10px;
+  background-color: green;
+  cursor: pointer;
+}
+
+.Kinect--selected .Kinect-camImg {
+  border: 2px solid #f25;
+  margin-left: -2px;
+  margin-top: -2px;
+}
+
+.Kinect-camImg:after {
+  content: '';
+  position: absolute;
+  height: 10px;
+  width: 3px;
+  background-color: black;
+  top: 5px;
+  right: -2px;
+}
+
+
+.Kinect-img {
+  width: 100%;
+  height: 100%;
+}
+
+.Kinect-rotate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+
+.Kinect-rotate {
+  z-index: 10;
+}
+
+.Kinect-rotate-handle {
+  width: 40px;
+  height: 40px;
+  background-color: GREEN;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  cursor: alias;
+  margin-left: -60px;
+  margin-top: -20px;
+  left: 100px;
+
+}
+
+.Kinect--selected .Kinect-rotate-handle {
+  border: 1px solid #f25;
+}
+*/
+
+/* .Stand-rotate-offset {
+  position: absolute;
+  left: -120px;
+  bottom: -20px;
+  background-color: blue;
+  width: 10px;
+  height: 10px;
+} */
 
 /* Focal Point */
 .FocalPoint {
