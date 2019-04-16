@@ -1,3 +1,4 @@
+import math
 from math import cos, pi, sin
 from typing import List, Tuple
 
@@ -127,3 +128,7 @@ def centroid(triangle: List[Tuple]):
     y = sum(p[1] for p in triangle) / len(triangle)
 
     return x, y
+
+
+def distance(p0, p1):
+    return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)

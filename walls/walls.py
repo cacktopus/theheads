@@ -1,17 +1,17 @@
 import itertools
-import math
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import List, Tuple
 
-import Polygon, Polygon.IO
+import Polygon
+import Polygon.IO
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
+from config import Config
 from debug_svg import DebugSVG
-from geom import tess, circle_points, centroid, make_stl
+from geom import tess, centroid, make_stl
 from line import Line2D
 from transformations import Vec
 # Ideas
@@ -20,23 +20,6 @@ from transformations import Vec
 from util import doubles
 
 EPSILON = 1E-9
-
-
-@dataclass
-class Config:
-    width: float
-    height: float
-    depth: float
-    r: float
-    line_width: float
-    pad_x: float
-    pad_y: float
-
-    x0: float
-    y0: float
-    max_x: float
-    max_y: float
-
 
 inner = Config(
     r=13.5,
@@ -68,22 +51,6 @@ outer = Config(
     y0=100,
     max_x=500,
     max_y=500,
-)
-
-circles_cfg = Config(
-    r=8,
-    line_width=2,
-    pad_x=8,
-    pad_y=4,
-
-    width=146,
-    height=79,
-    depth=1.75,
-
-    x0=25,
-    y0=25,
-    max_x=50 + 146,
-    max_y=50 + 146,
 )
 
 cfg = outer
@@ -235,69 +202,6 @@ def process(svg, window, poly):
             yield result[0]
 
 
-def distance(p0, p1):
-    return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
-
-
-def fun_circles(svg):
-    x0, y0 = cfg.x0, cfg.y0
-    x1, y1 = x0 + cfg.width, y0 + cfg.height
-
-    wall = Polygon.Polygon([
-        (x0, y0),
-        (x1, y0),
-        (x1, y1),
-        (x0, y1),
-    ])
-
-    window = [
-        (x0 + cfg.pad_x, y0 + cfg.pad_y),
-        (x1 - cfg.pad_x, y0 + cfg.pad_y),
-        (x1 - cfg.pad_x, y1 - cfg.pad_y),
-        (x0 + cfg.pad_x, y1 - cfg.pad_y),
-    ]
-    window_p = Polygon.Polygon(window)
-
-    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 0.80)
-
-    radii = {}
-    for i in range(len(points)):
-        radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
-
-    result = Polygon.Polygon()
-
-    for i, point in enumerate(points):
-        r = radii[i] * 0.95
-        center = Vec(*point)
-        points = circle_points(center, r, 20)
-
-        # for p0, p1 in doubles(points):
-        #     svg.debug(svg.svg.line(
-        #         p0.point2, p1.point2, stroke='black', stroke_width=0.5
-        #     ))
-
-        poly = Polygon.Polygon([p.point2 for p in points]) & window_p
-        result = result + poly
-
-    # a_circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(75, 75), 10, 20)])
-    #
-    result = wall - result
-
-    holes = []
-    contours = []
-    for i in range(len(result)):
-        cont = result[i]
-        contours.append(list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
-        print(result.orientation(i), result.isHole(i), cont)
-
-        if result.isHole(i):
-            h = centroid(cont)
-            holes.append(h)
-
-    B, A = tess(contours, holes)
-    make_stl("fun-circles", contours, B, A, 1.75)
-
-
 def bounding_box(poly):
     min_x = min(v[0] for v in poly)
     max_x = max(v[0] for v in poly)
@@ -386,10 +290,6 @@ def make_wall(name):
 
 def main():
     global cfg
-    cfg = circles_cfg
-    svg = DebugSVG(f"fun-circles.svg")
-    fun_circles(svg)
-    svg.save()
 
     cfg = outer
     for i in (1, 2):
