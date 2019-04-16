@@ -1,34 +1,25 @@
 import itertools
 import math
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import Polygon
-import matplotlib.pyplot as plt
-import svgwrite
-import svgwrite.container
-import triangle as tr
+import Polygon, Polygon.IO
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 from pyhull.voronoi import VoronoiTess
 
-from gen_stl import build_wall
-from stl_io import write_stl
+from debug_svg import DebugSVG
+from geom import tess, circle_points, centroid, make_stl
 from line import Line2D
 from transformations import Vec
-
 # Ideas
 # Cull small or narrow cells
 # Leave some cells filled in
 from util import doubles
 
 EPSILON = 1E-9
-
-MAX_X = 500
-MAX_Y = 500
 
 
 @dataclass
@@ -41,6 +32,11 @@ class Config:
     pad_x: float
     pad_y: float
 
+    x0: float
+    y0: float
+    max_x: float
+    max_y: float
+
 
 inner = Config(
     r=13.5,
@@ -51,6 +47,11 @@ inner = Config(
     width=106,
     height=79,
     depth=1.75,
+
+    x0=100,
+    y0=100,
+    max_x=500,
+    max_y=500,
 )
 
 outer = Config(
@@ -62,41 +63,30 @@ outer = Config(
     width=146,
     height=79,
     depth=1.75,
+
+    x0=100,
+    y0=100,
+    max_x=500,
+    max_y=500,
 )
 
+circles_cfg = Config(
+    r=8,
+    line_width=2,
+    pad_x=8,
+    pad_y=4,
+
+    width=146,
+    height=79,
+    depth=1.75,
+
+    x0=25,
+    y0=25,
+    max_x=50 + 146,
+    max_y=50 + 146,
+)
 
 cfg = outer
-
-
-class DebugSVG:
-    def __init__(self, filename):
-        base, ext = os.path.splitext(filename)
-        self._prod = svgwrite.Drawing(base + ext, profile='tiny')
-        self._debug = svgwrite.Drawing(base + "-debug" + ext, profile='tiny')
-        self._prod_g = svgwrite.container.Group()
-        self._debug_g = svgwrite.container.Group()
-        # self._prod_g.scale(1.7)
-        # self._prod_g.translate(-250, -200 + 12.5 + 12.5 / 2)
-        self._prod.add(self._prod_g)
-        self._debug.add(self._debug_g)
-
-    def save(self):
-        self._prod.save()
-        self._debug.save()
-
-    def add(self, *args):
-        self._prod_g.add(*args)
-        self._debug_g.add(*args)
-
-    @property
-    def svg(self):
-        return self._prod
-
-    def prod(self, *args):
-        self._prod_g.add(*args)
-
-    def debug(self, *args):
-        self._debug_g.add(*args)
 
 
 def winding(polys: List[Vec]):
@@ -178,15 +168,7 @@ def inset(svg, points, offset: float):
 
 
 def good(p):
-    return 0 < p[0] < MAX_X and 0 < p[1] < MAX_Y
-
-
-def centroid(triangle: List[Tuple]):
-    assert len(triangle) >= 3
-    x = sum(p[0] for p in triangle) / len(triangle)
-    y = sum(p[1] for p in triangle) / len(triangle)
-
-    return x, y
+    return 0 < p[0] < cfg.max_x and 0 < p[1] < cfg.max_y
 
 
 def circumcenter(triangle: List[Tuple]):
@@ -258,106 +240,62 @@ def distance(p0, p1):
 
 
 def fun_circles(svg):
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
+    x0, y0 = cfg.x0, cfg.y0
+    x1, y1 = x0 + cfg.width, y0 + cfg.height
+
+    wall = Polygon.Polygon([
+        (x0, y0),
+        (x1, y0),
+        (x1, y1),
+        (x0, y1),
+    ])
+
+    window = [
+        (x0 + cfg.pad_x, y0 + cfg.pad_y),
+        (x1 - cfg.pad_x, y0 + cfg.pad_y),
+        (x1 - cfg.pad_x, y1 - cfg.pad_y),
+        (x0 + cfg.pad_x, y1 - cfg.pad_y),
+    ]
+    window_p = Polygon.Polygon(window)
+
+    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 0.80)
 
     radii = {}
     for i in range(len(points)):
         radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
 
+    result = Polygon.Polygon()
+
     for i, point in enumerate(points):
-        r = radii[i] - 0.66
-        svg.debug(
-            svg.svg.circle(point, r, fill='black', stroke='black', fill_opacity=1.0, stroke_opacity=1.0,
-                           stroke_width=0.5))
+        r = radii[i] * 0.95
+        center = Vec(*point)
+        points = circle_points(center, r, 20)
 
+        # for p0, p1 in doubles(points):
+        #     svg.debug(svg.svg.line(
+        #         p0.point2, p1.point2, stroke='black', stroke_width=0.5
+        #     ))
 
-def tess(name, polys, depth):
-    indices = {}
-    vertices = []
-    segments = []
+        poly = Polygon.Polygon([p.point2 for p in points]) & window_p
+        result = result + poly
+
+    # a_circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(75, 75), 10, 20)])
+    #
+    result = wall - result
+
     holes = []
+    contours = []
+    for i in range(len(result)):
+        cont = result[i]
+        contours.append(list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+        print(result.orientation(i), result.isHole(i), cont)
 
-    for i, poly in enumerate(polys):
-        for v in poly:
-            assert isinstance(v, tuple)
-            if v not in indices:
-                pos = len(vertices)
-                indices[v] = pos
-                vertices.append(v)
+        if result.isHole(i):
+            h = centroid(cont)
+            holes.append(h)
 
-        for v0, v1 in doubles(poly):
-            # TODO: check for duplicate segment
-            index0 = indices[v0]
-            index1 = indices[v1]
-
-            segments.append((index0, index1))
-
-        if i > 0:
-            hole = centroid(poly)
-            holes.append(hole)
-
-    A = dict(
-        vertices=vertices,
-        segments=segments,
-        holes=holes,
-    )
-
-    B = tr.triangulate(A, opts="pq")
-    tr.compare(plt, A, B)
-    plt.savefig('tri.png')
-
-    svg = DebugSVG(f"{name}-new.svg")
-    svg._prod_g.scale(3)
-    svg._debug_g.scale(3)
-
-    verts = B['vertices']
-    tris = B['triangles']
-    segs = B['segments']
-
-    for h in holes:
-        svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
-
-    stl = []
-    for tri in tris:
-        poly = [verts[i] for i in tri]
-        svg.add(svg.svg.polygon(
-            poly,
-            fill_opacity=0.0,
-            stroke_opacity=1.00,
-            stroke='black',
-            stroke_width=0.2,
-        ))
-
-        p0, p1, p2 = poly
-
-        stl.append([
-            0, 0, -1,
-            p0[0], p0[1], depth,
-            p1[0], p1[1], depth,
-            p2[0], p2[1], depth,
-        ])
-
-        stl.append([
-            0, 0, 1,
-            p2[0], p2[1], 0,
-            p1[0], p1[1], 0,
-            p0[0], p0[1], 0,
-        ])
-
-    outer, holes = polys[0], polys[1:]
-    for v0, v1 in doubles(outer):
-        svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-        wall = build_wall(v0, v1, depth)
-        stl.extend(wall)
-
-    for hole in holes:
-        for v0, v1 in doubles(hole):
-            svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-            wall = build_wall(v0, v1, depth)
-            stl.extend(wall)
-
-    svg.save()
-    write_stl(f"{name}.stl", stl)
+    B, A = tess(contours, holes)
+    make_stl("fun-circles", contours, B, A, 1.75)
 
 
 def bounding_box(poly):
@@ -374,7 +312,7 @@ def make_wall(name):
     svg = DebugSVG(f"{name}-test.svg")
 
     try:
-        points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
+        points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
 
         for point in points:
             svg.debug(
@@ -389,7 +327,7 @@ def make_wall(name):
                                           stroke_width=0.5))
 
         # width = 146
-        x0, y0 = 100, 100
+        x0, y0 = cfg.x0, cfg.y0
         x1, y1 = x0 + cfg.width, y0 + cfg.height
 
         wall = [
@@ -436,11 +374,24 @@ def make_wall(name):
     finally:
         svg.save()
 
+    holes = []
+    for poly in results[1:]:
+        hole = centroid(poly)
+        holes.append(hole)
+
     # print(results)
-    tess(name, results, cfg.depth)
+    B, A = tess(results, holes)
+    make_stl(name, results, B, A, cfg.depth)
 
 
 def main():
+    global cfg
+    cfg = circles_cfg
+    svg = DebugSVG(f"fun-circles.svg")
+    fun_circles(svg)
+    svg.save()
+
+    cfg = outer
     for i in (1, 2):
         make_wall(f"wall{i}")
 
