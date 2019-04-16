@@ -38,7 +38,7 @@ const temp = [{
         }
     }
 }];
-const payloadDataChunkData2 = temp[0].data;
+const payloadDataChunkData_HARDCODED = temp[0].data;
 
 // This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
 let timeoutSetActive = {};
@@ -77,6 +77,7 @@ export const customWebsocketMiddleware = store => next => action => {
                         }, 1500); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
                         break;
                     case "active":
+                        console.log('active');
                         try {
                             var headName;
                             var rotation;
@@ -99,12 +100,12 @@ export const customWebsocketMiddleware = store => next => action => {
                                 store.dispatch(standSetIsNotActive(headName));
                             }, setToNotActiveAfterDur);
                         } catch (e) { }
-                        break;
-                    case "kinect":
+                    //     break;
+                    // case "kinect":
                         try {
                             var JOINT_NUM = { HEAD: 3 };
-                            var kinectName = payloadDataChunkData2.name;
-                            var simplifiedBodies = payloadDataChunkData2.simplifiedBodies;
+                            var kinectName = payloadDataChunkData_HARDCODED.name;
+                            var simplifiedBodies = payloadDataChunkData_HARDCODED.simplifiedBodies;
                             // var kinectName = payloadDataChunkData.name;
                             // var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
                             var validBodies = simplifiedBodies.filter(body => body.tracked);
@@ -125,7 +126,7 @@ export const customWebsocketMiddleware = store => next => action => {
                                 }
                                 return joint_pos;
                             });
-                            window.c_kk = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData2 };
+                            window.c_kk = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData_HARDCODED };
                             // console.log({ focalPoints: JSON.stringify(focalPoints) });
                             store.dispatch(kinectSetFocalPoints({ kinectName, focalPoints }));
                             // console.log({ kinect: true, nane: kinectName, focalPoints });
