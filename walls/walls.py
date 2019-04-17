@@ -242,7 +242,7 @@ def make_wall(name):
                     svg.debug(svg.svg.circle(point, 1, fill='magenta', stroke='magenta'))
                 fixed = make_convex(cell)
                 svg.debug(svg.svg.polygon(fixed, fill='red', stroke='red', opacity=0.50))
-                for p in process(svg, fixed):
+                for p in process(fixed):
                     poly = Polygon.Polygon(p) & window
                     result = result + poly
 
@@ -273,7 +273,7 @@ def main():
     global cfg
 
     cfg = inner
-    for i in (1,):
+    for i in (1, 2):
         make_wall(f"wall{i}")
 
 
