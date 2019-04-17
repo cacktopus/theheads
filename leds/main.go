@@ -16,7 +16,7 @@ import (
 var ibits = [4]uint{3, 2, 1, 0}
 
 const (
-	numLeds       = 64
+	numLeds       = 74
 	maxBrightness = 0.33
 	startLed      = 9
 
