@@ -18,7 +18,7 @@ var ibits = [4]uint{3, 2, 1, 0}
 const (
 	numLeds       = 74
 	maxBrightness = 0.33
-	startLed      = 9
+	startLed      = 10
 
 	meter = 1.0
 	inch  = 0.0254 * meter
