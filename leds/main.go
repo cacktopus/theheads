@@ -16,9 +16,9 @@ import (
 var ibits = [4]uint{3, 2, 1, 0}
 
 const (
-	numLeds       = 69
+	numLeds       = 64
 	maxBrightness = 0.33
-	startLed      = 8
+	startLed      = 9
 
 	meter = 1.0
 	inch  = 0.0254 * meter
