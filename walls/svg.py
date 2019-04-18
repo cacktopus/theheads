@@ -272,7 +272,7 @@ def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    paths = list(get_paths("brain-2 new.svg"))[:1]
+    paths = list(get_paths("zoomed b-2.svg"))[:1]
 
     for num, path in enumerate(paths):
         print(f" {num} ".center(80, '='))

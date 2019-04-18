@@ -9,7 +9,6 @@ from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 
 from config import Config
-from debug_svg import DebugSVG
 from geom import tess, centroid, make_stl
 from line import Line2D
 from transformations import Vec
@@ -197,84 +196,90 @@ def bounding_box(poly):
     return (min_x, min_y), (max_x, max_y)
 
 
-def make_wall(name):
-    svg = DebugSVG(f"{name}-test.svg")
-
-    try:
-        points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
-
-        for point in points:
-            svg.debug(
-                svg.svg.circle(point, cfg.r / 2, fill='white', stroke='black', fill_opacity=0.0, stroke_opacity=0.5,
-                               stroke_width=0.5))
-
-        dely = DelaunayTri(points)
-        for v in dely.vertices:
-            pts = [dely.points[p] for p in v]
-            if all(50 < x < 450 and 50 < y < 350 for (x, y) in pts):
-                svg.debug(svg.svg.polygon(pts, fill='white', stroke='green', stroke_opacity=0.50, fill_opacity=0.0,
-                                          stroke_width=0.5))
-
+class Wall:
+    def __init__(self, name, cfg):
         x0, y0 = cfg.x0, cfg.y0
         x1, y1 = x0 + cfg.width, y0 + cfg.height
 
-        wall = Polygon.Polygon([
+        self.x0, self.y0 = x0, y0
+        self.x1, self.y1 = x1, y1
+        self.name = name
+
+        self.wall = Polygon.Polygon([
             (x0, y0),
             (x1, y0),
             (x1, y1),
             (x0, y1),
         ])
 
-        window = Polygon.Polygon([
+        self.window = Polygon.Polygon([
             (x0 + cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y1 - cfg.pad_y),
             (x0 + cfg.pad_x, y1 - cfg.pad_y),
         ])
 
-        cells = spooky_cells(dely)
+        self.result = Polygon.Polygon()
 
-        result = Polygon.Polygon()
+    def make_stl(self):
+        holes = []
+        contours = []
+        for i in range(len(self.result)):
+            cont = self.result[i]
+            contours.append(
+                list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+            print(self.result.orientation(i), self.result.isHole(i), cont)
 
-        for i, cell in sorted(cells.items()):
-            if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
-                for point in cell:
-                    svg.debug(svg.svg.circle(point, 1, fill='magenta', stroke='magenta'))
-                fixed = make_convex(cell)
-                svg.debug(svg.svg.polygon(fixed, fill='red', stroke='red', opacity=0.50))
-                for p in process(fixed):
-                    poly = Polygon.Polygon(p) & window
-                    result = result + poly
+            if self.result.isHole(i):
+                h = centroid(cont)
+                holes.append(h)
 
-        result = wall - result
+        B, A = tess(contours, holes)
+        make_stl(self.name, contours, B, A, 1.75)
 
-    except:
-        raise
 
-    finally:
-        svg.save()
+def make_wall(name, cfg):
+    wall = Wall(name, cfg)
+    x0, y0 = wall.x0, wall.y0
+    x1, y1 = wall.x1, wall.y1
 
-    holes = []
-    contours = []
-    for i in range(len(result)):
-        cont = result[i]
-        contours.append(list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
-        print(result.orientation(i), result.isHole(i), cont)
+    b0 = (x1 - x0) / 2 - (6.125 + 7.5)
+    block = Polygon.Polygon([
+        (x0 + b0, y0 + 0),
+        (x1 - b0, y0 + 0),
+        (x1 - b0, y0 + 14.25 + 7.5),
+        (x0 + b0, y0 + 14.25 + 7.5),
+    ])
 
-        if result.isHole(i):
-            h = centroid(cont)
-            holes.append(h)
+    b1 = (x1 - x0) / 2 - 6.125
+    tunnel = Polygon.Polygon([
+        (x0 + b1, y0 + -10),
+        (x1 - b1, y0 + -10),
+        (x1 - b1, y0 + 14.25),
+        (x0 + b1, y0 + 14.25),
+    ])
 
-    B, A = tess(contours, holes)
-    make_stl(name, contours, B, A, 1.75)
+    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
+    dely = DelaunayTri(points)
+    cells = spooky_cells(dely)
+
+    for i, cell in sorted(cells.items()):
+        if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
+            fixed = make_convex(cell)
+            for p in process(fixed):
+                poly = Polygon.Polygon(p) & wall.window
+                wall.result = wall.result + poly
+
+    wall.result = wall.wall - wall.result
+    wall.result = wall.result | block
+    wall.result = wall.result - tunnel
+
+    wall.make_stl()
 
 
 def main():
-    global cfg
-
-    cfg = inner
     for i in (1, 2):
-        make_wall(f"wall{i}")
+        make_wall(f"wall{i}", inner)
 
 
 if __name__ == '__main__':
