@@ -1,7 +1,13 @@
+import numpy
+
 from numpy.linalg import inv
 
 from transformations import Vec, Mat
 import numpy as np
+
+
+class NoIntersection(Exception):
+    pass
 
 
 class Line2D:
@@ -15,7 +21,11 @@ class Line2D:
         u = (p1 - p0).unit()
         return Line2D(p0, u)
 
-    def intersect(self, l1):
+    def intersect(self, l1: "Line2D") -> Vec:
+        s = self._intersect(l1)
+        return self.p + self.u.scale(s)
+
+    def _intersect(self, l1: "Line2D") -> float:
         l0 = self
 
         ux, uy = l0.u.x, l0.u.y
@@ -24,10 +34,13 @@ class Line2D:
         px, py = l0.p.x, l0.p.y
         qx, qy = l1.p.x, l1.p.y
 
-        m_inv = inv(np.array([
-            [ux, -vx],
-            [uy, -vy],
-        ]))
+        try:
+            m_inv = inv(np.array([
+                [ux, -vx],
+                [uy, -vy],
+            ]))
+        except numpy.linalg.linalg.LinAlgError:
+            raise NoIntersection
 
         rhs = np.array([
             [qx - px],
@@ -36,9 +49,11 @@ class Line2D:
 
         result = np.matmul(m_inv, rhs)
 
-        s = result[0][0]
+        s = result[0][0][0]
+        return s
 
-        return l0.p + l0.u.scale(s)
+    def intersect_distance(self, l1: "Line2D") -> float:
+        return self._intersect(l1)
 
     def distance_sq(self, point: Vec):
         p = point
@@ -48,8 +63,6 @@ class Line2D:
         return to.x * u.y - to.y * u.x
         # a1 * b2 - a2 * b1
 
-
-
     # def distance(self, point: Vec):
     #     p = point
     #     a = self.p
@@ -58,7 +71,6 @@ class Line2D:
     #     to = a - p
     #
     #     return (to - n.scale(to.dot(n))).abs()
-
 
     def offset(self, dist: float):
         v = Mat.rotz(90) * self.u

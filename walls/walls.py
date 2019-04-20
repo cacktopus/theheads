@@ -9,6 +9,7 @@ from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 
+import geom
 from config import Config
 from geom import tess, centroid, make_stl, circle_points
 from line import Line2D
@@ -276,25 +277,37 @@ def make_wall(name, cfg):
     dely = DelaunayTri(points)
     cells = spooky_cells(dely)
 
+    svg = svgwrite.Drawing(f'{name}-.svg', profile='tiny')
+
     for i, cell in sorted(cells.items()):
         if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
             fixed = make_convex(cell)
             for p in process(fixed):
                 cell = Polygon.Polygon(p)
-
-                c = centroid(cell.contour(0))
-                a = cell.area(0)
-                r = (a / pi) ** 0.5
-
-                circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
-                circle &= wall.window
-
                 cell &= wall.window
-                wall.result += circle + cell
+
+                if len(cell):
+                    c = centroid(cell.contour(0))
+                    a = cell.area(0)
+                    r = (a / pi) ** 0.5
+
+                    circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
+                    circle &= wall.window
+
+                    wall.result += circle + cell
+
+                    svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+                    svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
+                    # svg.save()
+                    geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.5)
+                    # svg.save()
+                # return
 
     wall.result = wall.wall - wall.result
     # wall.result = wall.result | block
     # wall.result = wall.result - tunnel
+
+    svg.save()
 
     wall.to_svg(name)
     wall.make_stl()
