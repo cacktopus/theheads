@@ -141,12 +141,12 @@ async def build_installation(cfg: Config):
             camera = yaml.safe_load(body)
             cameras[camera['name']] = camera
 
-    for name, body in (await cfg.get_prefix(
-            "/the-heads/kinects/"
-    )).items():
-        if name.endswith(b".yaml"):
-            kinect = yaml.safe_load(body)
-            kinects[kinect['name']] = kinect
+    # for name, body in (await cfg.get_prefix(
+    #         "/the-heads/kinects/"
+    # )).items():
+    #     if name.endswith(b".yaml"):
+    #         kinect = yaml.safe_load(body)
+    #         kinects[kinect['name']] = kinect
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/heads/"
@@ -181,12 +181,12 @@ async def build_installation(cfg: Config):
         translateX = translate["x"]
         translateY = translate["y"]
 
-    # for name, body in (await cfg.get_prefix(
-    #         "/the-heads/kinects/"
-    # )).items():
-    #     if name.endswith(b".yaml"):
-    #         kinect = yaml.safe_load(body)
-    #         kinects[kinect['name']] = kinect
+    for name, body in (await cfg.get_prefix(
+            "/the-heads/kinects/"
+    )).items():
+        if name.endswith(b".yaml"):
+            kinect = yaml.safe_load(body)
+            kinects[kinect['name']] = kinect
 
     result = dict(
         stands=list(stands.values()),

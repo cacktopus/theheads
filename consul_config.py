@@ -36,16 +36,22 @@ class ConsulBackend:
         url = self._consul_endpoint + "/v1/kv{}?recurse=true".format(key.decode())
 
         resp, body = await get(url)
-        assert resp.status == 200
 
-        kvs = json.loads(body)
-        result = {}
-        for a in kvs:
-            key = a['Key'].encode()
-            val = d64(a['Value'])
-            result[key] = val
+        # Changed this from "assert resp.status == 200", to a conditional
+        if (resp.status == 200):
+            assert resp.status == 200
 
-        return result
+            kvs = json.loads(body)
+            result = {}
+            for a in kvs:
+                key = a['Key'].encode()
+                val = d64(a['Value'])
+                result[key] = val
+
+            return result
+        else:
+            print("\n***WARNING: Failed to load: {0}***\n".format(key))
+            return {}
 
     async def get_keys(self, key_prefix: str) -> List[str]:
         assert key_prefix.startswith("/")
