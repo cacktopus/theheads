@@ -1,11 +1,34 @@
 #!/usr/bin/env python
+import asyncio
 import json
-
-from ina219 import INA219
-from ina219 import DeviceRangeError
 import time
 
+import prometheus_client
+from aiohttp import web
+from ina219 import INA219
+
+from metrics import handle_metrics
+from util import run_app
+
 SHUNT_OHMS = 0.1
+
+VOLTAGE = prometheus_client.Gauge(
+    "power_monitor_voltage",
+    "Voltage (V)",
+    ["address"],
+)
+
+CURRENT = prometheus_client.Gauge(
+    "power_monitor_current",
+    "Current (mA)",
+    ["address"],
+)
+
+POWER = prometheus_client.Gauge(
+    "power_monitor_power",
+    "Power (mW)",
+    ["address"],
+)
 
 
 def read(*addrs):
@@ -18,31 +41,48 @@ def read(*addrs):
         ina.configure()
 
     for ina, addr in inas:
+        voltage = ina.voltage()
+        current = ina.current()
+        power = ina.power()
+
         data = dict(
-            voltage=ina.voltage(),
-            current=ina.current(),
-            power=ina.power(),
+            voltage=voltage,
+            current=current,
+            power=power,
             shunt_voltage=ina.shunt_voltage(),
             t=time.time(),
             addr=hex(addr),
         )
 
+        VOLTAGE.labels(address=hex(addr)).set(voltage)
+        POWER.labels(address=hex(addr)).set(power)
+        CURRENT.labels(address=hex(addr)).set(current)
+
         print(json.dumps(data))
 
-        # print("Bus Voltage: %.3f V" % ina.voltage())
-        # try:
-        #     print("Bus Current: %.3f mA" % ina.current())
-        #     print("Power: %.3f mW" % ina.power())
-        #     print("Shunt voltage: %.3f mV" % ina.shunt_voltage())
-        # except DeviceRangeError as e:
-        #     # Current out of device range with specified shunt resistor
-        #     print(e)
+
+async def poll_values():
+    while True:
+        read(0x40, 0x41)
+        await asyncio.sleep(1)
 
 
 def main():
-    while True:
-        read(0x40, 0x41)
-        time.sleep(1)
+    loop = asyncio.get_event_loop()
+
+    app = web.Application()
+    app['cfg'] = {
+        "port": 8083,
+    }
+
+    app.add_routes([
+        web.get('/metrics', handle_metrics),
+    ])
+
+    asyncio.ensure_future(poll_values())
+
+    loop.run_until_complete(run_app(app))
+    loop.run_forever()
 
 
 if __name__ == "__main__":
