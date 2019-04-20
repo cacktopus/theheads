@@ -28,12 +28,14 @@ class Camera:
         self.description = description
         self.fov = fov
 
+
 class Kinect:
     def __init__(self, name: str, m: Mat, stand: "Stand", fov: float):
         self.name = name
         self.m = m
         self.stand = stand
         self.fov = fov
+
 
 class Head:
     def __init__(self, name: str, m: Mat, stand: "Stand"):
@@ -129,10 +131,10 @@ async def build_installation(cfg: Config):
     kinects = {}
     heads = {}
     stands = {}
-    scaleTranslate = {}
-    scale=75
-    translateX=750
-    translateY=100
+    scale_translate = {}
+    scale = 75
+    translate_x = 750
+    translate_y = 100
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/cameras/"
@@ -171,15 +173,15 @@ async def build_installation(cfg: Config):
         if 'kinects' in stand:
             stand['kinects'] = [kinects[k] for k in stand['kinects']]
 
-    # for scale-translate
+    # for scale,translate, etc. for scene
     for name, body in (await cfg.get_prefix(
-            "/the-heads/scale-translate.yaml"
+            "/the-heads/scene.yaml"
     )).items():
-        scaleTranslate = yaml.safe_load(body)
-        scale = scaleTranslate["scale"]
-        translate = scaleTranslate["translate"]
-        translateX = translate["x"]
-        translateY = translate["y"]
+        scale_translate = yaml.safe_load(body)
+        scale = scale_translate["scale"]
+        translate = scale_translate["translate"]
+        translate_x = translate["x"]
+        translate_y = translate["y"]
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/kinects/"
@@ -192,8 +194,8 @@ async def build_installation(cfg: Config):
         stands=list(stands.values()),
         scale=scale,
         translate={
-            "x": translateX,
-            "y": translateY,
+            "x": translate_x,
+            "y": translate_y,
         },
         # kinects=list(kinects.values())
     )
@@ -251,7 +253,8 @@ def build_installation_from_filesystem(name):
 def main():
     loop = asyncio.get_event_loop()
 
-    cfg = loop.run_until_complete(Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
+    cfg = loop.run_until_complete(
+        Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
     result = loop.run_until_complete(build_installation("living-room", cfg))
     inst = Installation.unmarshal(result)
 
