@@ -289,7 +289,8 @@ def make_wall(name, cfg):
                 circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
                 circle &= wall.window
 
-                wall.result = wall.result + circle
+                cell &= wall.window
+                wall.result += circle + cell
 
     wall.result = wall.wall - wall.result
     # wall.result = wall.result | block
