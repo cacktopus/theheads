@@ -151,13 +151,23 @@ def poly_line_intersection(svg: svgwrite.Drawing, poly, line: Line2D) -> Vec:
 
 def interpolate_poly_circle(svg: svgwrite.Drawing, poly, center, radius, t):
     center = Vec(*center)
-    points = circle_points(center, 1, 20)
+    points = circle_points(center, radius, 40)
+
+    result = []
+
     for p in points:
         # svg.add(svg.circle(p.point2, 0.3, fill="magenta"))
         line = Line2D.from_points(center, p)
+
         q = poly_line_intersection(svg, poly, line)
+
+        w = t * q + (1 - t) * p
+        result.append(w)
+
         svg.add(svg.circle(q.point2, 0.3, fill="blue"))
-        svg.add(svg.line(center.point2, q.point2, stroke="grey", stroke_width=0.3))
+        # svg.add(svg.line(center.point2, q.point2, stroke="grey", stroke_width=0.3))
+
+    return result
 
 
 def centroid(triangle: List[Tuple]):

@@ -41,8 +41,8 @@ inner = Config(
 )
 
 outer = Config(
-    r=8,
-    line_width=2,
+    r=6,
+    line_width=1.0,
     pad_x=8,
     pad_y=4,
 
@@ -285,7 +285,7 @@ def make_wall(name, cfg):
             for p in process(fixed):
                 cell = Polygon.Polygon(p)
 
-                if len(cell & wall.window) == 0:
+                if len(cell & wall.wall) == 0:
                     break
 
                 c = centroid(cell.contour(0))
@@ -297,12 +297,16 @@ def make_wall(name, cfg):
                 svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
                 svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
                 # svg.save()
-                geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.5)
+                new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.66)
+                new = Polygon.Polygon([p.point2 for p in new])
+
+                svg.add(svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
 
                 cell &= wall.window
                 circle &= wall.window
+                new &= wall.window
 
-                wall.result += circle + cell
+                wall.result += new
 
     svg.add(svg.polygon(wall.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
     svg.add(svg.polygon(wall.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
