@@ -1,0 +1,25 @@
+{
+  "name": "voices",
+  "version": "1.0.0",
+  "description": "## Install Running MaryTTS",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/aidanj1/voices.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/aidanj1/voices/issues"
+  },
+  "homepage": "https://gitlab.com/aidanj1/voices#README",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "play-sound": "^1.1.3"
+  }
+}
