@@ -42,7 +42,7 @@ inner = Config(
 
 outer = Config(
     r=6,
-    line_width=1.0,
+    line_width=1.5,
     pad_x=8,
     pad_y=4,
 
