@@ -1,5 +1,6 @@
 import itertools
 from collections import defaultdict
+from math import pi
 from typing import List, Tuple
 
 import Polygon
@@ -9,7 +10,7 @@ from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
 
 from config import Config
-from geom import tess, centroid, make_stl
+from geom import tess, centroid, make_stl, circle_points
 from line import Line2D
 from transformations import Vec
 from util import doubles
@@ -279,19 +280,27 @@ def make_wall(name, cfg):
         if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
             fixed = make_convex(cell)
             for p in process(fixed):
-                poly = Polygon.Polygon(p) & wall.window
-                wall.result = wall.result + poly
+                cell = Polygon.Polygon(p)
+
+                c = centroid(cell.contour(0))
+                a = cell.area(0)
+                r = (a / pi) ** 0.5
+
+                circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
+                circle &= wall.window
+
+                wall.result = wall.result + circle
 
     wall.result = wall.wall - wall.result
     # wall.result = wall.result | block
     # wall.result = wall.result - tunnel
 
-    # wall.make_stl()
     wall.to_svg(name)
+    wall.make_stl()
 
 
 def main():
-    for i in (1, ):
+    for i in (1,):
         make_wall(f"wall{i}", outer)
 
 
