@@ -13,6 +13,7 @@ from geom import tess, centroid, make_stl
 from line import Line2D
 from transformations import Vec
 from util import doubles
+import svgwrite
 
 # Ideas
 # Cull small or narrow cells
@@ -237,6 +238,17 @@ class Wall:
         B, A = tess(contours, holes)
         make_stl(self.name, contours, B, A, 1.75)
 
+    def to_svg(self, name):
+        svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
+        # dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, '%')))
+        # dwg.add(dwg.text('Test', insert=(0, 0.2), fill='red'))
+        for i in range(len(self.result)):
+            cont = self.result[i]
+            # print(self.result.orientation(i), self.result.isHole(i), cont)
+            svg.add(svg.polygon(cont, fill_opacity=0, stroke="black", stroke_width=0.25))
+
+        svg.save()
+
 
 def make_wall(name, cfg):
     wall = Wall(name, cfg)
@@ -271,15 +283,16 @@ def make_wall(name, cfg):
                 wall.result = wall.result + poly
 
     wall.result = wall.wall - wall.result
-    wall.result = wall.result | block
-    wall.result = wall.result - tunnel
+    # wall.result = wall.result | block
+    # wall.result = wall.result - tunnel
 
-    wall.make_stl()
+    # wall.make_stl()
+    wall.to_svg(name)
 
 
 def main():
-    for i in (1, 2):
-        make_wall(f"wall{i}", inner)
+    for i in (1, ):
+        make_wall(f"wall{i}", outer)
 
 
 if __name__ == '__main__':
