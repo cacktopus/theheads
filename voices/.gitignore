@@ -2,14 +2,9 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
 
-# testing
-/coverage
-
-# production
-/build
+# wav outputs
+/outputs/*.wav
 
 # misc
 .DS_Store
