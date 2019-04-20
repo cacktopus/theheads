@@ -764,7 +764,7 @@ body {
   align-items: center;
   width: 40px;
   height: 40px;
-  background-color: #840dF0;
+  background-color: #7f848e;
   /*#840d00;*/
   border-radius: 50%;
   position: relative;
@@ -777,6 +777,11 @@ body {
   margin-top: -20px;
   /* top: -100px; */
   color: white !important;
+}
+
+.FocalPoint-move-handle--kinect {
+  cursor: pointer;
+  background-color: #8200c8;
 }
 
 /* Motion Lines */

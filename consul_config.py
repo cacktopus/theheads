@@ -18,6 +18,8 @@ class ConsulBackend:
         assert key.startswith(b"/")
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
 
+        print("hey {0}".format(url))
+
         resp, body = await get(url)
         assert resp.status == 200
         result = json.loads(body)
