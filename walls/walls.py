@@ -284,24 +284,28 @@ def make_wall(name, cfg):
             fixed = make_convex(cell)
             for p in process(fixed):
                 cell = Polygon.Polygon(p)
+
+                if len(cell & wall.window) == 0:
+                    break
+
+                c = centroid(cell.contour(0))
+                a = cell.area(0)
+                r = (a / pi) ** 0.5
+
+                circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
+
+                svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+                svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
+                # svg.save()
+                geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.5)
+
                 cell &= wall.window
+                circle &= wall.window
 
-                if len(cell):
-                    c = centroid(cell.contour(0))
-                    a = cell.area(0)
-                    r = (a / pi) ** 0.5
+                wall.result += circle + cell
 
-                    circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
-                    circle &= wall.window
-
-                    wall.result += circle + cell
-
-                    svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
-                    svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
-                    # svg.save()
-                    geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.5)
-                    # svg.save()
-                # return
+    svg.add(svg.polygon(wall.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+    svg.add(svg.polygon(wall.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
 
     wall.result = wall.wall - wall.result
     # wall.result = wall.result | block
