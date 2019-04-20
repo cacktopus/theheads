@@ -1,46 +1,25 @@
 import itertools
-import math
-import os
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import List, Tuple
 
 import Polygon
-import matplotlib.pyplot as plt
-import svgwrite
-import svgwrite.container
-import triangle as tr
+import Polygon.IO
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
-from pyhull.voronoi import VoronoiTess
 
-from gen_stl import build_wall
-from stl_io import write_stl
+from config import Config
+from geom import tess, centroid, make_stl
 from line import Line2D
 from transformations import Vec
+from util import doubles
 
 # Ideas
 # Cull small or narrow cells
 # Leave some cells filled in
-from util import doubles
+
 
 EPSILON = 1E-9
-
-MAX_X = 500
-MAX_Y = 500
-
-
-@dataclass
-class Config:
-    width: float
-    height: float
-    depth: float
-    r: float
-    line_width: float
-    pad_x: float
-    pad_y: float
-
 
 inner = Config(
     r=13.5,
@@ -51,6 +30,11 @@ inner = Config(
     width=106,
     height=79,
     depth=1.75,
+
+    x0=100,
+    y0=100,
+    max_x=500,
+    max_y=500,
 )
 
 outer = Config(
@@ -62,41 +46,14 @@ outer = Config(
     width=146,
     height=79,
     depth=1.75,
+
+    x0=100,
+    y0=100,
+    max_x=500,
+    max_y=500,
 )
 
-
 cfg = outer
-
-
-class DebugSVG:
-    def __init__(self, filename):
-        base, ext = os.path.splitext(filename)
-        self._prod = svgwrite.Drawing(base + ext, profile='tiny')
-        self._debug = svgwrite.Drawing(base + "-debug" + ext, profile='tiny')
-        self._prod_g = svgwrite.container.Group()
-        self._debug_g = svgwrite.container.Group()
-        # self._prod_g.scale(1.7)
-        # self._prod_g.translate(-250, -200 + 12.5 + 12.5 / 2)
-        self._prod.add(self._prod_g)
-        self._debug.add(self._debug_g)
-
-    def save(self):
-        self._prod.save()
-        self._debug.save()
-
-    def add(self, *args):
-        self._prod_g.add(*args)
-        self._debug_g.add(*args)
-
-    @property
-    def svg(self):
-        return self._prod
-
-    def prod(self, *args):
-        self._prod_g.add(*args)
-
-    def debug(self, *args):
-        self._debug_g.add(*args)
 
 
 def winding(polys: List[Vec]):
@@ -148,7 +105,7 @@ def make_convex(poly: List[Tuple]) -> List[Vec]:
     return result
 
 
-def inset(svg, points, offset: float):
+def inset(points, offset: float):
     result = []
 
     poly = [Vec(*p) for p in points]
@@ -157,36 +114,17 @@ def inset(svg, points, offset: float):
 
     lines = list(generate_offset_lines(poly, signed_offset))
 
-    for line in lines:
-        # svg.debug(svg.svg.circle(line.p.point2, 1, fill='magenta'))
-        p0 = line.p + line.u.scale(0)
-        p1 = line.p + line.u.scale(500)
-        # svg.debug(svg.svg.line(p0.point2, p1.point2, stroke='black', stroke_width=0.2))
-
     for l0, l1 in all_pairs(lines):
         p_new = l0.intersect(l1)
 
         if should_include_point(lines, p_new, sign):
-            if good(p_new.point2):
-                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='green'))
             result.append(p_new.point2)
-        else:
-            if good(p_new.point2):
-                pass  # svg.debug(svg.svg.circle(p_new.point2, 1, fill='red'))
 
     return make_convex(result)
 
 
 def good(p):
-    return 0 < p[0] < MAX_X and 0 < p[1] < MAX_Y
-
-
-def centroid(triangle: List[Tuple]):
-    assert len(triangle) >= 3
-    x = sum(p[0] for p in triangle) / len(triangle)
-    y = sum(p[1] for p in triangle) / len(triangle)
-
-    return x, y
+    return 0 < p[0] < cfg.max_x and 0 < p[1] < cfg.max_y
 
 
 def circumcenter(triangle: List[Tuple]):
@@ -235,129 +173,17 @@ def spooky_cells(dely: DelaunayTri):
     return cells
 
 
-def process(svg, window, poly):
+def process(poly):
     if all(good(p) for p in poly):
         print("points", poly)
 
         try:
-            poly = inset(svg, poly, cfg.line_width / 2.0)
+            poly = inset(poly, cfg.line_width / 2.0)
         except Exception as e:
             print(e)
             raise
 
-        result = list(window & Polygon.Polygon(poly))
-        print(result)
-
-        if len(result):
-            assert len(result) == 1
-            yield result[0]
-
-
-def distance(p0, p1):
-    return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
-
-
-def fun_circles(svg):
-    points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
-
-    radii = {}
-    for i in range(len(points)):
-        radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
-
-    for i, point in enumerate(points):
-        r = radii[i] - 0.66
-        svg.debug(
-            svg.svg.circle(point, r, fill='black', stroke='black', fill_opacity=1.0, stroke_opacity=1.0,
-                           stroke_width=0.5))
-
-
-def tess(name, polys, depth):
-    indices = {}
-    vertices = []
-    segments = []
-    holes = []
-
-    for i, poly in enumerate(polys):
-        for v in poly:
-            assert isinstance(v, tuple)
-            if v not in indices:
-                pos = len(vertices)
-                indices[v] = pos
-                vertices.append(v)
-
-        for v0, v1 in doubles(poly):
-            # TODO: check for duplicate segment
-            index0 = indices[v0]
-            index1 = indices[v1]
-
-            segments.append((index0, index1))
-
-        if i > 0:
-            hole = centroid(poly)
-            holes.append(hole)
-
-    A = dict(
-        vertices=vertices,
-        segments=segments,
-        holes=holes,
-    )
-
-    B = tr.triangulate(A, opts="pq")
-    tr.compare(plt, A, B)
-    plt.savefig('tri.png')
-
-    svg = DebugSVG(f"{name}-new.svg")
-    svg._prod_g.scale(3)
-    svg._debug_g.scale(3)
-
-    verts = B['vertices']
-    tris = B['triangles']
-    segs = B['segments']
-
-    for h in holes:
-        svg.debug(svg.svg.circle(h, 1, fill='magenta', stroke='magenta'))
-
-    stl = []
-    for tri in tris:
-        poly = [verts[i] for i in tri]
-        svg.add(svg.svg.polygon(
-            poly,
-            fill_opacity=0.0,
-            stroke_opacity=1.00,
-            stroke='black',
-            stroke_width=0.2,
-        ))
-
-        p0, p1, p2 = poly
-
-        stl.append([
-            0, 0, -1,
-            p0[0], p0[1], depth,
-            p1[0], p1[1], depth,
-            p2[0], p2[1], depth,
-        ])
-
-        stl.append([
-            0, 0, 1,
-            p2[0], p2[1], 0,
-            p1[0], p1[1], 0,
-            p0[0], p0[1], 0,
-        ])
-
-    outer, holes = polys[0], polys[1:]
-    for v0, v1 in doubles(outer):
-        svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-        wall = build_wall(v0, v1, depth)
-        stl.extend(wall)
-
-    for hole in holes:
-        for v0, v1 in doubles(hole):
-            svg.debug(svg.svg.line(v0, v1, stroke='black', stroke_width=1.0))
-            wall = build_wall(v0, v1, depth)
-            stl.extend(wall)
-
-    svg.save()
-    write_stl(f"{name}.stl", stl)
+        yield poly
 
 
 def bounding_box(poly):
@@ -370,79 +196,90 @@ def bounding_box(poly):
     return (min_x, min_y), (max_x, max_y)
 
 
-def make_wall(name):
-    svg = DebugSVG(f"{name}-test.svg")
-
-    try:
-        points = poisson_disc_samples(width=MAX_X, height=MAX_Y, r=cfg.r)
-
-        for point in points:
-            svg.debug(
-                svg.svg.circle(point, cfg.r / 2, fill='white', stroke='black', fill_opacity=0.0, stroke_opacity=0.5,
-                               stroke_width=0.5))
-
-        dely = DelaunayTri(points)
-        for v in dely.vertices:
-            pts = [dely.points[p] for p in v]
-            if all(50 < x < 450 and 50 < y < 350 for (x, y) in pts):
-                svg.debug(svg.svg.polygon(pts, fill='white', stroke='green', stroke_opacity=0.50, fill_opacity=0.0,
-                                          stroke_width=0.5))
-
-        # width = 146
-        x0, y0 = 100, 100
+class Wall:
+    def __init__(self, name, cfg):
+        x0, y0 = cfg.x0, cfg.y0
         x1, y1 = x0 + cfg.width, y0 + cfg.height
 
-        wall = [
+        self.x0, self.y0 = x0, y0
+        self.x1, self.y1 = x1, y1
+        self.name = name
+
+        self.wall = Polygon.Polygon([
             (x0, y0),
             (x1, y0),
             (x1, y1),
             (x0, y1),
-        ]
+        ])
 
-        window = [
+        self.window = Polygon.Polygon([
             (x0 + cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y0 + cfg.pad_y),
             (x1 - cfg.pad_x, y1 - cfg.pad_y),
             (x0 + cfg.pad_x, y1 - cfg.pad_y),
-        ]
-        window_p = Polygon.Polygon(window)
+        ])
 
-        cells = spooky_cells(dely)
+        self.result = Polygon.Polygon()
 
-        results = [wall]
+    def make_stl(self):
+        holes = []
+        contours = []
+        for i in range(len(self.result)):
+            cont = self.result[i]
+            contours.append(
+                list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+            print(self.result.orientation(i), self.result.isHole(i), cont)
 
-        for i, cell in sorted(cells.items()):
-            if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
-                for point in cell:
-                    svg.debug(svg.svg.circle(point, 1, fill='magenta', stroke='magenta'))
-                fixed = make_convex(cell)
-                svg.debug(svg.svg.polygon(fixed, fill='red', stroke='red', opacity=0.50))
-                for p in process(svg, window_p, fixed):
-                    results.append(p)
-                    add = svg.svg.polygon(p, fill='black', opacity=0.40)
-                    svg.add(add)
+            if self.result.isHole(i):
+                h = centroid(cont)
+                holes.append(h)
 
-        v = VoronoiTess(points)
-        count = 0
+        B, A = tess(contours, holes)
+        make_stl(self.name, contours, B, A, 1.75)
 
-        # for region in v.regions:
-        #     points = [v.vertices[i] for i in region]
-        #     process(svg, window, points)
-        #     count += 1
 
-    except:
-        raise
+def make_wall(name, cfg):
+    wall = Wall(name, cfg)
+    x0, y0 = wall.x0, wall.y0
+    x1, y1 = wall.x1, wall.y1
 
-    finally:
-        svg.save()
+    b0 = (x1 - x0) / 2 - (6.125 + 7.5)
+    block = Polygon.Polygon([
+        (x0 + b0, y0 + 0),
+        (x1 - b0, y0 + 0),
+        (x1 - b0, y0 + 14.25 + 7.5),
+        (x0 + b0, y0 + 14.25 + 7.5),
+    ])
 
-    # print(results)
-    tess(name, results, cfg.depth)
+    b1 = (x1 - x0) / 2 - 6.125
+    tunnel = Polygon.Polygon([
+        (x0 + b1, y0 + -10),
+        (x1 - b1, y0 + -10),
+        (x1 - b1, y0 + 14.25),
+        (x0 + b1, y0 + 14.25),
+    ])
+
+    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
+    dely = DelaunayTri(points)
+    cells = spooky_cells(dely)
+
+    for i, cell in sorted(cells.items()):
+        if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
+            fixed = make_convex(cell)
+            for p in process(fixed):
+                poly = Polygon.Polygon(p) & wall.window
+                wall.result = wall.result + poly
+
+    wall.result = wall.wall - wall.result
+    wall.result = wall.result | block
+    wall.result = wall.result - tunnel
+
+    wall.make_stl()
 
 
 def main():
     for i in (1, 2):
-        make_wall(f"wall{i}")
+        make_wall(f"wall{i}", inner)
 
 
 if __name__ == '__main__':

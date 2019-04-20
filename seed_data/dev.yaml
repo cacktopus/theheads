@@ -12,6 +12,7 @@ stands:
   - name: head-01
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
   pos: {x: 0, y: 0}
   rot: -90
 
@@ -28,6 +29,7 @@ stands:
   - name: head-02
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-03
   pos: {x: 4, y: 0}
@@ -36,6 +38,7 @@ stands:
   - name: head-03
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-04
   pos: {x: 6, y: 0}
@@ -44,6 +47,7 @@ stands:
   - name: head-04
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-05
   pos: {x: 8, y: 0}
@@ -52,6 +56,7 @@ stands:
   - name: head-05
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-06
   pos: {x: 10, y: 0}
@@ -60,6 +65,7 @@ stands:
   - name: head-06
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-07
   pos: {x: 12, y: 0}
@@ -68,6 +74,7 @@ stands:
   - name: head-07
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-08
   pos: {x: 14, y: 0}
@@ -76,6 +83,7 @@ stands:
   - name: head-08
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-09
   pos: {x: 16, y: 0}
@@ -84,6 +92,7 @@ stands:
   - name: head-09
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-10
   pos: {x: 18, y: 0}
@@ -92,6 +101,7 @@ stands:
   - name: head-10
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
 
 - name: stand-11
   pos: {x: 20, y: 0}
@@ -100,3 +110,4 @@ stands:
   - name: head-11
     pos: {x: 0, y: 0}
     rot: 0
+    virtual: true
