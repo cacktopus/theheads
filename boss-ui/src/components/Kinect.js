@@ -7,7 +7,7 @@ import { DraggableCore } from 'react-draggable';
 import { rotateVector } from '../helpers';
 import cn from "classnames";
 
-import {encodeRot, decodeRot, encodePosRelativeStand, encodePosScale, decodePosRelativeStand, decodePosScale, noTouchMove} from '../helpers';
+import { encodeRot, decodeRot, encodePosRelativeStand, encodePosForKinectFocusPoint, decodePosRelativeStand, noTouchMove } from '../helpers';
 
 export default class Kinect extends React.Component {
     constructor(props) {
@@ -106,7 +106,7 @@ export default class Kinect extends React.Component {
         let fovHeight = 0;
 
         if (0 < fov && fov < 180) {
-            const rad = (fov/2 * Math.PI/180);
+            const rad = (fov / 2 * Math.PI / 180);
             fovHeight = fovLength * Math.tan(rad);
         }
         const topAdjust = 12; // This is related to the height of half the kinect.
@@ -118,14 +118,44 @@ export default class Kinect extends React.Component {
             borderBottom: `${fovHeight}px solid transparent`,
             position: "absolute",
             top: `-${fovHeight - topAdjust}px`,
-            left: "12px",
+            // left: "12px",
+            left: 0,
             zIndex: 2,
+            marginTop: 3,
             pointerEvents: "none" // https://stackoverflow.com/questions/3680429/click-through-a-div-to-underlying-elements
         }
 
         const isKinectRotatesHidden = this.props.menu.get("isKinectRotatesHidden");
         const isForceShowKinectRotatesOnSelect = this.props.menu.get("isForceShowKinectRotatesOnSelect");
         const isShowKinectRotator = !isKinectRotatesHidden || (isSelected && isForceShowKinectRotatesOnSelect);
+
+        let kinectName = kinect.get("name");
+        let kinectFocalPoints;
+        let kinectFocalPointsForThisKinect;
+        if (kinectName == "kinect-01")
+            window.c_kfp = this;
+
+        if (this.props.kinectFocalPoints && this.props.kinectFocalPoints.get) {
+            kinectFocalPointsForThisKinect = this.props.kinectFocalPoints.get(kinectName);
+            if (kinectFocalPointsForThisKinect && kinectFocalPointsForThisKinect.size > 0) {
+                window.c_klfp2 = kinectFocalPointsForThisKinect;
+
+                kinectFocalPoints = kinectFocalPointsForThisKinect.toJS().map((kfp, i) => {
+                    const encPos = encodePosForKinectFocusPoint({x: kfp.z, y: kfp.x * -1})
+
+                    window.c_tra = {
+                        encPos
+                    }
+                    const styleKinectFocalPoint = {
+                        transform: `translate(${encPos.x}px, ${encPos.y}px)`,
+                        // y: encodePosScale(this.props.menu, kfp.z)
+                    }
+                    // window.c_kk2 = {kfp, enc;
+                    return <div key={i} style={styleKinectFocalPoint} class={`KinectFocalPoint bil KinectFocalPoint-${this.props.kinectIndex}`}>K{kfp.bodyIndex}</div>
+                    // return <div key={i} class={`KinectFocalPoint KinectFocalPoint-${kinectName}` }>K{kfp.bodyIndex}</div>
+                });
+            }
+        }
 
         return (
             <div className={cn("Kinect", { "Kinect--selected": isSelected })} >
@@ -144,8 +174,8 @@ export default class Kinect extends React.Component {
                 >
                     <div className="Kinect-container" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
                         <div className="Kinect-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
-                            { 
-                                !isShowKinectRotator ? null : 
+                            {
+                                !isShowKinectRotator ? null :
                                     <div className="Kinect-rotate noselect">
                                         {/* offset is used for the drag's reference */}
                                         <DraggableCore
@@ -171,6 +201,10 @@ export default class Kinect extends React.Component {
                             <div className="Kinect-fov" style={fovStyle}>
                                 {/* <div className="Kinect-fov-1"></div>
                                 <div className="Kinect-fov-2"></div> */}
+                            </div>
+
+                            <div className="Kinect-focalPoints KinectFocalPoints">
+                                {kinectFocalPoints}
                             </div>
                         </div>
                     </div>

@@ -77,7 +77,6 @@ export const customWebsocketMiddleware = store => next => action => {
                         }, 1500); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
                         break;
                     case "active":
-                        console.log('active');
                         try {
                             var headName;
                             var rotation;
@@ -100,14 +99,17 @@ export const customWebsocketMiddleware = store => next => action => {
                                 store.dispatch(standSetIsNotActive(headName));
                             }, setToNotActiveAfterDur);
                         } catch (e) { }
-                    //     break;
-                    // case "kinect":
+                        break;
+                    case "kinect":
+                        window.c_kpl = payloadDataChunk;
                         try {
+                            // payloadDataChunk.data.simplifiedBodies[0].tracked
+
                             var JOINT_NUM = { HEAD: 3 };
-                            var kinectName = payloadDataChunkData_HARDCODED.name;
-                            var simplifiedBodies = payloadDataChunkData_HARDCODED.simplifiedBodies;
-                            // var kinectName = payloadDataChunkData.name;
-                            // var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
+                            // var kinectName = payloadDataChunkData_HARDCODED.name;
+                            // var simplifiedBodies = payloadDataChunkData_HARDCODED.simplifiedBodies;
+                            var kinectName = payloadDataChunkData.name;
+                            var simplifiedBodies = payloadDataChunkData.simplifiedBodies;
                             var validBodies = simplifiedBodies.filter(body => body.tracked);
                             const focalPoints = validBodies.map(body => {
                                 var joint_pos = {};
@@ -126,7 +128,7 @@ export const customWebsocketMiddleware = store => next => action => {
                                 }
                                 return joint_pos;
                             });
-                            window.c_kk = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData_HARDCODED };
+                            window.c_kk3 = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData };
                             // console.log({ focalPoints: JSON.stringify(focalPoints) });
                             store.dispatch(kinectSetFocalPoints({ kinectName, focalPoints }));
                             // console.log({ kinect: true, nane: kinectName, focalPoints });

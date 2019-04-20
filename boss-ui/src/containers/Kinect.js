@@ -3,10 +3,10 @@ import { menuSelectKinect, kinectMoveByIndex, kinectRotateByIndex} from '../acti
 import Kinect from '../components/Kinect'
 
 const mapStateToProps = (state, ownProps) => {
-
     return ({
         stands: state.stands, //ownProps.filter === state.visibilityFilter
         stand: state.stands.get(ownProps.standIndex),
+        kinectFocalPoints: state.kinectFocalPoints,
         // kinects: state.stands .get(ownProps.index),
         menu: state.menu
     });

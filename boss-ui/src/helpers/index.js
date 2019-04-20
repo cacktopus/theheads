@@ -36,6 +36,16 @@ export const rotateVector = (vec, ang, origin) => {
     // return new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
 };
 
+// NOTE. I don't know if this should be encode or decode :)
+export const encodePosForKinectFocusPoint = (pos) => {
+    // Because the Kinect has already been scaled 
+    // we just need to undo the adjustment do to the stand width
+    return {
+        x: 100/STAND_WIDTH * pos.x,
+        y: 100/STAND_WIDTH * pos.y
+    }
+}
+
 export const encodePosRelativeStand = (menu, pos) => {
     const scaleVal = Math.max(1, menu.get("scale"));
     return {

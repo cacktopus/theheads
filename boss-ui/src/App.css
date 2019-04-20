@@ -575,9 +575,11 @@ body {
 }
 
 .Kinect-camImg {
-  position: relative;
+  position: absolute;
   height: 30px;
   width: 20px;
+  margin-top: -15px;
+  margin-left: -20px;
   background-color: rgb(130,0,200);
   cursor: pointer;
 }
@@ -591,7 +593,7 @@ body {
 .Kinect-camImg:after {
   content: '';
   position: absolute;
-  height: 10px;
+  height: 20px;
   width: 3px;
   background-color: black;
   top: 5px;
@@ -779,9 +781,32 @@ body {
   color: white !important;
 }
 
-.FocalPoint-move-handle--kinect {
-  cursor: pointer;
+/* .KinectFocalPoint */
+
+.KinectFocalPoints {
+  position: absolute;
+}
+
+.KinectFocalPoint {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
   background-color: #8200c8;
+  /*#840d00;*/
+  border-radius: 50%;
+  
+  top: 0;
+  left: 0;
+  /* transform: translate(-10px, -10px); */
+  border: 1px solid black;
+  /* cursor: pointer; */
+  margin-left: -20px;
+  margin-top: -20px;
+  /* top: -100px; */
+  color: white !important;
 }
 
 /* Motion Lines */
