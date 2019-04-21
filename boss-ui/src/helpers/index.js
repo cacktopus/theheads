@@ -2,6 +2,8 @@
 import { scale, translate, compose, applyToPoint } from 'transformation-matrix';
 // import { scale, rotate, translate, compose, applyToPoint } from 'transformation-matrix';
 
+export const STAND_WIDTH = 0.381;
+
 // E.g.: rotateVector([0,1], 90); for point 0,1 rotate by 90degrees.
 export const rotateVector = (vec, ang, origin) => {
     ang = -ang * (Math.PI / 180);
@@ -34,7 +36,30 @@ export const rotateVector = (vec, ang, origin) => {
     // return new Array(Math.round(10000*(vec[0] * cos - vec[1] * sin))/10000, Math.round(10000*(vec[0] * sin + vec[1] * cos))/10000);
 };
 
-console.log("FIguRE OUT THE DECODE / ENCODE... in progress with... ");
+// NOTE. I don't know if this should be encode or decode :)
+export const encodePosForKinectFocusPoint = (pos) => {
+    // Because the Kinect has already been scaled 
+    // we just need to undo the adjustment do to the stand width
+    return {
+        x: 100/STAND_WIDTH * pos.x,
+        y: 100/STAND_WIDTH * pos.y
+    }
+}
+
+export const encodePosRelativeStand = (menu, pos) => {
+    const scaleVal = Math.max(1, menu.get("scale"));
+    return {
+        x: pos.x / scaleVal,
+        y: pos.y / scaleVal
+    }
+}
+
+export const decodePosRelativeStand = (pos) => {
+    return {
+        x: (100 / STAND_WIDTH) * pos.x,
+        y: (100 / STAND_WIDTH) * pos.y
+    }
+}
 
 export const encodePos = (menu, pos) => {
     const scaleVal = menu.get("scale");

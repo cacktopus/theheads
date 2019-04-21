@@ -1,0 +1,96 @@
+{
+    "stands": [{
+            "cameras": [{
+                "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                "fov": 64.33,
+                "name": "camera-01",
+                "pos": {
+                    "x": 0.1,
+                    "y": 0
+                },
+                "rot": 0
+            }],
+            "heads": [{
+                "name": "head-01",
+                "pos": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rot": 0
+            }],
+            "name": "stand-01",
+            "pos": {
+                "x": 0,
+                "y": -3
+            },
+            "rot": -45
+        },
+        {
+            "cameras": [{
+                "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                "fov": 64.33,
+                "name": "camera-02",
+                "pos": {
+                    "x": 0.1,
+                    "y": 0
+                },
+                "rot": 0
+            }],
+            "heads": [{
+                "name": "head-02",
+                "pos": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rot": 0
+            }],
+            "name": "stand-02",
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "rot": 225
+        },
+        {
+            "cameras": [],
+            "heads": [{
+                "name": "head-03",
+                "pos": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rot": 0
+            }],
+            "name": "stand-03",
+            "pos": {
+                "x": 0,
+                "y": -3
+            },
+            "rot": 135
+        }
+    ],
+    "scale": 100,
+    "translate": {
+        "x": 751,
+        "y": 100
+    },
+    "kinects": [{
+            "fov": 71,
+            "name": "kinect-01",
+            "pos": {
+                "x": 1,
+                "y": -1.5
+            },
+            "rot": -45
+        },
+        {
+            "fov": 71,
+            "name": "kinect-02",
+            "pos": {
+                "x": -3,
+                "y": -1
+            },
+            "rot": 135
+        }
+    ]
+}

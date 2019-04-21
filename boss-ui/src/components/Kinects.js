@@ -1,5 +1,5 @@
 import React from 'react';
-import Camera from '../containers/Camera'
+import Kinect from '../containers/Kinect'
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -12,11 +12,11 @@ export default class Menu extends React.Component {
     }
 
     render() {
-        const cameras = this.props.cameras || [];
+        const kinects = this.props.kinects || [];
 
         return (
-            <div className="Cameras">
-                {cameras.map((camera, i) => <Camera key={i} camera={camera} cameraIndex={i} standIndex={this.props.standIndex}/>)}
+            <div className="Kinects">
+                {kinects.map((kinect, i) => <Kinect key={i} kinect={kinect} kinectIndex={i} standIndex={this.props.standIndex}/>)}
             </div>
         );
     }

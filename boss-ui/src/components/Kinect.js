@@ -1,5 +1,5 @@
 import React from 'react';
-//import Cameras from '../containers/Cameras'
+//import Kinects from '../containers/Kinects'
 // import Draggable from 'react-draggable'; 
 import { DraggableCore } from 'react-draggable';
 // import Draggable, {DraggableCore} from 'react-draggable'; 
@@ -7,9 +7,9 @@ import { DraggableCore } from 'react-draggable';
 import { rotateVector } from '../helpers';
 import cn from "classnames";
 
-import {encodeRot, decodeRot, encodePosRelativeStand, decodePosRelativeStand, noTouchMove} from '../helpers';
+import { encodeRot, decodeRot, encodePosRelativeStand, encodePosForKinectFocusPoint, decodePosRelativeStand, noTouchMove } from '../helpers';
 
-export default class Camera extends React.Component {
+export default class Kinect extends React.Component {
     constructor(props) {
         super(props);
 
@@ -28,11 +28,11 @@ export default class Camera extends React.Component {
         this.handleRotateStop = this.handleRotateStop.bind(this);
 
         // Refs
-        this.refCameraRotateHandle = React.createRef();
+        this.refKinectRotateHandle = React.createRef();
     }
 
     componentDidMount() {
-        noTouchMove(this.refCameraRotateHandle.current);
+        noTouchMove(this.refKinectRotateHandle.current);
     }
 
     // Move
@@ -42,7 +42,7 @@ export default class Camera extends React.Component {
         const pos = { x: x - curPos.x, y: y - curPos.y };
 
         this.setState({ moveRelativeStartPos: pos });
-        this.props.selectCamera();
+        this.props.selectKinect();
     }
 
     handleMoveDrag(e, a) {
@@ -50,30 +50,18 @@ export default class Camera extends React.Component {
         const pos = { x, y }; //: x - origin.x, y: y - origin.y };
         const rot = decodeRot(this.props.stand.get("rot"));
         const newPos = encodePosRelativeStand(this.props.menu, rotateVector(pos, rot));//, origin);
-        this.props.cameraMove(newPos);
+        this.props.kinectMove(newPos);
     }
 
-    // handleMoveDragBLAHJ(e, a) {
-    //     // console.log("h dr", e, a);
-    //     const { x, y } = a;
-    //     const pos = encodePosScale(this.props.menu, { x, y });
-    //     // const pos = encrypt1({ x, y });
-    //     // const pos = { x, y };
-    //     // Convert the values 
-
-    //     this.props.standMove(pos);
-    //     // this.setState({ pos });
-    // }
-
     handleMoveStop(e, a) {
-        // this.props.cameraMove(pos);
+        // this.props.kinectMove(pos);
         // console.log("h stop", e, a);
     }
 
 
     // Rotate
     handleRotateStart(e, a) {
-        this.props.selectCamera();
+        this.props.selectKinect();
         // console.log("hrot str", e, a);
     }
 
@@ -84,7 +72,7 @@ export default class Camera extends React.Component {
         var deg = rad * (180 / Math.PI);
 
         const standRot = decodeRot(this.props.stand.get("rot"));
-        this.props.cameraRotate(encodeRot(deg - standRot));
+        this.props.kinectRotate(encodeRot(deg - standRot));
     }
 
     handleRotateStop(e, a) {
@@ -92,7 +80,7 @@ export default class Camera extends React.Component {
     }
 
     getCurrentPos() {
-        let pos = decodePosRelativeStand(this.props.camera.get("pos").toJS());
+        let pos = decodePosRelativeStand(this.props.kinect.get("pos").toJS());
         pos.x = isNaN(pos.x) ? 0 : pos.x;
         pos.y = isNaN(pos.y) ? 0 : pos.y;
 
@@ -100,47 +88,77 @@ export default class Camera extends React.Component {
     }
 
     render() {
-        const camera = this.props.camera;
+        const kinect = this.props.kinect;
 
         let pos = this.getCurrentPos();
 
-        let rot = camera.get("rot");
+        let rot = kinect.get("rot");
         rot = isNaN(rot) ? 0 : rot;
         rot = decodeRot(rot);
 
         const selectedStandIndex = this.props.menu.get("selectedStandIndex");
-        const selectedCameraIndex = this.props.menu.get("selectedCameraIndex");
+        const selectedKinectIndex = this.props.menu.get("selectedKinectIndex");
 
-        const isSelected = selectedStandIndex === this.props.standIndex && selectedCameraIndex === this.props.cameraIndex;
+        const isSelected = selectedStandIndex === this.props.standIndex && selectedKinectIndex === this.props.kinectIndex;
 
-        const fov = camera.get("fov");
-        const fovLength = 500;
+        const fov = kinect.get("fov");
+        const fovLength = 1000;//1900;
         let fovHeight = 0;
 
         if (0 < fov && fov < 180) {
-            const rad = (fov/2 * Math.PI/180);
+            const rad = (fov / 2 * Math.PI / 180);
             fovHeight = fovLength * Math.tan(rad);
         }
-        const topAdjust = 12; // This is related to the height of half the camera.
+        const topAdjust = 12; // This is related to the height of half the kinect.
         const fovStyle = {
             width: 0,
             height: 0,
             borderTop: `${fovHeight}px solid transparent`,
-            borderRight: `${fovLength}px solid rgba(0,100,0,0.1)`,
+            borderRight: `${fovLength}px solid rgba(130,0,200,0.1)`,
             borderBottom: `${fovHeight}px solid transparent`,
             position: "absolute",
             top: `-${fovHeight - topAdjust}px`,
-            left: "12px",
+            // left: "12px",
+            left: 0,
             zIndex: 2,
+            marginTop: 3,
             pointerEvents: "none" // https://stackoverflow.com/questions/3680429/click-through-a-div-to-underlying-elements
         }
 
-        const isCameraRotatesHidden = this.props.menu.get("isCameraRotatesHidden");
-        const isForceShowCameraRotatesOnSelect = this.props.menu.get("isForceShowCameraRotatesOnSelect");
-        const isShowCameraRotator = !isCameraRotatesHidden || (isSelected && isForceShowCameraRotatesOnSelect);
+        const isKinectRotatesHidden = this.props.menu.get("isKinectRotatesHidden");
+        const isForceShowKinectRotatesOnSelect = this.props.menu.get("isForceShowKinectRotatesOnSelect");
+        const isShowKinectRotator = !isKinectRotatesHidden || (isSelected && isForceShowKinectRotatesOnSelect);
+
+        let kinectName = kinect.get("name");
+        let kinectFocalPoints;
+        let kinectFocalPointsForThisKinect;
+        if (kinectName == "kinect-01")
+            window.c_kfp = this;
+
+        if (this.props.kinectFocalPoints && this.props.kinectFocalPoints.get) {
+            kinectFocalPointsForThisKinect = this.props.kinectFocalPoints.get(kinectName);
+            if (kinectFocalPointsForThisKinect && kinectFocalPointsForThisKinect.size > 0) {
+                window.c_klfp2 = kinectFocalPointsForThisKinect;
+
+                kinectFocalPoints = kinectFocalPointsForThisKinect.toJS().map((kfp, i) => {
+                    const encPos = encodePosForKinectFocusPoint({x: kfp.z, y: kfp.x * -1})
+
+                    window.c_tra = {
+                        encPos
+                    }
+                    const styleKinectFocalPoint = {
+                        transform: `translate(${encPos.x}px, ${encPos.y}px)`,
+                        // y: encodePosScale(this.props.menu, kfp.z)
+                    }
+                    // window.c_kk2 = {kfp, enc;
+                    return <div key={i} style={styleKinectFocalPoint} class={`KinectFocalPoint bil KinectFocalPoint-${this.props.kinectIndex}`}>K{kfp.bodyIndex}</div>
+                    // return <div key={i} class={`KinectFocalPoint KinectFocalPoint-${kinectName}` }>K{kfp.bodyIndex}</div>
+                });
+            }
+        }
 
         return (
-            <div className={cn("Camera", { "Camera--selected": isSelected })} >
+            <div className={cn("Kinect", { "Kinect--selected": isSelected })} >
                 <DraggableCore
                     // allowAnyClick= boolean,
                     // cancel= string,
@@ -148,17 +166,17 @@ export default class Camera extends React.Component {
                     // enableUserSelectHack= boolean,
                     // offsetParent={this.refStandRotateOffset.current} //HTMLElement,
                     // grid= [number, number],
-                    handle=".Camera-camImg"
+                    handle=".Kinect-camImg"
                     onStart={this.handleMoveStart}
                     onDrag={this.handleMoveDrag}
                     onStop={this.handleMoveStop}
                 // onMouseDown= (e= MouseEvent) => void
                 >
-                    <div className="Camera-container" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
-                        <div className="Camera-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
-                            { 
-                                !isShowCameraRotator ? null : 
-                                    <div className="Camera-rotate noselect">
+                    <div className="Kinect-container" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+                        <div className="Kinect-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
+                            {
+                                !isShowKinectRotator ? null :
+                                    <div className="Kinect-rotate noselect">
                                         {/* offset is used for the drag's reference */}
                                         <DraggableCore
                                             // allowAnyClick= boolean,
@@ -167,22 +185,26 @@ export default class Camera extends React.Component {
                                             // enableUserSelectHack= boolean,
                                             // offsetParent={this.refStandRotateOffset.current} //HTMLElement,
                                             // grid= [number, number],
-                                            handle=".Camera-rotate-handle"
+                                            handle=".Kinect-rotate-handle"
                                             onStart={this.handleRotateStart}
                                             onDrag={this.handleRotateDrag}
                                             onStop={this.handleRotateStop}
                                         // onMouseDown= (e= MouseEvent) => void
                                         >
-                                            <div ref={this.refCameraRotateHandle} className="Camera-rotate-handle"></div>
+                                            <div ref={this.refKinectRotateHandle} className="Kinect-rotate-handle"></div>
                                         </DraggableCore>
                                     </div>
                             }
 
-                            <div className="Camera-camImg"></div>
+                            <div className="Kinect-camImg"></div>
 
-                            <div className="Camera-fov" style={fovStyle}>
-                                <div className="Camera-fov-1"></div>
-                                <div className="Camera-fov-2"></div>
+                            <div className="Kinect-fov" style={fovStyle}>
+                                {/* <div className="Kinect-fov-1"></div>
+                                <div className="Kinect-fov-2"></div> */}
+                            </div>
+
+                            <div className="Kinect-focalPoints KinectFocalPoints">
+                                {kinectFocalPoints}
                             </div>
                         </div>
                     </div>

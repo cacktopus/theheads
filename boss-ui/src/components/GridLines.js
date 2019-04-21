@@ -111,7 +111,7 @@ export default class Menu extends React.Component {
         const scale = parseFloat(this.props.menu.get("scale"));
 
         const additionalColsAbove = Math.ceil(translateY / scale) + 1; // Always add an extra 1 (just for smoother scrolls)
-
+        // const additionalColsBelow = 5; //Math.ceil(translateY / scale) + 1; // Always add an extra 1 (just for smoother scrolls)
 
         this.setState({
             additionalColsAbove,

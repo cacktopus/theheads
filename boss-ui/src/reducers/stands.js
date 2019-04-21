@@ -21,7 +21,7 @@ const defaultHead = {
         "x": 0,
         "y": 0
     },
-    "rot": 0 ,
+    "rot": 0,
     "vRot": 0 // Virtual rotation (i.e. the manual rotation of the head)
 };
 
@@ -41,6 +41,7 @@ const createNewStand = ({
     pos = { x: 0, y: 0 },
     rot = 0,
     cameras = [defaultCamera],
+    kinects = [],
     heads = [defaultHead],
     popupInfo = undefined,
     isActive = false,
@@ -52,10 +53,11 @@ const createNewStand = ({
     }
 
     return fromJS({
-        name, 
+        name,
         pos,
         rot,
         cameras,
+        kinects,
         heads,
         popupInfo,
         isActive,
@@ -105,11 +107,11 @@ const getNewName = (prefix, arrayObj) => {
 }
 
 const getStandIndexFromHeadName = (state, headName) => {
-    var temp = state.findIndex(stand => stand.getIn(["heads",0, "name"]) === headName)
+    var temp = state.findIndex(stand => stand.getIn(["heads", 0, "name"]) === headName)
     return temp;
 };
 
-function rotateHeadByHeadName({state, headName, rotation}) {
+function rotateHeadByHeadName({ state, headName, rotation }) {
     let heads, standIndex, headIndex;
     let newState = state;
 
@@ -143,7 +145,8 @@ function rotateHeadByHeadName({state, headName, rotation}) {
             // Ignore the messages if head is manually being rotated within the UI
             return newState;
         }
-    }    
+    }
+    return state;
 }
 
 const processWebsocketData = (state, payloadDataChunk) => {
@@ -157,7 +160,7 @@ const processWebsocketData = (state, payloadDataChunk) => {
             headName = data.headName;
             rotation = data.rotation;
 
-            return rotateHeadByHeadName({state, headName, rotation})
+            return rotateHeadByHeadName({ state, headName, rotation })
             // position = data.position;
 
             // standIndex = state.findIndex(stand => {
@@ -241,19 +244,19 @@ const stands = (state = fromJS([]), action) => {
         case 'HEAD_MOVE_BY_INDEX':
             return state.setIn([action.standIndex, "heads", action.headIndex, "pos"], fromJS(action.pos));
         case 'HEAD_ROTATE_BY_HEADNAME':
-            return rotateHeadByHeadName({state, headName : action.headName, rotation: action.rotation});
-            // console.log('HEAD_ROTATE_BY_HEADNAME');
-            // // Get stand and head index with the headname
-            // let standIndex = getStandIndexFromHeadName(state, action.headName);
-            // let headIndex = 0;
+            return rotateHeadByHeadName({ state, headName: action.headName, rotation: action.rotation });
+        // console.log('HEAD_ROTATE_BY_HEADNAME');
+        // // Get stand and head index with the headname
+        // let standIndex = getStandIndexFromHeadName(state, action.headName);
+        // let headIndex = 0;
 
-            // return newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
-            // // newState = newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
-            // // return newState.setIn([standIndex, "heads", headIndex, "rot"], fromJS(action.rot));
+        // return newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
+        // // newState = newState.setIn([standIndex, "heads", headIndex, "vRot"], fromJS(action.rot));
+        // // return newState.setIn([standIndex, "heads", headIndex, "rot"], fromJS(action.rot));
         case 'HEAD_ROTATE_BY_INDEX':
             return state.setIn([action.standIndex, "heads", action.headIndex, "vRot"], fromJS(action.rot));
-            // newState = state.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
-            // return newState.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
+        // newState = state.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
+        // return newState.setIn([action.standIndex, "heads", action.headIndex, "rot"], fromJS(action.rot));
         case 'HEAD_ROTATE_START_BY_INDEX':
             return state.setIn([action.standIndex, "isManualHeadMove"], true);
         case 'HEAD_ROTATE_STOP_BY_INDEX':
@@ -271,6 +274,26 @@ const stands = (state = fromJS([]), action) => {
         case 'CAMERA_REMOVE_BY_INDEX':
             console.log("rem", action.standIndex, action.cameraIndex);
             return state.removeIn([action.standIndex, "cameras", action.cameraIndex]);
+
+        // Kinect
+        // case 'KINECT_SET_FOCAL_POINTS':
+        //     window.c_st83 = state;
+        //     console.log(action.kinectName, action.focalPoints);
+        //     return state;
+            // return state.setIn(["focalPoints", action.kinectName], fromJS(action.focalPoints));
+        case 'KINECT_MOVE_BY_INDEX':
+            // window.c_CAM342 = { arr: [action.standIndex,"kinects",action.kinectIndex,"pos"], pos: fromJS(action.pos)};
+            return state.setIn([action.standIndex, "kinects", action.kinectIndex, "pos"], fromJS(action.pos));
+        case 'KINECT_ROTATE_BY_INDEX':
+            return state.setIn([action.standIndex, "kinects", action.kinectIndex, "rot"], fromJS(action.rot));
+        // case 'KINECT_ADD_NEW':
+        //     let kinectsList = state.getIn([action.standIndex, "kinects"]).toJS();
+        //     return state.updateIn([action.standIndex, "kinects"], kinects => kinects.push(fromJS(createNewKinect({}, kinectsList))))
+        // case 'KINECT_REMOVE_BY_INDEX':
+        //     console.log("rem", action.standIndex, action.kinectIndex);
+        //     return state.removeIn([action.standIndex, "kinects", action.kinectIndex]);
+
+        // Scene
         case 'STAND_SET_SCENE':
             if (action.sceneData && action.sceneData.stands && action.sceneData.stands.length > 0) {
                 return fromJS(action.sceneData.stands);
@@ -280,8 +303,8 @@ const stands = (state = fromJS([]), action) => {
         // Active or not
         case 'STAND_SET_IS_ACTIVE':
             tempStandIndex = getStandIndexFromHeadName(state, action.headName);
-            
-            if (tempStandIndex >= 0 ) {
+
+            if (tempStandIndex >= 0) {
                 return state.setIn([tempStandIndex, "isActive"], true);
             } else {
                 return state;
@@ -289,7 +312,7 @@ const stands = (state = fromJS([]), action) => {
         case 'STAND_SET_IS_NOT_ACTIVE':
             tempStandIndex = getStandIndexFromHeadName(state, action.headName);
 
-            if (tempStandIndex >= 0 ) {
+            if (tempStandIndex >= 0) {
                 return state.setIn([tempStandIndex, "isActive"], false);
             } else {
                 return state;

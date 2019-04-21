@@ -29,37 +29,68 @@ export default class Menu extends React.Component {
 
 
         html.addEventListener("mousedown", (e) => {
-            if(e.target.tagName.toUpperCase() === "HTML") {
+            if (e.target.tagName.toUpperCase() === "HTML") {
                 this.props.menuDeselectStandAndAll();
             }
         })
 
         html.addEventListener("touchstart", (e) => {
-            if(e.target.tagName.toUpperCase() === "HTML") {
+            if (e.target.tagName.toUpperCase() === "HTML") {
                 this.props.menuDeselectStandAndAll();
             }
         })
     }
 
     render() {
-        // window.c_ko = this;
+        window.c_ko = this;
 
         const stands = this.props.stands.map((stand, i) => {
-            return <Stand key={i} index={i} stand={stand}/>
+            return <Stand key={i} index={i} stand={stand} />
         });
 
         const standsContainerStyle = {
             position: "relative"
         }
 
+        // let kinects = [];
+        // try {
+        //     var tempKinectsImmObj = this.props.kinects.get("kinects");
+        //     // var tempKinectsJSObj = tempKinectsImmObj.toJS();
+            
+        //     // for (var kinectName in tempKinectsJSObj) {
+        //     // tempKinectsImmObj.keyName
+        //     tempKinectsImmObj.keySeq().forEach((kinectName,i) => {
+        //         kinects.push(<Kinect key={kinectName} kinectName={kinectName} kinect={tempKinectsImmObj.get(kinectName)}/>) 
+        //     });
+        //     // kinects = this.props.kinects.get("kinects");
+        //     // kinects.map((kinect, i) => <Kinect key={i} index={i} kinect={kinect}/>);
+        // } catch(e) {}
+
+        
+        // const scale = this.props.menu.get("scale");
+        // const translateX = this.props.menu.getIn(["translate", "x"]);
+        // const translateY = this.props.menu.getIn(["translate", "y"]);
+        
+        // const styleKinects = {
+        //     transform: `translate(${translateX}px, ${translateY}px) scale(${scale/100})`
+        //     // transform: `translate(${translateX*scale/100}px, ${translateY*scale/100}px) scale(${scale/100})`
+        // }
+
+        // window.c_sds = { 
+        //     scale,
+        //     translateX,
+        //     translateY,
+        //     styleKinects
+        // }
+
         return (
             <div id="Scene" className="Scene">
                 <div style={standsContainerStyle}>
-                    <UnderVisuals/>
+                    <UnderVisuals />
                     <div className="Stands">
                         {stands}
                     </div>
-                    <FocalPoints/>
+                    <FocalPoints />
                     {/* <Popups popups={this.props.popups}/> */}
                 </div>
             </div>

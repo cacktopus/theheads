@@ -40,6 +40,12 @@ export const menuSelectCamera = ({ standIndex, cameraIndex }) => {
         cameraIndex
     })
 }
+
+export const menuSelectKinect = kinectName => ({
+    type: 'MENU_SELECT_KINECT',
+    kinectName
+})
+
 // export const menuSelectCamera = ({standIndex, cameraIndex}) => ({
 //     type: 'MENU_SELECT_CAMERA',
 //     standIndex,
@@ -90,6 +96,7 @@ export function sceneFetchFromUrl(sceneUrl) {
             .then(response => response.json())
             .then(json => {
                 if (typeof json === "object") {
+                    console.log("jos", json);
                     if (json.scale) {
                         dispatch(menuSetScale(json.scale));
                     }
@@ -97,7 +104,12 @@ export function sceneFetchFromUrl(sceneUrl) {
                         dispatch(menuSetTranslateX(json.translate.x));
                         dispatch(menuSetTranslateY(json.translate.y));
                     }
+                    // if (json.kinects) {
+                    //     console.log("kinnn");
+                    //     dispatch(kinectSetScene(json))
+                    // }
                 }
+                
                 dispatch(standSetScene(json))
             })
             .catch(e => console.log(e))
@@ -170,6 +182,60 @@ export const standSetIsNotActive = (headName) => ({
     type: 'STAND_SET_IS_NOT_ACTIVE',
     headName
 })
+
+// KINECT
+export const kinectMoveByIndex = (standIndex, kinectIndex, pos) => ({
+    type: 'KINECT_MOVE_BY_INDEX',
+    standIndex: standIndex,
+    kinectIndex: kinectIndex,
+    pos
+})
+
+export const kinectRotateByIndex = (standIndex, kinectIndex, rot) => ({
+    type: 'KINECT_ROTATE_BY_INDEX',
+    standIndex,
+    kinectIndex,
+    rot
+})
+
+export const kinectAddNew = (standIndex) => ({
+    type: 'KINECT_ADD_NEW',
+    standIndex
+})
+
+export const kinectRemoveByIndex = (standIndex, kinectIndex) => ({
+    type: 'KINECT_REMOVE_BY_INDEX',
+    standIndex,
+    kinectIndex
+})
+
+export const kinectSetFocalPoints = ({kinectName, focalPoints}) => ({
+    type: 'KINECT_SET_FOCAL_POINTS',
+    focalPoints,
+    kinectName
+})
+
+// export const kinectSetScene = (sceneData) => ({
+//     type: 'KINECT_SET_SCENE',
+//     sceneData
+// });
+
+// export const kinectMoveByName = ({kinectName, pos}) => ({
+//     type: 'KINECT_MOVE_BY_NAME',
+//     kinectName: kinectName,
+//     pos
+// })
+
+// export const kinectRotateByName = ({kinectName, rot}) => ({
+//     type: 'KINECT_ROTATE_BY_NAME',
+//     kinectName,
+//     rot
+// })
+
+// export const kinectClearFocalPoints = (kinectName) => ({
+//     type: 'KINECT_CLEAR_FOCAL_POINTS',
+//     kinectName
+// })
 
 // HEAD
 export const headMoveByIndex = (standIndex, headIndex, pos) => ({

@@ -397,9 +397,12 @@ export default class Menu extends React.Component {
 
         standOptions = ([defaultStandOption]).concat(standOptions);
 
-        const cameraOptions = cameras.map((camera, i) => {
-            return <option key={i} value={i}>{i} - {camera.get("name")}</option>
-        });
+        let cameraOptions;
+        if (cameras) {
+            cameraOptions = cameras.map((camera, i) => {
+                return <option key={i} value={i}>{i} - {camera.get("name")}</option>
+            });
+        }
 
         const headOptions = heads.map((head, i) => {
             return <option key={i} value={i}>{i} - {head.get("name")}</option>

@@ -61,6 +61,9 @@ You can browse the ui at http://localhost:8500.
 Open http://localhost:8000 in your browser window.
 For Boss: Open http://localhost:8081 in your browser window.
 
+### NOTE: to connect to the boxes from my machine use:
+    ssh-add -K ~/.ssh/id_heads
+
 ### Simulate motion detected:
     Connect to tunnel: 
     ssh-add -t 72000
