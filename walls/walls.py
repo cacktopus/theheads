@@ -42,7 +42,7 @@ inner = Config(
 
 outer = Config(
     r=6,
-    line_width=1.25,
+    line_width=1.175,
     pad_x=8,
     pad_y=4,
 
@@ -274,6 +274,9 @@ def make_wall(name, cfg):
     ])
 
     points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
+
+    fill_points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 4)
+
     dely = DelaunayTri(points)
     cells = spooky_cells(dely)
 
@@ -286,6 +289,14 @@ def make_wall(name, cfg):
                 cell = Polygon.Polygon(p)
 
                 if len(cell & wall.wall) == 0:
+                    break
+
+                skip = False
+                for fill_point in fill_points:
+                    if cell.isInside(*fill_point):
+                        skip = True
+
+                if skip:
                     break
 
                 c = centroid(cell.contour(0))
@@ -307,6 +318,9 @@ def make_wall(name, cfg):
                 new &= wall.window
 
                 wall.result += new
+
+    for fill_point in fill_points:
+        svg.add(svg.circle(fill_point, 2, fill="magenta"))
 
     svg.add(svg.polygon(wall.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
     svg.add(svg.polygon(wall.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
