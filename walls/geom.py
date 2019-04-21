@@ -180,3 +180,13 @@ def centroid(triangle: List[Tuple]):
 
 def distance(p0, p1):
     return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
+
+
+def clamp(a, x, b):
+    if x < a:
+        return a
+
+    if x > b:
+        return b
+
+    return x

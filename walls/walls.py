@@ -176,12 +176,12 @@ def spooky_cells(dely: DelaunayTri):
     return cells
 
 
-def process(poly):
+def process(poly, inset_amount):
     if all(good(p) for p in poly):
         print("points", poly)
 
         try:
-            poly = inset(poly, cfg.line_width / 2.0)
+            poly = inset(poly, inset_amount)
         except Exception as e:
             print(e)
             raise
@@ -285,7 +285,19 @@ def make_wall(name, cfg):
     for i, cell in sorted(cells.items()):
         if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
             fixed = make_convex(cell)
-            for p in process(fixed):
+
+            wx0 = min(p[0] for p in wall.window[0])
+            wx1 = max(p[0] for p in wall.window[0])
+            cx = centroid(fixed)[0]
+
+            t = (cx - wx0) / (wx1 - wx0)
+            t = geom.clamp(0, t, 1)
+
+            inset_boost = geom.clamp(0, -1 + 2 * t, 0.75)
+
+            inset_amount = cfg.line_width / 2.0 + inset_boost
+
+            for p in process(fixed, inset_amount):
                 cell = Polygon.Polygon(p)
 
                 if len(cell & wall.wall) == 0:
@@ -308,7 +320,8 @@ def make_wall(name, cfg):
                 svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
                 svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
                 # svg.save()
-                new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 0.66)
+
+                new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 1 - t)
                 new = Polygon.Polygon([p.point2 for p in new])
 
                 svg.add(svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
@@ -337,7 +350,7 @@ def make_wall(name, cfg):
 
 def main():
     for i in (1,):
-        make_wall(f"wall{i}", outer)
+        make_wall(f"wallb{i}", outer)
 
 
 if __name__ == '__main__':
