@@ -91,35 +91,32 @@ class Installation:
                 obj_to_m(stand),
             )
 
-            if 'cameras' in stand:
-                for camera in stand['cameras']:
-                    c = Camera(
-                        camera['name'],
-                        obj_to_m(camera),
-                        s,
-                        camera['description'],
-                        camera['fov'],
-                    )
-                    s.add_camera(c)
+            for camera in stand.get('cameras', []):
+                c = Camera(
+                    camera['name'],
+                    obj_to_m(camera),
+                    s,
+                    camera['description'],
+                    camera['fov'],
+                )
+                s.add_camera(c)
 
-            if 'kinects' in stand:
-                for kinect in stand['kinects']:
-                    k = Kinect(
-                        kinect['name'],
-                        obj_to_m(kinect),
-                        s,
-                        kinect['fov'],
-                    )
-                    s.add_kinect(k)
+            for kinect in stand.get('kinects', []):
+                k = Kinect(
+                    kinect['name'],
+                    obj_to_m(kinect),
+                    s,
+                    kinect['fov'],
+                )
+                s.add_kinect(k)
 
-            if 'heads' in stand:
-                for head in stand['heads']:
-                    h = Head(
-                        head['name'],
-                        obj_to_m(head),
-                        s,
-                    )
-                    s.add_head(h)
+            for head in stand.get('heads', []):
+                h = Head(
+                    head['name'],
+                    obj_to_m(head),
+                    s,
+                )
+                s.add_head(h)
 
             inst.add_stand(s)
 
@@ -166,12 +163,9 @@ async def build_installation(cfg: Config):
                 stands[stand['name']] = stand
 
     for stand in stands.values():
-        if 'cameras' in stand:
-            stand['cameras'] = [cameras[c] for c in stand['cameras']]
-        if 'heads' in stand:
-            stand['heads'] = [heads[h] for h in stand['heads']]
-        if 'kinects' in stand:
-            stand['kinects'] = [kinects[k] for k in stand['kinects']]
+        stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
+        stand['heads'] = [heads[h] for h in stand.get('heads', [])]
+        stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
 
     # for scale,translate, etc. for scene
     for name, body in (await cfg.get_prefix(
@@ -235,12 +229,9 @@ def build_installation_from_filesystem(name):
                 stands[stand['name']] = stand
 
     for stand in stands.values():
-        if 'cameras' in stand:
-            stand['cameras'] = [cameras[c] for c in stand['cameras']]
-        if 'kinects' in stand:
-            stand['kinects'] = [kinects[k] for k in stand['kinects']]
-        if 'heads' in stand:
-            stand['heads'] = [heads[h] for h in stand['heads']]
+        stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
+        stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
+        stand['heads'] = [heads[h] for h in stand.get('heads', [])]
 
     result = dict(
         name=name,
