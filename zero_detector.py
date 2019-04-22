@@ -55,7 +55,11 @@ class ZeroDetector:
         self._done = False
 
     def act(self, *args) -> Optional[int]:
-        step = next(self.gen, None)
+        try:
+            step = next(self.gen, None)
+        except ZeroNotFoundError:
+            self._done = True
+            return None
         if step is None:
             self._done = True
         return step
