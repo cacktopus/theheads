@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import json
-import platform
 from typing import Optional
 
 import asyncio_redis
@@ -9,8 +8,9 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
 import motors
+import zero_detector
 from config import THE_HEADS_EVENTS, Config
-from consul_config import ConsulBackend, ConfigError
+from consul_config import ConsulBackend
 from health import health_check
 from util import run_app
 
@@ -22,7 +22,14 @@ _DEFAULT_REDIS = "127.0.0.1:6379"
 
 
 class Stepper:
-    def __init__(self, cfg, redis: asyncio_redis.Connection, motor):
+    def __init__(
+            self,
+            cfg,
+            redis: asyncio_redis.Connection,
+            motor,
+            controller,
+            next_controller,
+    ):
         self._pos = 0
         self._target = 0
         self._motor = motor
@@ -30,6 +37,8 @@ class Stepper:
         self.queue = asyncio.Queue()
         self.cfg = cfg
         self.redis = redis
+        self._controller = controller
+        self._next_controller = next_controller
 
     @property
     def pos(self) -> int:
@@ -37,7 +46,6 @@ class Stepper:
 
     def zero(self):
         self._pos = 0
-        self._target = 0
 
     def set_target(self, target: int):
         self._target = target
@@ -50,20 +58,18 @@ class Stepper:
 
     async def seek(self):
         while True:
-            options = [
-                ((self._target - self._pos) % NUM_STEPS, 1),
-                ((self._pos - self._target) % NUM_STEPS, -1),
-            ]
+            await asyncio.sleep(1.0 / self._speed)
 
-            steps, direction = min(options)
-
-            if steps > 0:
+            direction = self._controller.act(self._pos, self._target)
+            if direction is not None:
                 self._pos += direction
                 self._pos %= NUM_STEPS
                 self.queue.put_nowait(self._pos)
                 self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
 
-            await asyncio.sleep(1.0 / self._speed)
+            if self._controller.is_done():
+                self._controller.finish(self)
+                self._controller = self._next_controller or Idle()
 
     async def redis_publisher(self):
         while True:
@@ -81,6 +87,32 @@ class Stepper:
             except asyncio_redis.NotConnectedError:
                 # TODO: emit stats/log
                 print("Not connected")
+
+
+class Seeker:
+    def act(self, pos: int, target: int) -> Optional[int]:
+        options = [
+            ((target - pos) % NUM_STEPS, 1),
+            ((pos - target) % NUM_STEPS, -1),
+        ]
+
+        steps, direction = min(options)
+
+        if steps > 0:
+            return direction
+
+        return None
+
+    def is_done(self) -> bool:
+        return False
+
+
+class Idle:
+    def act(self, *args) -> Optional[int]:
+        return None
+
+    def is_done(self):
+        return False
 
 
 def adjust_position(request, speed, target):
@@ -189,10 +221,13 @@ async def setup(
 
     if cfg['head'].get('virtual', False):
         motor = motors.FakeStepper()
+        gpio = zero_detector.FakeGPIO()
     else:
         motor = motors.setup()
+        gpio = zero_detector.GPIO()
 
-    stepper = Stepper(cfg, redis_connection, motor)
+    zd = zero_detector.ZeroDetector(gpio)
+    stepper = Stepper(cfg, redis_connection, motor, zd, Seeker())
     asyncio.ensure_future(stepper.redis_publisher())
     asyncio.ensure_future(stepper.seek())
 

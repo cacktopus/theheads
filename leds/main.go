@@ -6,25 +6,50 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
 	"periph.io/x/periph/host"
+	"strconv"
 	"time"
 )
 
 var ibits = [4]uint{3, 2, 1, 0}
 
 const (
-	numLeds       = 69
 	maxBrightness = 0.33
-	startLed      = 8
 
 	meter = 1.0
 	inch  = 0.0254 * meter
 
 	ledRingRadius = (15.0/2 - 1) * inch
 )
+
+var (
+	numLeds  = 74
+	startLed = 10
+)
+
+func init() {
+	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
+	if ok {
+		var err error
+		numLeds, err = strconv.Atoi(strNumLeds)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	strStartLed, ok := os.LookupEnv("START_LED")
+	if ok {
+		var err error
+		startLed, err = strconv.Atoi(strStartLed)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 func adaptForSpi(data []byte) []byte {
 	var result []byte = nil
