@@ -140,6 +140,11 @@ export default class Menu extends React.Component {
         const cameras = stand.get("cameras");
         const kinects = stand.get("kinects");
 
+        if (typeof window !== 'undefined') {
+            console.log('c__kinects');
+            window.c__kinects = kinects;
+        }
+
         // const standStyle = {transform:`translate(${stand.pos.x}px, ${stand.pos.y}px)`}
         // console.log('ren');
 

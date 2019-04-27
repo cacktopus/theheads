@@ -95,6 +95,11 @@ export default class Kinect extends React.Component {
     render() {
         const kinect = this.props.kinect;
 
+        if (typeof window !== 'undefined') {
+            console.log('c__kinects');
+            window.c__kinect9 = kinect;
+        }
+
         let pos = this.getCurrentPos();
 
         let rot = kinect.get("rot");
