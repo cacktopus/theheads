@@ -1,11 +1,11 @@
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 
+from grid import the_grid
 from head_manager import HeadManager
 from installation import Installation
 from transformations import Vec, Mat
-from grid import the_grid
 
 
 @dataclass
@@ -45,14 +45,19 @@ class Orchestrator:
             m = head.stand.m * head.m
             m_inv = m.inv()
 
-            f = m_inv * next(iter(self.focal_points.values())).pos
+            # select the closest focal point to head
+            scores = []
+            for fp in self.focal_points.values():
+                to = m_inv * fp.pos
+                distance = to.abs()
+                if distance > 0.01:
+                    scores.append((distance, to))
 
-            if f.abs() < 0.01:
-                continue
+            _, selected = min(scores)
 
-            f = f.unit()
+            direction = selected.unit()
 
-            theta = math.atan2(f.y, f.x) * 180 / math.pi
+            theta = math.atan2(direction.y, direction.x) * 180 / math.pi
 
             print(head.name, theta)
 
