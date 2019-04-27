@@ -38,26 +38,40 @@ class Orchestrator:
         if subject == "kinect":
             print(kw['msg'])
             # kinect_name = safeget(kw, 'msg', 'data', 'name')
-            # simplified_bodies_array = safeget(kw, 'msg', 'data', 'simplifiedBodies')
-            # for body in simplified_bodies_array:
-            #     if body['tracked']:
-            #         joints = safeget(body, 'joints')
-            #         for joint in joints:
-            #             camera_x = joint['cameraX']
-            #             camera_z = joint['cameraZ']
-            #             print("camera_x:",camera_x,"=== camera_z: ",camera_z)
-            #             print(self.inst.kinects)
-            #             kinect_obj = self.inst.kinects.get(kinect_name, {})
-            #             # print(kinect_obj.m)
-            #             # print(kinect_obj.fov)
-            #             print('kinect_obj.stand')
-            #             print(kinect_obj.stand.m)
-            #             # print(kinect_obj.get('name'))
-            #             # print(kinect_obj.get('stand'))
-            #             # print(kinect_obj.get('pos'))
-            #             # print(kinect_name,dir(kinect_obj))
+            simplified_bodies_array = safeget(kw, 'msg', 'data', 'simplifiedBodies')
 
-            #         # print('tracked')
+            is_focal_set = False
+
+            for body in simplified_bodies_array:
+                if body['tracked']:
+                    joints = safeget(body, 'joints')
+                    for joint in joints:
+                        global_x = joint['globalX']
+                        global_y = joint['globalY']
+
+                        is_focal_set = True
+                        best_focus_x = global_x
+                        best_focus_y = global_y
+
+                        # camera_x = joint['cameraX']
+                        # camera_z = joint['cameraZ']
+                        # print("camera_x:",camera_x,"=== camera_z: ",camera_z)
+                        # print(self.inst.kinects)
+                        # kinect_obj = self.inst.kinects.get(kinect_name, {})
+                        # # print(kinect_obj.m)
+                        # # print(kinect_obj.fov)
+                        # print('kinect_obj.stand')
+                        # print(kinect_obj.stand.m)
+                        # # print(kinect_obj.get('name'))
+                        # # print(kinect_obj.get('stand'))
+                        # # print(kinect_obj.get('pos'))
+                        # # print(kinect_name,dir(kinect_obj))
+
+                    # print('tracked')
+
+            if is_focal_set:
+                self.focus = Vec(best_focus_x, best_focus_y)
+                self.act()
 
     def act(self):
         if self.focus is None:

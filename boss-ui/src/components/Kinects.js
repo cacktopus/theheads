@@ -13,7 +13,6 @@ export default class Menu extends React.Component {
 
     render() {
         const kinects = this.props.kinects;
-        console.log('render <Kinects');
 
         if (!kinects || kinects.size === 0) {
             if (typeof window !== 'undefined') {
