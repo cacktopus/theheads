@@ -34,7 +34,7 @@ class FocalPoint:
         t = t or time.time()
         return t > self.expiry
 
-    def to_json(self) -> Dict:
+    def to_object(self) -> Dict:
         return {
             "name": self.name,
             "pos": {
@@ -56,7 +56,7 @@ class Orchestrator:
         self._focal_points: Dict[str, FocalPoint] = {}
         self.head_manager = head_manager
         self.broadcast = broadcast
-        asyncio.create_task(self._garbage_collector())
+        asyncio.create_task(self._focal_point_garbage_collector())
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
@@ -96,22 +96,6 @@ class Orchestrator:
             print(head.name, theta)
 
             self.head_manager.send(head.name, theta)
-
-    def _publish_focal_points(self):
-        self.broadcast("focal-points", msg={
-            "type": "focal-points",
-            "data": {
-                "focal-points": [fp.to_json() for fp in self._focal_points.values()]
-            }
-        })
-
-    def _add_focal_point(self, name: str, pos: Vec, ttl: float = None):
-        self._focal_points[name] = FocalPoint(name, pos, ttl=ttl)
-        self._publish_focal_points()
-
-    def _remove_focal_point(self, name):
-        del self._focal_points[name]
-        self._publish_focal_points()
 
     def manual_focal_point(self, name: str, x: float, y: float):
         self._add_focal_point(name, Vec(x, y), ttl=60.0)
@@ -169,7 +153,23 @@ class Orchestrator:
                     self._add_focal_point(name, Vec(x, y))
                     self.act()
 
-    async def _garbage_collector(self):
+    def _publish_focal_points(self):
+        self.broadcast("focal-points", msg={
+            "type": "focal-points",
+            "data": {
+                "focal-points": [fp.to_object() for fp in self._focal_points.values()]
+            }
+        })
+
+    def _add_focal_point(self, name: str, pos: Vec, ttl: float = None):
+        self._focal_points[name] = FocalPoint(name, pos, ttl=ttl)
+        self._publish_focal_points()
+
+    def _remove_focal_point(self, name):
+        del self._focal_points[name]
+        self._publish_focal_points()
+
+    async def _focal_point_garbage_collector(self):
         while True:
             await asyncio.sleep(0.25)
 

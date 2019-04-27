@@ -5,8 +5,6 @@ from typing import Dict, Callable
 import aiohttp
 from aiohttp import web
 
-from transformations import Vec
-
 
 class Closed:
     pass
