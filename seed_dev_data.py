@@ -71,7 +71,7 @@ async def main(inst_name: str):
 
     async def setup_services():
         home = os.path.expanduser("~")
-        check_output(f"{home}/bin/consul kv import @seed_data/hyperborea.json".split())
+        check_output(f"{home}/bin/consul kv import @seed_data/hyperborea-dev.json".split())
         # positions = setup_positions()
         #
         # with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
