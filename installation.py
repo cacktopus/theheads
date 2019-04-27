@@ -28,12 +28,14 @@ class Camera:
         self.description = description
         self.fov = fov
 
+
 class Kinect:
     def __init__(self, name: str, m: Mat, stand: "Stand", fov: float):
         self.name = name
         self.m = m
         self.stand = stand
         self.fov = fov
+
 
 class Head:
     def __init__(self, name: str, m: Mat, stand: "Stand"):
@@ -89,35 +91,32 @@ class Installation:
                 obj_to_m(stand),
             )
 
-            if 'cameras' in stand:
-                for camera in stand['cameras']:
-                    c = Camera(
-                        camera['name'],
-                        obj_to_m(camera),
-                        s,
-                        camera['description'],
-                        camera['fov'],
-                    )
-                    s.add_camera(c)
+            for camera in stand.get('cameras', []):
+                c = Camera(
+                    camera['name'],
+                    obj_to_m(camera),
+                    s,
+                    camera['description'],
+                    camera['fov'],
+                )
+                s.add_camera(c)
 
-            if 'kinects' in stand:
-                for kinect in stand['kinects']:
-                    k = Kinect(
-                        kinect['name'],
-                        obj_to_m(kinect),
-                        s,
-                        kinect['fov'],
-                    )
-                    s.add_kinect(k)
+            for kinect in stand.get('kinects', []):
+                k = Kinect(
+                    kinect['name'],
+                    obj_to_m(kinect),
+                    s,
+                    kinect['fov'],
+                )
+                s.add_kinect(k)
 
-            if 'heads' in stand:
-                for head in stand['heads']:
-                    h = Head(
-                        head['name'],
-                        obj_to_m(head),
-                        s,
-                    )
-                    s.add_head(h)
+            for head in stand.get('heads', []):
+                h = Head(
+                    head['name'],
+                    obj_to_m(head),
+                    s,
+                )
+                s.add_head(h)
 
             inst.add_stand(s)
 
@@ -129,10 +128,10 @@ async def build_installation(cfg: Config):
     kinects = {}
     heads = {}
     stands = {}
-    scaleTranslate = {}
-    scale=75
-    translateX=750
-    translateY=100
+    scale_translate = {}
+    scale = 75
+    translate_x = 750
+    translate_y = 100
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/cameras/"
@@ -164,22 +163,19 @@ async def build_installation(cfg: Config):
                 stands[stand['name']] = stand
 
     for stand in stands.values():
-        if 'cameras' in stand:
-            stand['cameras'] = [cameras[c] for c in stand['cameras']]
-        if 'heads' in stand:
-            stand['heads'] = [heads[h] for h in stand['heads']]
-        if 'kinects' in stand:
-            stand['kinects'] = [kinects[k] for k in stand['kinects']]
+        stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
+        stand['heads'] = [heads[h] for h in stand.get('heads', [])]
+        stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
 
-    # for scale-translate
+    # for scale,translate, etc. for scene
     for name, body in (await cfg.get_prefix(
-            "/the-heads/scale-translate.yaml"
+            "/the-heads/scene.yaml"
     )).items():
-        scaleTranslate = yaml.safe_load(body)
-        scale = scaleTranslate["scale"]
-        translate = scaleTranslate["translate"]
-        translateX = translate["x"]
-        translateY = translate["y"]
+        scale_translate = yaml.safe_load(body)
+        scale = scale_translate["scale"]
+        translate = scale_translate["translate"]
+        translate_x = translate["x"]
+        translate_y = translate["y"]
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/kinects/"
@@ -192,8 +188,8 @@ async def build_installation(cfg: Config):
         stands=list(stands.values()),
         scale=scale,
         translate={
-            "x": translateX,
-            "y": translateY,
+            "x": translate_x,
+            "y": translate_y,
         },
         # kinects=list(kinects.values())
     )
@@ -217,7 +213,7 @@ def build_installation_from_filesystem(name):
     for path in glob(os.path.join(base, "kinects/*.yaml")):
         with open(path) as fp:
             kinect = yaml.safe_load(fp)
-            kinectss[kinect['name']] = kinect
+            kinects[kinect['name']] = kinect
 
     heads = {}
     for path in glob(os.path.join(base, "heads/*.yaml")):
@@ -233,12 +229,9 @@ def build_installation_from_filesystem(name):
                 stands[stand['name']] = stand
 
     for stand in stands.values():
-        if 'cameras' in stand:
-            stand['cameras'] = [cameras[c] for c in stand['cameras']]
-        if 'kinects' in stand:
-            stand['kinects'] = [kinects[k] for k in stand['kinects']]
-        if 'heads' in stand:
-            stand['heads'] = [heads[h] for h in stand['heads']]
+        stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
+        stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
+        stand['heads'] = [heads[h] for h in stand.get('heads', [])]
 
     result = dict(
         name=name,
@@ -251,7 +244,8 @@ def build_installation_from_filesystem(name):
 def main():
     loop = asyncio.get_event_loop()
 
-    cfg = loop.run_until_complete(Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
+    cfg = loop.run_until_complete(
+        Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
     result = loop.run_until_complete(build_installation("living-room", cfg))
     inst = Installation.unmarshal(result)
 
