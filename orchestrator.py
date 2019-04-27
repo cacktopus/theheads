@@ -157,7 +157,7 @@ class Orchestrator:
         self.broadcast("focal-points", msg={
             "type": "focal-points",
             "data": {
-                "focal-points": [fp.to_object() for fp in self._focal_points.values()]
+                "focal_points": [fp.to_object() for fp in self._focal_points.values()]
             }
         })
 
