@@ -1,10 +1,17 @@
 import math
-from typing import Dict, List
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from head_manager import HeadManager
 from installation import Installation
 from transformations import Vec, Mat
 from grid import the_grid
+
+
+@dataclass
+class FocalPoint:
+    name: str
+    pos: Vec
 
 
 class Orchestrator:
@@ -14,13 +21,12 @@ class Orchestrator:
             head_manager: HeadManager,
     ):
         self.inst = inst
-        self.focus = None
+        self.focus: Optional[FocalPoint] = None
         self.head_manager = head_manager
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
-            self.focus = kw['pos']
-            self.act()
+            self.manual_focal_point(**kw)
 
         if subject == "head-rotation":
             self.head_manager.send(kw['head_name'], kw['rotation'])
@@ -39,7 +45,7 @@ class Orchestrator:
             m = head.stand.m * head.m
             m_inv = m.inv()
 
-            f = m_inv * self.focus
+            f = m_inv * self.focus.pos
 
             if f.abs() < 0.01:
                 continue
@@ -51,6 +57,10 @@ class Orchestrator:
             print(head.name, theta)
 
             self.head_manager.send(head.name, theta)
+
+    def manual_focal_point(self, name: str, x: float, y: float):
+        self.focus = FocalPoint(name, Vec(x, y))
+        self.act()
 
     def motion_detected(self, camera_name: str, position: Vec):
         # perhaps not the best place for this function to live
@@ -64,7 +74,7 @@ class Orchestrator:
         step_size = min(the_grid.get_pixel_size()) / 4.0
 
         to = p1 - p0
-        length = (to).abs()
+        length = to.abs()
         direction = to.scale(1.0 / length)
 
         dx = to.x / length * step_size
@@ -82,8 +92,8 @@ class Orchestrator:
             pos_x += dx
             pos_y += dy
 
-        focus = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-        self.focus = focus
+        focal_pos = Vec(*the_grid.idx_to_xy(the_grid.focus()))
+        self.focus = FocalPoint("g0", focal_pos)
         self.act()
 
     def handle_kinect_motion(self, msg: Dict):
@@ -100,5 +110,5 @@ class Orchestrator:
                 y = joint.get('globalY')
 
                 if x is not None and y is not None:
-                    self.focus = Vec(x, y)
+                    self.focus = FocalPoint("k01-0", Vec(x, y))
                     self.act()

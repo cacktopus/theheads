@@ -43,7 +43,12 @@ class WebsocketConnection:
 
                     elif payload['type'] == 'focal-point-location':
                         location = data['location']
-                        self._broadcast('focal-point-location', pos=Vec(location['x'], location['y']))
+                        self._broadcast(
+                            'focal-point-location',
+                            x=location['x'],
+                            y=location['y'],
+                            name=data['focalPointName'],
+                        )
 
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
