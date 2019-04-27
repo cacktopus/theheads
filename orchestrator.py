@@ -1,3 +1,4 @@
+import asyncio
 import math
 from dataclasses import dataclass
 from typing import Dict, List
@@ -6,12 +7,22 @@ from grid import the_grid
 from head_manager import HeadManager
 from installation import Installation
 from transformations import Vec, Mat
+import time
 
 
 @dataclass
 class FocalPoint:
     name: str
     pos: Vec
+    lifespan: float = 5.0
+    created: float = None
+
+    def __post_init__(self):
+        self.created = self.created or time.time()
+
+    def is_expired(self, t: float = None) -> bool:
+        t = t or time.time()
+        return t > (self.created + self.lifespan)
 
 
 class Orchestrator:
@@ -23,6 +34,7 @@ class Orchestrator:
         self.inst = inst
         self.focal_points: Dict[str, FocalPoint] = {}
         self.head_manager = head_manager
+        asyncio.create_task(self._garbage_collector())
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
@@ -64,7 +76,7 @@ class Orchestrator:
             self.head_manager.send(head.name, theta)
 
     def manual_focal_point(self, name: str, x: float, y: float):
-        self.focal_points[name] = FocalPoint(name, Vec(x, y))
+        self.focal_points[name] = FocalPoint(name, Vec(x, y), lifespan=60.0)
         self.act()
 
     def motion_detected(self, camera_name: str, position: Vec):
@@ -118,3 +130,19 @@ class Orchestrator:
                     name = "k01-0"
                     self.focal_points[name] = FocalPoint(name, Vec(x, y))
                     self.act()
+
+    async def _garbage_collector(self):
+        while True:
+            await asyncio.sleep(0.25)
+
+            expired = set()
+            for name, fp in self.focal_points.items():
+                if fp.is_expired():
+                    expired.add(name)
+
+            for name in expired:
+                del self.focal_points[name]
+                print(f'removing focal point "{name}"')
+
+            if expired:
+                self.act()
