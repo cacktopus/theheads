@@ -16,7 +16,7 @@ export default class Menu extends React.Component {
 
         return (
             <div className="Kinects">
-                {kinects.map((kinect, i) => <Kinect key={i} kinect={kinect} kinectIndex={i} standIndex={this.props.standIndex}/>)}
+                {kinects.map((kinect, i) => kinect ? <Kinect key={i} kinect={kinect} kinectIndex={i} standIndex={this.props.standIndex}/> : null)}
             </div>
         );
     }
