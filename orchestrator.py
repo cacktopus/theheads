@@ -21,7 +21,7 @@ class Orchestrator:
             head_manager: HeadManager,
     ):
         self.inst = inst
-        self.focus: Optional[FocalPoint] = None
+        self.focal_points: Dict[str, FocalPoint] = {}
         self.head_manager = head_manager
 
     def notify(self, subject, **kw):
@@ -38,14 +38,14 @@ class Orchestrator:
             self.handle_kinect_motion(**kw)
 
     def act(self):
-        if self.focus is None:
+        if not self.focal_points:
             return
 
         for head in self.inst.heads.values():
             m = head.stand.m * head.m
             m_inv = m.inv()
 
-            f = m_inv * self.focus.pos
+            f = m_inv * next(iter(self.focal_points.values())).pos
 
             if f.abs() < 0.01:
                 continue
@@ -59,7 +59,7 @@ class Orchestrator:
             self.head_manager.send(head.name, theta)
 
     def manual_focal_point(self, name: str, x: float, y: float):
-        self.focus = FocalPoint(name, Vec(x, y))
+        self.focal_points[name] = FocalPoint(name, Vec(x, y))
         self.act()
 
     def motion_detected(self, camera_name: str, position: Vec):
@@ -93,7 +93,7 @@ class Orchestrator:
             pos_y += dy
 
         focal_pos = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-        self.focus = FocalPoint("g0", focal_pos)
+        self.focal_points["g0"] = FocalPoint("g0", focal_pos)
         self.act()
 
     def handle_kinect_motion(self, msg: Dict):
@@ -110,5 +110,6 @@ class Orchestrator:
                 y = joint.get('globalY')
 
                 if x is not None and y is not None:
-                    self.focus = FocalPoint("k01-0", Vec(x, y))
+                    name = "k01-0"
+                    self.focal_points[name] = FocalPoint(name, Vec(x, y))
                     self.act()
