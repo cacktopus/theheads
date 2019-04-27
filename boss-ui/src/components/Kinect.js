@@ -80,11 +80,16 @@ export default class Kinect extends React.Component {
     }
 
     getCurrentPos() {
-        let pos = decodePosRelativeStand(this.props.kinect.get("pos").toJS());
-        pos.x = isNaN(pos.x) ? 0 : pos.x;
-        pos.y = isNaN(pos.y) ? 0 : pos.y;
+        try {
+            let pos = decodePosRelativeStand(this.props.kinect.get("pos").toJS());
+            pos.x = isNaN(pos.x) ? 0 : pos.x;
+            pos.y = isNaN(pos.y) ? 0 : pos.y;
 
-        return pos;
+            return pos;
+        } catch (e) {
+            console.log("error in getCurrentPos", e);
+            return { x: 0, y: 0 }
+        }
     }
 
     render() {
@@ -141,7 +146,7 @@ export default class Kinect extends React.Component {
                 window.c_klfp2 = kinectFocalPointsForThisKinect;
 
                 kinectFocalPoints = kinectFocalPointsForThisKinect.toJS().map((kfp, i) => {
-                    const encPos = encodePosForKinectFocusPoint({x: kfp.z, y: kfp.x * -1})
+                    const encPos = encodePosForKinectFocusPoint({ x: kfp.z, y: kfp.x * -1 })
 
                     window.c_tra = {
                         encPos
