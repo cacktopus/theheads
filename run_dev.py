@@ -4,12 +4,17 @@ import boss
 import head
 import home
 import util
+from const import DEFAULT_CONSUL_ENDPOINT
+from consul_config import ConsulBackend
+from seed_dev_data import head_names
 
 
 async def run():
+    consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
+    names = await head_names(consul_backend)
     heads = []
-    for i in range(1, 11 + 1):
-        app = await head.setup(instance="head-{:02}".format(i), port_override=18080 + i)
+    for i, name in enumerate(names):
+        app = await head.setup(instance=name, port_override=18080 + i)
         heads.append(util.run_app(app))
 
     app2 = await boss.setup(port=8081)

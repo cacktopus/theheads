@@ -47,6 +47,18 @@ def setup_positions():
     return result
 
 
+async def head_names(consul_backend: ConsulBackend):
+    heads = await consul_backend.get_prefix(b"/the-heads/heads/")
+    names = []
+    for text in heads.values():
+        head = yaml.load(text)
+        names.append(head['name'])
+
+    assert len(names) == len(set(names)), "head names must be unique"
+
+    return sorted(list(names))
+
+
 async def main(inst_name: str):
     consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
 
@@ -87,8 +99,8 @@ async def main(inst_name: str):
             await put(key, value)
 
     async def setup_instances():
-        for i in range(1, 11 + 1):
-            name = "head-{:02}".format(i)
+        names = await head_names(consul_backend)
+        for i, name in enumerate(names):
             await consul_backend.register_service_with_agent("head", 18080 + i, ID=name, tags=[name, "frontend"])
 
         # redis
