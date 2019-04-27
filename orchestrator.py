@@ -1,7 +1,7 @@
 import asyncio
 import math
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Callable
 
 from grid import the_grid
 from head_manager import HeadManager
@@ -14,15 +14,35 @@ import time
 class FocalPoint:
     name: str
     pos: Vec
-    lifespan: float = 5.0
+    ttl: float = 5.0
     created: float = None
 
     def __post_init__(self):
+        if self.ttl is None:
+            self.ttl = 5.0
         self.created = self.created or time.time()
+
+    @property
+    def expiry(self):
+        return self.created + self.ttl
+
+    def time_left(self, t: float = None) -> float:
+        t = t or time.time()
+        return self.expiry - t
 
     def is_expired(self, t: float = None) -> bool:
         t = t or time.time()
-        return t > (self.created + self.lifespan)
+        return t > self.expiry
+
+    def to_json(self) -> Dict:
+        return {
+            "name": self.name,
+            "pos": {
+                "x": self.pos.x,
+                "y": self.pos.y,
+            },
+            "ttl": self.time_left(),
+        }
 
 
 class Orchestrator:
@@ -30,10 +50,12 @@ class Orchestrator:
             self,
             inst: Installation,
             head_manager: HeadManager,
+            broadcast: Callable,
     ):
         self.inst = inst
-        self.focal_points: Dict[str, FocalPoint] = {}
+        self._focal_points: Dict[str, FocalPoint] = {}
         self.head_manager = head_manager
+        self.broadcast = broadcast
         asyncio.create_task(self._garbage_collector())
 
     def notify(self, subject, **kw):
@@ -50,20 +72,20 @@ class Orchestrator:
             self.handle_kinect_motion(**kw)
 
     def act(self):
-        if not self.focal_points:
-            return
-
         for head in self.inst.heads.values():
             m = head.stand.m * head.m
             m_inv = m.inv()
 
             # select the closest focal point to head
             scores = []
-            for fp in self.focal_points.values():
+            for fp in self._focal_points.values():
                 to = m_inv * fp.pos
                 distance = to.abs()
                 if distance > 0.01:
                     scores.append((distance, to))
+
+            if len(scores) == 0:
+                continue
 
             _, selected = min(scores)
 
@@ -75,8 +97,24 @@ class Orchestrator:
 
             self.head_manager.send(head.name, theta)
 
+    def _publish_focal_points(self):
+        self.broadcast("focal-points", msg={
+            "type": "focal-points",
+            "data": {
+                "focal-points": [fp.to_json() for fp in self._focal_points.values()]
+            }
+        })
+
+    def _add_focal_point(self, name: str, pos: Vec, ttl: float = None):
+        self._focal_points[name] = FocalPoint(name, pos, ttl=ttl)
+        self._publish_focal_points()
+
+    def _remove_focal_point(self, name):
+        del self._focal_points[name]
+        self._publish_focal_points()
+
     def manual_focal_point(self, name: str, x: float, y: float):
-        self.focal_points[name] = FocalPoint(name, Vec(x, y), lifespan=60.0)
+        self._add_focal_point(name, Vec(x, y), ttl=60.0)
         self.act()
 
     def motion_detected(self, camera_name: str, position: Vec):
@@ -110,7 +148,7 @@ class Orchestrator:
             pos_y += dy
 
         focal_pos = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-        self.focal_points["g0"] = FocalPoint("g0", focal_pos)
+        self._add_focal_point("g0", focal_pos)
         self.act()
 
     def handle_kinect_motion(self, msg: Dict):
@@ -128,7 +166,7 @@ class Orchestrator:
 
                 if x is not None and y is not None:
                     name = "k01-0"
-                    self.focal_points[name] = FocalPoint(name, Vec(x, y))
+                    self._add_focal_point(name, Vec(x, y))
                     self.act()
 
     async def _garbage_collector(self):
@@ -136,13 +174,12 @@ class Orchestrator:
             await asyncio.sleep(0.25)
 
             expired = set()
-            for name, fp in self.focal_points.items():
+            for name, fp in self._focal_points.items():
                 if fp.is_expired():
                     expired.add(name)
 
             for name in expired:
-                del self.focal_points[name]
-                print(f'removing focal point "{name}"')
+                self._remove_focal_point(name)
 
             if expired:
                 self.act()

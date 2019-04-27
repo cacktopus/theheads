@@ -118,6 +118,7 @@ async def setup(
     orchestrator = Orchestrator(
         inst=inst,
         head_manager=hm,
+        broadcast=observer.notify_observers,
     )
 
     observer.register_observer(orchestrator)
