@@ -1,0 +1,57 @@
+[
+  {
+    "key": "the-heads/cameras/camera-01.yaml",
+    "flags": 0,
+    "value": "ZGVzY3JpcHRpb246IFJhc3BiZXJyeSBQaSBQaU5vaXIgQ2FtZXJhIFYyIFZpZGVvIE1vZHVsZQpmb3Y6IDY0LjMzCm5hbWU6IGNhbWVyYS0wMQpwb3M6IHt4OiAwLjEsIHk6IDB9CnJvdDogMAo="
+  },
+  {
+    "key": "the-heads/cameras/camera-02.yaml",
+    "flags": 0,
+    "value": "ZGVzY3JpcHRpb246IFJhc3BiZXJyeSBQaSBQaU5vaXIgQ2FtZXJhIFYyIFZpZGVvIE1vZHVsZQpmb3Y6IDY0LjMzCm5hbWU6IGNhbWVyYS0wMgpwb3M6IHt4OiAwLjEsIHk6IDB9CnJvdDogMAo="
+  },
+  {
+    "key": "the-heads/cameras/camera-03.yaml",
+    "flags": 0,
+    "value": "ZGVzY3JpcHRpb246IFJhc3BiZXJyeSBQaSBQaU5vaXIgQ2FtZXJhIFYyIFZpZGVvIE1vZHVsZQpmb3Y6IDY0LjMzCm5hbWU6IGNhbWVyYS0wMwpwb3M6IHt4OiAwLjEsIHk6IDB9CnJvdDogMAo="
+  },
+  {
+    "key": "the-heads/heads/head-01.yaml",
+    "flags": 0,
+    "value": "bmFtZTogaGVhZC0wMQpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDA="
+  },
+  {
+    "key": "the-heads/heads/head-02.yaml",
+    "flags": 0,
+    "value": "bmFtZTogaGVhZC0wMgpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDA="
+  },
+  {
+    "key": "the-heads/heads/head-03.yaml",
+    "flags": 0,
+    "value": "bmFtZTogaGVhZC0wMwpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDA="
+  },
+  {
+    "key": "the-heads/kinects/kinect-01.yaml",
+    "flags": 0,
+    "value": "Zm92OiA3MQpuYW1lOiBraW5lY3QtMDEKcG9zOiB7eDogMSwgeTogMH0Kcm90OiAwCg=="
+  },
+  {
+    "key": "the-heads/kinects/kinect-02.yaml",
+    "flags": 0,
+    "value": "Zm92OiA3MQpuYW1lOiBraW5lY3QtMDIKcG9zOiB7eDogMC4zLCB5OiAwLjN9CnJvdDogMTM1Cg=="
+  },
+  {
+    "key": "the-heads/stands/stand-01.yaml",
+    "flags": 0,
+    "value": "Y2FtZXJhczogW10Ka2luZWN0czogW2tpbmVjdC0wMV0KaGVhZHM6IFtoZWFkLTAxXQpuYW1lOiBzdGFuZC0wMQpwb3M6IHt4OiAtMi41LCB5OiAwfQpyb3Q6IDA="
+  },
+  {
+    "key": "the-heads/stands/stand-02.yaml",
+    "flags": 0,
+    "value": "Y2FtZXJhczogW10Ka2luZWN0czogW10KaGVhZHM6IFtoZWFkLTAyXQpuYW1lOiBzdGFuZC0wMgpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDA="
+  },
+  {
+    "key": "the-heads/stands/stand-03.yaml",
+    "flags": 0,
+    "value": "Y2FtZXJhczogW10Ka2luZWN0czogW2tpbmVjdC0wMl0KaGVhZHM6IFtoZWFkLTAzXQpuYW1lOiBzdGFuZC0wMwpwb3M6IHt4OiAwLCB5OiAtMi41fQpyb3Q6IDA="
+  }
+]
