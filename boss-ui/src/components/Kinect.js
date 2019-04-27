@@ -151,7 +151,7 @@ export default class Kinect extends React.Component {
                         // y: encodePosScale(this.props.menu, kfp.z)
                     }
                     // window.c_kk2 = {kfp, enc;
-                    return <div key={i} style={styleKinectFocalPoint} class={`KinectFocalPoint bil KinectFocalPoint-${this.props.kinectIndex}`}>K{kfp.bodyIndex}</div>
+                    return <div key={i} style={styleKinectFocalPoint} className={`KinectFocalPoint bil KinectFocalPoint-${this.props.kinectIndex}`}>K{kfp.bodyIndex}</div>
                     // return <div key={i} class={`KinectFocalPoint KinectFocalPoint-${kinectName}` }>K{kfp.bodyIndex}</div>
                 });
             }

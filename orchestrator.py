@@ -36,28 +36,28 @@ class Orchestrator:
             self.motion_detected(**kw)
 
         if subject == "kinect":
-            # print(kw['msg'])
-            kinect_name = safeget(kw, 'msg', 'data', 'name')
-            simplified_bodies_array = safeget(kw, 'msg', 'data', 'simplifiedBodies')
-            for body in simplified_bodies_array:
-                if body['tracked']:
-                    joints = safeget(body, 'joints')
-                    for joint in joints:
-                        camera_x = joint['cameraX']
-                        camera_z = joint['cameraZ']
-                        print("camera_x:",camera_x,"=== camera_z: ",camera_z)
-                        print(self.inst.kinects)
-                        kinect_obj = self.inst.kinects.get(kinect_name, {})
-                        # print(kinect_obj.m)
-                        # print(kinect_obj.fov)
-                        print('kinect_obj.stand')
-                        print(kinect_obj.stand.m)
-                        # print(kinect_obj.get('name'))
-                        # print(kinect_obj.get('stand'))
-                        # print(kinect_obj.get('pos'))
-                        # print(kinect_name,dir(kinect_obj))
+            print(kw['msg'])
+            # kinect_name = safeget(kw, 'msg', 'data', 'name')
+            # simplified_bodies_array = safeget(kw, 'msg', 'data', 'simplifiedBodies')
+            # for body in simplified_bodies_array:
+            #     if body['tracked']:
+            #         joints = safeget(body, 'joints')
+            #         for joint in joints:
+            #             camera_x = joint['cameraX']
+            #             camera_z = joint['cameraZ']
+            #             print("camera_x:",camera_x,"=== camera_z: ",camera_z)
+            #             print(self.inst.kinects)
+            #             kinect_obj = self.inst.kinects.get(kinect_name, {})
+            #             # print(kinect_obj.m)
+            #             # print(kinect_obj.fov)
+            #             print('kinect_obj.stand')
+            #             print(kinect_obj.stand.m)
+            #             # print(kinect_obj.get('name'))
+            #             # print(kinect_obj.get('stand'))
+            #             # print(kinect_obj.get('pos'))
+            #             # print(kinect_name,dir(kinect_obj))
 
-                    # print('tracked')
+            #         # print('tracked')
 
     def act(self):
         if self.focus is None:
