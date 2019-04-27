@@ -46,12 +46,14 @@ class Orchestrator:
                 if body['tracked']:
                     joints = safeget(body, 'joints')
                     for joint in joints:
-                        global_x = joint['globalX']
-                        global_y = joint['globalY']
 
-                        is_focal_set = True
-                        best_focus_x = global_x
-                        best_focus_y = global_y
+                        global_x = joint.get('globalX')
+                        global_y = joint.get('globalY')
+
+                        if global_x is not None:
+                            is_focal_set = True
+                            best_focus_x = global_x
+                            best_focus_y = global_y
 
                         # camera_x = joint['cameraX']
                         # camera_z = joint['cameraZ']
