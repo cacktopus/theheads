@@ -1,5 +1,14 @@
-import { motionLinesAddLine, motionLinesRemoveLine, standSetIsActive, standSetIsNotActive, kinectSetFocalPoints, headRotateByHeadName } from "../actions";
+import {
+    motionLinesAddLine,
+    motionLinesRemoveLine,
+    standSetIsActive,
+    standSetIsNotActive,
+    kinectSetFocalPoints,
+    kinectClearFocalPoints,
+    headRotateByHeadName
+} from "../actions";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
+import { debounce } from 'throttle-debounce';
 
 const temp = [{
     "type": "kinect",
@@ -44,7 +53,13 @@ const payloadDataChunkData_HARDCODED = temp[0].data;
 let timeoutSetActive = {};
 
 
-console.log('EDIT THE SHIT HERE... for kinect message');
+// Kinect related functions
+function clearKinectFocalPoint(store, kinectName) {
+    console.log('clearKinectFocalPoint!', kinectName);
+    store.dispatch(kinectClearFocalPoints({ kinectName }));
+}
+const CLEAR_KINECT_FOCAL_POINTS_TIMEOUT = 5000; // Time of not getting message to then clear all focal points for that kinect.
+let debouncedClearKinectFocalPointFns = {};
 
 export const customWebsocketMiddleware = store => next => action => {
     if (action.type === WEBSOCKET_MESSAGE) {
@@ -101,7 +116,7 @@ export const customWebsocketMiddleware = store => next => action => {
                         } catch (e) { }
                         break;
                     case "kinect":
-                        window.c_kpl = payloadDataChunk;
+                        // window.c_kpl = payloadDataChunk;
                         try {
                             // payloadDataChunk.data.simplifiedBodies[0].tracked
 
@@ -129,9 +144,16 @@ export const customWebsocketMiddleware = store => next => action => {
                                 return joint_pos;
                             });
                             window.c_kk3 = { kinect: true, name: kinectName, focalPoints, payloadDataChunkData };
-                            // console.log({ focalPoints: JSON.stringify(focalPoints) });
                             store.dispatch(kinectSetFocalPoints({ kinectName, focalPoints }));
-                            // console.log({ kinect: true, nane: kinectName, focalPoints });
+
+                            // A debounce function which will clear all focal points for this particular kinect name
+                            // This ensure that if a kinect stores sending messages that we don't still consider 
+                            // the focal points it last sent were still there.
+                            if(!debouncedClearKinectFocalPointFns[kinectName]) {
+                                debouncedClearKinectFocalPointFns[kinectName] = debounce(CLEAR_KINECT_FOCAL_POINTS_TIMEOUT, clearKinectFocalPoint);
+                            }
+                            debouncedClearKinectFocalPointFns[kinectName](store, kinectName);
+                            
                         } catch (e) { console.log(e) }
                         break;
                     default:

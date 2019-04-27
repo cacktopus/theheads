@@ -2,3 +2,5 @@ env/
 __pycache__/
 svg.js
 .DS_Store
+dump.rdb
+.idea/

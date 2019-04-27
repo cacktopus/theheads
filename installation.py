@@ -213,7 +213,7 @@ def build_installation_from_filesystem(name):
     for path in glob(os.path.join(base, "kinects/*.yaml")):
         with open(path) as fp:
             kinect = yaml.safe_load(fp)
-            kinectss[kinect['name']] = kinect
+            kinects[kinect['name']] = kinect
 
     heads = {}
     for path in glob(os.path.join(base, "heads/*.yaml")):

@@ -91,12 +91,10 @@ export const menuToggleForceShowRotatesOnSelect = (rotateType) => ({
 
 export function sceneFetchFromUrl(sceneUrl) {
     return dispatch => {
-        // dispatch(requestPosts(subreddit))
         return fetch(sceneUrl)
             .then(response => response.json())
             .then(json => {
                 if (typeof json === "object") {
-                    console.log("jos", json);
                     if (json.scale) {
                         dispatch(menuSetScale(json.scale));
                     }
@@ -212,6 +210,11 @@ export const kinectRemoveByIndex = (standIndex, kinectIndex) => ({
 export const kinectSetFocalPoints = ({kinectName, focalPoints}) => ({
     type: 'KINECT_SET_FOCAL_POINTS',
     focalPoints,
+    kinectName
+})
+
+export const kinectClearFocalPoints = ({kinectName}) => ({
+    type: 'KINECT_CLEAR_FOCAL_POINTS',
     kinectName
 })
 

@@ -32,8 +32,10 @@ const kinect = (state = fromJS(initialState), action) => {
         //     return state;
 
         case 'KINECT_SET_FOCAL_POINTS':
-            window.c_s8 = state;
+            window.c_s89 = {state, action};
             return state.set(action.kinectName, fromJS(action.focalPoints));
+        case 'KINECT_CLEAR_FOCAL_POINTS':
+            return state.set(action.kinectName, fromJS([]));
             // return state.setIn([action.kinectName, "focalPoints"], fromJS(action.focalPoints));
         // case 'KINECT_SET_SCENE':
         //     console.log("setting kinect scene");

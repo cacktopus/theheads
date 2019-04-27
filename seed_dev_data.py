@@ -1,5 +1,7 @@
 import asyncio
 import math
+import os
+from subprocess import check_output
 
 import yaml
 
@@ -68,35 +70,37 @@ async def main(inst_name: str):
         assert resp.status == 200
 
     async def setup_services():
-        positions = setup_positions()
-
-        with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
-            inst_data = yaml.safe_load(fp)
-
-        for i, stand in enumerate(inst_data['stands']):
-            for camera in stand.get('cameras', []):
-                await put(
-                    "/the-heads/cameras/{}.yaml".format(camera['name']),
-                    yaml.dump(camera, encoding='utf-8'),
-                )
-
-            for head in stand['heads']:
-                await put(
-                    "/the-heads/heads/{}.yaml".format(head['name']),
-                    yaml.dump(head, encoding='utf-8'),
-                )
-
-            stand['cameras'] = [x['name'] for x in stand.get('cameras', [])]
-            stand['heads'] = [x['name'] for x in stand['heads']]
-
-            pos, rot = positions[i]
-
-            stand['pos'] = {"x": pos.x, "y": pos.y}
-            stand['rot'] = rot
-
-            key = "/the-heads/stands/{}.yaml".format(stand['name'])
-            value = yaml.dump(stand, encoding='utf-8')
-            await put(key, value)
+        home = os.path.expanduser("~")
+        check_output(f"{home}/bin/consul kv import @seed_data/hyperborea-dev.json".split())
+        # positions = setup_positions()
+        #
+        # with open('seed_data/{}.yaml'.format(inst_name), "r") as fp:
+        #     inst_data = yaml.safe_load(fp)
+        #
+        # for i, stand in enumerate(inst_data['stands']):
+        #     for camera in stand.get('cameras', []):
+        #         await put(
+        #             "/the-heads/cameras/{}.yaml".format(camera['name']),
+        #             yaml.dump(camera, encoding='utf-8'),
+        #         )
+        #
+        #     for head in stand['heads']:
+        #         await put(
+        #             "/the-heads/heads/{}.yaml".format(head['name']),
+        #             yaml.dump(head, encoding='utf-8'),
+        #         )
+        #
+        #     stand['cameras'] = [x['name'] for x in stand.get('cameras', [])]
+        #     stand['heads'] = [x['name'] for x in stand['heads']]
+        #
+        #     pos, rot = positions[i]
+        #
+        #     stand['pos'] = {"x": pos.x, "y": pos.y}
+        #     stand['rot'] = rot
+        #
+        #     key = "/the-heads/stands/{}.yaml".format(stand['name'])
+        #     value = yaml.dump(stand, encoding='utf-8')
+        #     await put(key, value)
 
     async def setup_instances():
         names = await head_names(consul_backend)

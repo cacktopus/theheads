@@ -1,0 +1,43 @@
+{
+  "type": "kinect",
+  "data": {
+    "name": "kinect-01",
+    "simplifiedBodies": [
+      {
+        "bodyIndex": 0,
+        "tracked": true,
+        "joints": [
+          {
+            "cameraX": 0.3308548033237457,
+            "cameraY": -0.018190979957580566,
+            "cameraZ": 1.6566009521484375,
+            "globalX": 0.1566009521484375,
+            "globalY": 0.3308548033237457,
+            "jointType": 3,
+            "trackingState": 2
+          }
+        ]
+      },
+      {
+        "bodyIndex": 1,
+        "tracked": false
+      },
+      {
+        "bodyIndex": 2,
+        "tracked": false
+      },
+      {
+        "bodyIndex": 3,
+        "tracked": false
+      },
+      {
+        "bodyIndex": 4,
+        "tracked": false
+      },
+      {
+        "bodyIndex": 5,
+        "tracked": false
+      }
+    ]
+  }
+}

@@ -276,22 +276,10 @@ const stands = (state = fromJS([]), action) => {
             return state.removeIn([action.standIndex, "cameras", action.cameraIndex]);
 
         // Kinect
-        // case 'KINECT_SET_FOCAL_POINTS':
-        //     window.c_st83 = state;
-        //     console.log(action.kinectName, action.focalPoints);
-        //     return state;
-            // return state.setIn(["focalPoints", action.kinectName], fromJS(action.focalPoints));
         case 'KINECT_MOVE_BY_INDEX':
-            // window.c_CAM342 = { arr: [action.standIndex,"kinects",action.kinectIndex,"pos"], pos: fromJS(action.pos)};
             return state.setIn([action.standIndex, "kinects", action.kinectIndex, "pos"], fromJS(action.pos));
         case 'KINECT_ROTATE_BY_INDEX':
             return state.setIn([action.standIndex, "kinects", action.kinectIndex, "rot"], fromJS(action.rot));
-        // case 'KINECT_ADD_NEW':
-        //     let kinectsList = state.getIn([action.standIndex, "kinects"]).toJS();
-        //     return state.updateIn([action.standIndex, "kinects"], kinects => kinects.push(fromJS(createNewKinect({}, kinectsList))))
-        // case 'KINECT_REMOVE_BY_INDEX':
-        //     console.log("rem", action.standIndex, action.kinectIndex);
-        //     return state.removeIn([action.standIndex, "kinects", action.kinectIndex]);
 
         // Scene
         case 'STAND_SET_SCENE':
