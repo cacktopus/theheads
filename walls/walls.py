@@ -229,8 +229,8 @@ class Wall:
         B, A = tess(contours, holes)
         make_stl(self.name, contours, B, A, 1.75)
 
-    def to_svg(self, name):
-        svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
+    def to_svg(self, svg):
+        svg = svg or svgwrite.Drawing(f'{self.name}.svg', profile='tiny')
         # dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, '%')))
         # dwg.add(dwg.text('Test', insert=(0, 0.2), fill='red'))
         for i in range(len(self.result)):
@@ -240,7 +240,7 @@ class Wall:
 
         svg.save()
 
-    def make(self):
+    def make(self, prod_svg, debug_svg):
         x0, y0 = self.x0, self.y0
         x1, y1 = self.x1, self.y1
 
@@ -260,10 +260,9 @@ class Wall:
             (x0 + b1, y0 + 14.25),
         ])
 
-        svg = svgwrite.Drawing(f'{self.name}-.svg', profile='tiny')
         points = poisson_disc_samples(width=self.cfg.max_x, height=self.cfg.max_y, r=self.cfg.r)
-        for p in points:
-            svg.add(svg.circle(p, 0.5, fill="green"))
+        # for p in points:
+        #     svg.add(svg.circle(p, 0.5, fill="green"))
 
         dely = DelaunayTri(points)
         cells = spooky_cells(dely)
@@ -271,8 +270,8 @@ class Wall:
         wx0 = min(p[0] for p in self.window[0])
         wx1 = max(p[0] for p in self.window[0])
 
-        g0 = Graph(svg, (wx0, wx1), (10, 10 + 30), (0.0, 1.0), "darkblue")
-        g1 = Graph(svg, (wx0, wx1), (10 + 30 + 5, 10 + 30 + 5 + 30), (0.0, 1.0), "darkgreen")
+        g0 = Graph(prod_svg, (wx0, wx1), (10, 10 + 30), (0.0, 1.0), "darkblue")
+        g1 = Graph(prod_svg, (wx0, wx1), (10 + 30 + 5, 10 + 30 + 5 + 30), (0.0, 1.0), "darkgreen")
 
         for i, cell in sorted(cells.items()):
             inbounds = all(x0 - 50 < x < x1 + 50 and y0 - 50 < y < y1 + 50 for (x, y) in cell)
@@ -311,14 +310,14 @@ class Wall:
 
             circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
 
-            svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
-            svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
+            debug_svg.add(debug_svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+            debug_svg.add(debug_svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
             # svg.save()
 
-            new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 1 - v)
+            new = geom.interpolate_poly_circle(debug_svg, cell.contour(0), c, r, 1 - v)
             new = Polygon.Polygon([p.point2 for p in new])
 
-            svg.add(svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
+            debug_svg.add(debug_svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
 
             cell &= self.window
             circle &= self.window
@@ -326,17 +325,12 @@ class Wall:
 
             self.result += new
 
-        svg.add(svg.polygon(self.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
-        svg.add(svg.polygon(self.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+        debug_svg.add(debug_svg.polygon(self.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+        debug_svg.add(debug_svg.polygon(self.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
 
         self.result = self.wall - self.result
         # wall.result = wall.result | block
         # wall.result = wall.result - tunnel
-
-        svg.save()
-
-        self.to_svg(self.name)
-        self.make_stl()
 
 
 class Graph:
@@ -383,9 +377,17 @@ def inset_boost(t: float) -> float:
 
 def main():
     random.seed(42)
-    for i in (2,):
-        wall = Wall(f"wall{i}", outer, x_offset=146 + 10)
-        wall.make()
+
+    prod_svg = svgwrite.Drawing(f'wall.svg', profile='tiny')
+    debug_svg = svgwrite.Drawing(f'wall-.svg', profile='tiny')
+    for i in range(2):
+        wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
+        wall.make(prod_svg, debug_svg)
+        wall.to_svg(prod_svg)
+        # wall.make_stl()
+
+    prod_svg.save()
+    debug_svg.save()
 
 
 if __name__ == '__main__':
