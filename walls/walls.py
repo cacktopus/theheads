@@ -125,7 +125,11 @@ def inset(points, offset: float):
         if should_include_point(lines, p_new, sign):
             result.append(p_new.point2)
 
-    return make_convex(result)
+    if len(result) == 0:
+        return None
+
+    convex = make_convex(result)
+    return convex
 
 
 def circumcenter(triangle: List[Tuple]):
@@ -260,9 +264,14 @@ class Wall:
             (x0 + b1, y0 + 14.25),
         ])
 
-        points = poisson_disc_samples(width=self.cfg.max_x, height=self.cfg.max_y, r=self.cfg.r)
+        width = (x1 - x0) + 150
+        height = (y1 - y0) + 150
+        points = poisson_disc_samples(width=width, height=height, r=self.cfg.r)
+
+        points = [(p[0] + x0 - 75, y1 - p[1] + 75) for p in points]
+
         # for p in points:
-        #     svg.add(svg.circle(p, 0.5, fill="green"))
+        #     prod_svg.add(prod_svg.circle(p, 0.5, fill="green"))
 
         dely = DelaunayTri(points)
         cells = spooky_cells(dely)
@@ -283,7 +292,7 @@ class Wall:
             cx = centroid(fixed)[0]
 
             t = cx / (wx1 - wx0)
-            v = (
+            v = 0.85 * (
                     0.5
                     + noise.snoise2(0, 1 * t)
                     + 0.5 * noise.snoise2(0, 2 * t + 100)
@@ -298,6 +307,8 @@ class Wall:
             inset_amount = self.cfg.line_width / 2.0 + boost
 
             p = inset(fixed, inset_amount)
+            if p is None:
+                continue
 
             cell = Polygon.Polygon(p)
 
@@ -378,9 +389,9 @@ def inset_boost(t: float) -> float:
 def main():
     random.seed(42)
 
-    prod_svg = svgwrite.Drawing(f'wall.svg', profile='tiny')
-    debug_svg = svgwrite.Drawing(f'wall-.svg', profile='tiny')
-    for i in range(2):
+    prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
+    debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
+    for i in range(8):
         wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
