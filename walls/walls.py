@@ -1,10 +1,12 @@
 import itertools
+import random
 from collections import defaultdict
 from math import pi
 from typing import List, Tuple
 
 import Polygon
 import Polygon.IO
+import noise
 from bridson import poisson_disc_samples
 from pyhull.convex_hull import ConvexHull
 from pyhull.delaunay import DelaunayTri
@@ -52,8 +54,8 @@ outer = Config(
 
     x0=100,
     y0=100,
-    max_x=500,
-    max_y=500,
+    max_x=600,
+    max_y=300,
 )
 
 cfg = outer
@@ -126,10 +128,6 @@ def inset(points, offset: float):
     return make_convex(result)
 
 
-def good(p):
-    return 0 < p[0] < cfg.max_x and 0 < p[1] < cfg.max_y
-
-
 def circumcenter(triangle: List[Tuple]):
     a, b, c = triangle
     ax, ay = a
@@ -176,19 +174,6 @@ def spooky_cells(dely: DelaunayTri):
     return cells
 
 
-def process(poly, inset_amount):
-    if all(good(p) for p in poly):
-        print("points", poly)
-
-        try:
-            poly = inset(poly, inset_amount)
-        except Exception as e:
-            print(e)
-            raise
-
-        yield poly
-
-
 def bounding_box(poly):
     min_x = min(v[0] for v in poly)
     max_x = max(v[0] for v in poly)
@@ -200,9 +185,13 @@ def bounding_box(poly):
 
 
 class Wall:
-    def __init__(self, name, cfg):
-        x0, y0 = cfg.x0, cfg.y0
-        x1, y1 = x0 + cfg.width, y0 + cfg.height
+    def __init__(self, name, cfg, x_offset=0):
+        x0 = cfg.x0 + x_offset
+        y0 = cfg.y0
+        x1 = x0 + cfg.width
+        y1 = y0 + cfg.height
+
+        self.cfg = cfg
 
         self.x0, self.y0 = x0, y0
         self.x1, self.y1 = x1, y1
@@ -251,106 +240,152 @@ class Wall:
 
         svg.save()
 
+    def make(self):
+        x0, y0 = self.x0, self.y0
+        x1, y1 = self.x1, self.y1
 
-def make_wall(name, cfg):
-    wall = Wall(name, cfg)
-    x0, y0 = wall.x0, wall.y0
-    x1, y1 = wall.x1, wall.y1
+        b0 = (x1 - x0) / 2 - (6.125 + 7.5)
+        block = Polygon.Polygon([
+            (x0 + b0, y0 + 0),
+            (x1 - b0, y0 + 0),
+            (x1 - b0, y0 + 14.25 + 7.5),
+            (x0 + b0, y0 + 14.25 + 7.5),
+        ])
 
-    b0 = (x1 - x0) / 2 - (6.125 + 7.5)
-    block = Polygon.Polygon([
-        (x0 + b0, y0 + 0),
-        (x1 - b0, y0 + 0),
-        (x1 - b0, y0 + 14.25 + 7.5),
-        (x0 + b0, y0 + 14.25 + 7.5),
-    ])
+        b1 = (x1 - x0) / 2 - 6.125
+        tunnel = Polygon.Polygon([
+            (x0 + b1, y0 + -10),
+            (x1 - b1, y0 + -10),
+            (x1 - b1, y0 + 14.25),
+            (x0 + b1, y0 + 14.25),
+        ])
 
-    b1 = (x1 - x0) / 2 - 6.125
-    tunnel = Polygon.Polygon([
-        (x0 + b1, y0 + -10),
-        (x1 - b1, y0 + -10),
-        (x1 - b1, y0 + 14.25),
-        (x0 + b1, y0 + 14.25),
-    ])
+        svg = svgwrite.Drawing(f'{self.name}-.svg', profile='tiny')
+        points = poisson_disc_samples(width=self.cfg.max_x, height=self.cfg.max_y, r=self.cfg.r)
+        for p in points:
+            svg.add(svg.circle(p, 0.5, fill="green"))
 
-    points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r)
+        dely = DelaunayTri(points)
+        cells = spooky_cells(dely)
 
-    fill_points = poisson_disc_samples(width=cfg.max_x, height=cfg.max_y, r=cfg.r * 4)
+        wx0 = min(p[0] for p in self.window[0])
+        wx1 = max(p[0] for p in self.window[0])
 
-    dely = DelaunayTri(points)
-    cells = spooky_cells(dely)
+        g0 = Graph(svg, (wx0, wx1), (10, 10 + 30), (0.0, 1.0), "darkblue")
+        g1 = Graph(svg, (wx0, wx1), (10 + 30 + 5, 10 + 30 + 5 + 30), (0.0, 1.0), "darkgreen")
 
-    svg = svgwrite.Drawing(f'{name}-.svg', profile='tiny')
+        for i, cell in sorted(cells.items()):
+            inbounds = all(x0 - 50 < x < x1 + 50 and y0 - 50 < y < y1 + 50 for (x, y) in cell)
+            if not inbounds:
+                continue
 
-    for i, cell in sorted(cells.items()):
-        if all(50 < x < 450 and 50 < y < 350 for (x, y) in cell):
             fixed = make_convex(cell)
 
-            wx0 = min(p[0] for p in wall.window[0])
-            wx1 = max(p[0] for p in wall.window[0])
             cx = centroid(fixed)[0]
 
-            t = (cx - wx0) / (wx1 - wx0)
-            t = geom.clamp(0, t, 1)
+            t = cx / (wx1 - wx0)
+            v = (
+                    0.5
+                    + noise.snoise2(0, 1 * t)
+                    + 0.5 * noise.snoise2(0, 2 * t + 100)
+                    + 0.25 * noise.snoise2(0, 4 * t + 200)
+            )
+            v = geom.clamp(0, v, 1)
+            g0.plot(cx, v)
 
-            inset_boost = geom.clamp(0, -1 + 2 * t, 0.75)
+            boost = inset_boost(v)
+            g1.plot(cx, boost)
 
-            inset_amount = cfg.line_width / 2.0 + inset_boost
+            inset_amount = self.cfg.line_width / 2.0 + boost
 
-            for p in process(fixed, inset_amount):
-                cell = Polygon.Polygon(p)
+            p = inset(fixed, inset_amount)
 
-                if len(cell & wall.wall) == 0:
-                    break
+            cell = Polygon.Polygon(p)
 
-                skip = False
-                for fill_point in fill_points:
-                    if cell.isInside(*fill_point):
-                        skip = True
+            if len(cell & self.wall) == 0:
+                continue
 
-                if skip:
-                    break
+            c = centroid(cell.contour(0))
+            a = cell.area(0)
+            r = (a / pi) ** 0.5
 
-                c = centroid(cell.contour(0))
-                a = cell.area(0)
-                r = (a / pi) ** 0.5
+            circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
 
-                circle = Polygon.Polygon([p.point2 for p in circle_points(Vec(*c), r, 20)])
+            svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+            svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
+            # svg.save()
 
-                svg.add(svg.polygon(cell.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
-                svg.add(svg.circle(c, r, fill_opacity=0, stroke="black", stroke_width=0.25))
-                # svg.save()
+            new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 1 - v)
+            new = Polygon.Polygon([p.point2 for p in new])
 
-                new = geom.interpolate_poly_circle(svg, cell.contour(0), c, r, 1 - t)
-                new = Polygon.Polygon([p.point2 for p in new])
+            svg.add(svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
 
-                svg.add(svg.polygon(new.contour(0), fill_opacity=0, stroke="orange", stroke_width=0.25))
+            cell &= self.window
+            circle &= self.window
+            new &= self.window
 
-                cell &= wall.window
-                circle &= wall.window
-                new &= wall.window
+            self.result += new
 
-                wall.result += new
+        svg.add(svg.polygon(self.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+        svg.add(svg.polygon(self.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
 
-    for fill_point in fill_points:
-        svg.add(svg.circle(fill_point, 2, fill="magenta"))
+        self.result = self.wall - self.result
+        # wall.result = wall.result | block
+        # wall.result = wall.result - tunnel
 
-    svg.add(svg.polygon(wall.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
-    svg.add(svg.polygon(wall.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+        svg.save()
 
-    wall.result = wall.wall - wall.result
-    # wall.result = wall.result | block
-    # wall.result = wall.result - tunnel
+        self.to_svg(self.name)
+        self.make_stl()
 
-    svg.save()
 
-    wall.to_svg(name)
-    wall.make_stl()
+class Graph:
+    def __init__(self, svg, X, Y, y_range, color):
+        self.svg = svg
+        self.xmin, self.xmax = X
+        self.ymin, self.ymax = Y
+        self.y_scale = self.ymax - self.ymin
+        self.y_range = y_range
+        self.color = color
+
+        self.axis()
+
+    def plot(self, x, y):
+        t = y * self.y_range[1] + (1 - y) * self.y_range[0]
+        y_plot = self.ymax - t * self.y_scale
+
+        self.svg.add(self.svg.circle(
+            (x, y_plot),
+            1.0,
+            fill=self.color))
+
+    def axis(self):
+        self.svg.add(self.svg.line(
+            (self.xmin, self.ymin),
+            (self.xmax, self.ymin),
+            stroke_width=1.5,
+            opacity=0.5,
+            stroke=self.color,
+        ))
+
+        self.svg.add(self.svg.line(
+            (self.xmin, self.ymax),
+            (self.xmax, self.ymax),
+            stroke_width=1.5,
+            opacity=0.5,
+            stroke=self.color,
+        ))
+
+
+def inset_boost(t: float) -> float:
+    return geom.clamp(0, -1 + 2 * t, 0.75)
 
 
 def main():
-    for i in (1,):
-        make_wall(f"wallb{i}", outer)
+    random.seed(42)
+    for i in (2,):
+        wall = Wall(f"wall{i}", outer, x_offset=146 + 10)
+        wall.make()
 
 
 if __name__ == '__main__':
