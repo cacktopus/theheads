@@ -32,6 +32,8 @@ export default class Menu extends React.Component {
         this.handleRotateDrag = this.handleRotateDrag.bind(this);
         this.handleRotateStop = this.handleRotateStop.bind(this);
 
+        this.handleStandClick = this.handleStandClick.bind(this);
+
         // this.handleMoveDragEnd = this.handleMoveDragEnd.bind(this);
         // this.handleMoveDragEnter = this.handleMoveDragEnter.bind(this);
         // this.handleMoveDragExit = this.handleMoveDragExit.bind(this);
@@ -72,10 +74,20 @@ export default class Menu extends React.Component {
 
             const clickPos = { x: e.nativeEvent.clientX - x, y: e.nativeEvent.clientY - y };
 
+            this.props.popupInfoRemoveAll();
             this.props.popupInfoAddNew(clickPos);
-        } else {
-            this.props.popupInfoRemove();
         }
+        //  else {
+        //     this.props.popupInfoRemove();
+        // }
+    }
+
+    // Move
+    handleStandClick(e, a) {
+        this.props.standSelect();
+        this.togglePopupInfo(e);
+        // console.log("h str", e, a);
+        // this.props.standMove(1,a.)
     }
 
     // Move
@@ -198,7 +210,7 @@ export default class Menu extends React.Component {
                     // onMouseDown= (e= MouseEvent) => void
                 > */}
 
-                <div ref={this.refStand} id={`Stand-${standName}`} className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.props.standSelect}>
+                <div ref={this.refStand} id={`Stand-${standName}`} className={cn("Stand", { "Stand--selected": isSelected, "Stand--active" : isActive })} onClick={this.handleStandClick}>
                     {popupInfo}
                     <div className="Stand-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
                         <div style={styleStandContainer} className="Stand-container">
@@ -209,15 +221,15 @@ export default class Menu extends React.Component {
                             {/* <div className="Stand-select noselect" onClick={this.props.standStand}>
                                     Select
                                 </div> */}
-                            <div className="Stand-remove noselect" onClick={this.props.standRemove}>
+                            {/* <div className="Stand-remove noselect" onClick={this.props.standRemove}>
                                 X
-                                </div>
+                                </div> */}
                             <div ref={this.refStandMoveHandle} className="Stand-move noselect">
                                 Move
                             </div>
-                            <div className="Stand-info noselect" onClick={this.togglePopupInfo}>
+                            {/* <div className="Stand-info noselect" onClick={this.togglePopupInfo}>
                                 Info
-                            </div>
+                            </div> */}
 
                             { !isShowStandRotator ? null :
                                 <div className="Stand-rotate noselect">

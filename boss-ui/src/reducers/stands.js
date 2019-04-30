@@ -308,15 +308,20 @@ const stands = (state = fromJS([]), action) => {
 
         // Popup
         case 'POPUP_INFO_MOVE_BY_INDEX':
-            console.log('move it')
             return state; //state.setIn(["popups", action.popupId], {type: action.popupType});
+
         case 'POPUP_INFO_ADD_NEW':
-            window.c_soi = state;
-            console.log('hi');
             return state.setIn([action.standIndex, "popupInfo"], fromJS({ pos: action.pos }));
 
         case 'POPUP_INFO_REMOVE':
             return state.removeIn([action.standIndex, "popupInfo"]);
+
+        case 'POPUP_INFO_REMOVE_ALL':
+            let newState = state;
+            for (let i = 0; i < state.size; i++) {
+                newState = newState.removeIn([i, "popupInfo"]);
+            }
+            return newState;
 
         // Default
         default:

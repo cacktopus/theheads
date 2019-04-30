@@ -96,10 +96,39 @@ export default class Popup extends React.Component {
     render() {
         // let pos = this.getCurrentPos();
 
+        const consulInstallationUrl = `${document.location.hostname}:8500/ui/dc1/kv/the-heads/`;
+        // installation 
+
+        if (typeof window !== 'undefined') {
+            window.c__t23 = this;
+        }
+
+        const standName = this.props.stand.get("name");
+        const headName = this.props.stand.getIn(["heads",0,"name"]);
+        const cameraName = this.props.stand.getIn(["cameras",0,"name"]);
+        const kinectName = this.props.stand.getIn(["kinects",0,"name"]);
+
+        function getLink(type, name) {
+            if (name) {
+                return <a style={{display: "block"}} target="_blank" href={`${consulInstallationUrl}/${type}/${name}.yaml/edit`}>{name}</a>;
+            } else {
+                return undefined
+            }
+        }
+
+        let standLink = getLink("stands", standName);
+        let headLink = getLink("heads", headName);
+        let cameraLink = getLink("cameras", cameraName);
+        let kinectLink = getLink("kinects", kinectName);
+
         return (
             <div className="PopupInfo">
-                Popup Details<br/>
-                {this.props.stand.get("name")} : {this.props.stand.getIn(["heads",0,"name"])}
+                Links:
+                {standLink}
+                {headLink}
+                {cameraLink}
+                {kinectLink}
+                
             <div className="PopupInfo-closeButton" onClick={this.closePopupInfo}>
                     X
                 </div>

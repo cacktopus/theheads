@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { popupInfoAddNew, popupInfoRemove, standRemoveByIndex, standMoveByIndex, standRotateByIndex, menuSelectStand } from '../actions'
+import { popupInfoAddNew, popupInfoRemove, popupInfoRemoveAll, standRemoveByIndex, standMoveByIndex, standRotateByIndex, menuSelectStand } from '../actions'
 import Stand from '../components/Stand'
 
 const mapStateToProps = (state, ownProps) =>
@@ -23,6 +23,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 
     popupInfoAddNew: (clickPos) => { dispatch(popupInfoAddNew(ownProps.index, clickPos)) },
     popupInfoRemove: () => { dispatch(popupInfoRemove(ownProps.index)) },
+    popupInfoRemoveAll: () => { dispatch(popupInfoRemoveAll()) },
 
     standMove: (pos) => dispatch(standMoveByIndex(ownProps.index, pos)), // pos = {x, y}
     standRemove: () => dispatch(standRemoveByIndex(ownProps.index)), // pos = {x, y}

@@ -321,6 +321,10 @@ export const popupInfoRemove = (standIndex) => ({
     standIndex
 })
 
+export const popupInfoRemoveAll = () => ({
+    type: 'POPUP_INFO_REMOVE_ALL'
+})
+
 // FOCAL POINTS
 
 export const focalPointAdd = options => ({

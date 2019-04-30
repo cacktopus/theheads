@@ -150,6 +150,7 @@ body {
   background: #6a6a6a;
   position: relative;
   border-right: 5px solid blue;
+  cursor: pointer;
 }
 
 .Stand-octagon:before {
@@ -371,6 +372,7 @@ body {
 .Head-container {
   width: 100%;
   height: 100%;
+  cursor: pointer;
 }
 
 
