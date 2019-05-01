@@ -152,7 +152,7 @@ function rotateHeadByHeadName({ state, headName, rotation }) {
 const processWebsocketData = (state, payloadDataChunk) => {
     let { type, data } = payloadDataChunk;
     let headName, heads, standIndex, headIndex, rotation;
-    let newState = state;
+    // let newState = state;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
 
     switch (type) {
@@ -161,39 +161,6 @@ const processWebsocketData = (state, payloadDataChunk) => {
             rotation = data.rotation;
 
             return rotateHeadByHeadName({ state, headName, rotation })
-            // position = data.position;
-
-            // standIndex = state.findIndex(stand => {
-
-            //     heads = stand.get("heads");
-            //     if (heads && heads.size > 0) {
-            //         headIndex = heads.findIndex((head, i) => {
-            //             return head.get("name") === headName;
-            //         })
-            //     }
-
-            //     if (headIndex >= 0) {
-            //         return true;
-            //     } else {
-            //         headIndex = undefined;
-            //         return false;
-            //     }
-            // })
-
-            // if (standIndex >= 0 && headIndex >= 0) {
-            //     // Convert position (0-200) to degrees (0 - 360)
-            //     // rotation = 360 * position / 200;
-
-            //     newState = state.setIn([standIndex, "heads", headIndex, "rot"], rotation);
-
-            //     // If the head isn't manually moving, do not move the virtual rotation of the head.
-            //     if (!newState.getIn([standIndex, "isManualHeadMove"])) {
-            //         return newState.setIn([standIndex, "heads", headIndex, "vRot"], rotation);
-            //     } else {
-            //         // Ignore the messages if head is manually being rotated within the UI
-            //         return newState;
-            //     }
-            // }
             break;
         default:
             break;
@@ -203,14 +170,15 @@ const processWebsocketData = (state, payloadDataChunk) => {
 }
 
 const stands = (state = fromJS([]), action) => {
-    window.c_sn_str = { state, action };
-    let newState = state;
+    
+    let newState;
     let tempStandIndex;
 
     switch (action.type) {
         // Websocket message
         // NOTE: This should probably be handles by the websocket middleware... which then sends specific dispatch (window.c_ )
         case WEBSOCKET_MESSAGE:
+            newState = state;
             let totalPayload;
             try {
                 totalPayload = JSON.parse(action.payload.data);
@@ -219,11 +187,11 @@ const stands = (state = fromJS([]), action) => {
                 totalPayload.forEach(payloadDataChunk => {
                     newState = processWebsocketData(newState, payloadDataChunk);
                 });
-
+                
                 return newState;
-            } catch (e) { }
-
-            return state;
+            } catch (e) {
+                return state;
+            }
         case 'STAND_ADD':
             return state.push(createNewStand({}, state));
         case 'STAND_SETIN_FIELDS_BY_INDEX':
@@ -317,7 +285,7 @@ const stands = (state = fromJS([]), action) => {
             return state.removeIn([action.standIndex, "popupInfo"]);
 
         case 'POPUP_INFO_REMOVE_ALL':
-            let newState = state;
+            newState = state;
             for (let i = 0; i < state.size; i++) {
                 newState = newState.removeIn([i, "popupInfo"]);
             }

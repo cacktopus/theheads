@@ -6,7 +6,7 @@ import Draggable, { DraggableCore } from 'react-draggable';
 import cn from "classnames";
 import PopupInfo from '../containers/PopupInfo';
 
-import {encodeRot, decodeRot, encodePos, decodePos, noTouchMove} from '../helpers';
+import { encodeRot, decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -25,9 +25,11 @@ export default class Menu extends React.Component {
         this.handleMoveDrag = this.handleMoveDrag.bind(this);
         this.handleMoveStop = this.handleMoveStop.bind(this);
 
-        this.handleRotateStart = this.handleRotateStart.bind(this);
-        this.handleRotateDrag = this.handleRotateDrag.bind(this);
-        this.handleRotateStop = this.handleRotateStop.bind(this);
+        // this.handleRotateStart = this.handleRotateStart.bind(this);
+        // this.handleRotateDrag = this.handleRotateDrag.bind(this);
+        // this.handleRotateStop = this.handleRotateStop.bind(this);
+
+        this.canDrag = this.canDrag.bind(this);
 
         // this.handleMoveDragEnd = this.handleMoveDragEnd.bind(this);
         // this.handleMoveDragEnter = this.handleMoveDragEnter.bind(this);
@@ -65,7 +67,7 @@ export default class Menu extends React.Component {
     togglePopupInfo(e) {
         if (!this.props.popupInfo) {
             // The x and y of the Scene
-            var {x, y} = document.getElementById("Scene").getBoundingClientRect();
+            var { x, y } = document.getElementById("Scene").getBoundingClientRect();
 
             const clickPos = { x: e.nativeEvent.clientX - x, y: e.nativeEvent.clientY - y };
 
@@ -75,47 +77,61 @@ export default class Menu extends React.Component {
         }
     }
 
+    canDrag() {
+        return this.props.focalPoint.get("type") !== "kinect"
+    }
+
     // Move
     handleMoveStart(e, a) {
-        this.props.focalPointSelect();
+        if (this.canDrag) {
+            this.props.focalPointSelect();
+        }
         // console.log("h str", e, a);
         // this.props.focalPointMove(1,a.)
     }
 
     handleMoveDrag(e, a) {
-        // console.log("h dr", e, a);
-        const { x, y } = a;
-        const pos = encodePos(this.props.menu, { x, y });
-        // const pos = encrypt1({ x, y });
-        // const pos = { x, y };
-        // Convert the values 
+        if (this.canDrag) {
+            // console.log("h dr", e, a);
+            const { x, y } = a;
+            const pos = encodePos(this.props.menu, { x, y });
+            // const pos = encrypt1({ x, y });
+            // const pos = { x, y };
+            // Convert the values 
 
-        this.props.focalPointMove(pos);
-        // this.setState({ pos });
+            this.props.focalPointMove(pos);
+            // this.setState({ pos });
+        }
     }
 
     handleMoveStop(e, a) {
     }
 
-    // Rotate
-    handleRotateStart(e, a) {
-        this.props.focalPointSelect();
-    }
+    // // Rotate
+    // handleRotateStart(e, a) {
+    //     if (this.canDrag) {
+    //         this.props.focalPointSelect();
+    //     }
+    // }
 
-    handleRotateDrag(e, a) {
-        const { x, y } = a;
-        var rad = Math.atan2(y, x); // In radians
-        var deg = encodeRot(rad * (180 / Math.PI));
-        // var deg = rad * (180 / Math.PI);
+    // handleRotateDrag(e, a) {
 
-        this.props.focalPointRotate(deg);
-    }
+    //     const { x, y } = a;
+    //     var rad = Math.atan2(y, x); // In radians
+    //     var deg = encodeRot(rad * (180 / Math.PI));
+    //     // var deg = rad * (180 / Math.PI);
 
-    handleRotateStop(e, a) {
-        // console.log("hrlt stop", e, a);
-    }
+    //     this.props.focalPointRotate(deg);
+    // }
+
+    // handleRotateStop(e, a) {
+    //     // console.log("hrlt stop", e, a);
+    // }
 
     render() {
+        if (typeof window !== 'undefined') {
+            window.c__t234 = this;
+        }
         const focalPoint = this.props.focalPoint;
         const isActive = focalPoint.get("isActive");
         // let pos = {x: 0, y:0};
@@ -148,7 +164,7 @@ export default class Menu extends React.Component {
         if (this.props.popupInfo) {
             popupInfo = (
                 <div className="FocalPoint-popupInfo">
-                    <PopupInfo focalPointIndex={this.props.index} pos={this.props.popupInfo.get("pos")}/>
+                    <PopupInfo focalPointIndex={this.props.index} pos={this.props.popupInfo.get("pos")} />
                 </div>
             );
         }
@@ -157,11 +173,23 @@ export default class Menu extends React.Component {
         const FocalPointRotatesOnSelect = this.props.menu.get("FocalPointRotatesOnSelect");
         const FocalPointRotator = !FocalPointRotatesHidden || (isSelected && FocalPointRotatesOnSelect);
 
-        const focalPointName = focalPoint.get("name");
+        const focalPointName = focalPoint.get("name") || `FP${this.props.index}`;
+        // if (focalPoint.get("name")) {
+        //     // console.log('name', focalPoint.get("name"));
+        // } else {
+        //     // console.log('noname', focalPoint.get("name"), focalPoint.toJS());
+        // }
+
+        let styleFocalPointHandle = {};
+
+        if (focalPointName.indexOf("k") === 0) {
+            styleFocalPointHandle.backgroundColor = "#8200C8";
+        }
 
         return (
-            <div className={cn("FocalPoint", { "FocalPoint--selected": isSelected, "FocalPoint--active" : isActive })} >
+            <div className={cn("FocalPoint", { "FocalPoint--selected": isSelected, "FocalPoint--active": isActive })} >
                 <Draggable
+                    disabled={!this.canDrag()}
                     handle=".FocalPoint-move-handle"
                     defaultPosition={{ x: 0, y: 0 }}
                     // position={null}
@@ -171,21 +199,8 @@ export default class Menu extends React.Component {
                     onDrag={this.handleMoveDrag}
                     onStop={this.handleMoveStop}
                 >
-                    {/* <DraggableCore
-                        // allowAnyClick= boolean,
-                        // cancel= string,
-                        // disabled= boolean,
-                        // enableUserSelectHack= boolean,
-                        // offsetParent= HTMLElement,
-                        // grid= [number, number],
-                        handle=".FocalPoint-rotate"
-                        // onStart={this.handleRotateStart}
-                        // onDrag={this.handleRotateDrag}
-                        // onStop={this.handleRotateStop}
-                        // onMouseDown= (e= MouseEvent) => void
-                    > */}
 
-                    <div className="FocalPoint-move-handle" onClick={this.props.focalPointSelect}>FP{this.props.index}</div>
+                    <div style={styleFocalPointHandle} className="FocalPoint-move-handle" onClick={this.props.focalPointSelect}>{focalPointName}</div>
 
                     {/* <div ref={this.FocalPoint} className={cn("FocalPoint", { "FocalPoint--selected": isSelected, "FocalPoint--active" : isActive })} onClick={this.props.focalPointSelect}> */}
                     {/* <div ref={this.FocalPoint} id={`FocalPoint-${focalPointName}`} className={cn("FocalPoint", { "FocalPoint--selected": isSelected, "FocalPoint--active" : isActive })} onClick={this.props.focalPointSelect}> */}
@@ -193,82 +208,5 @@ export default class Menu extends React.Component {
                 </Draggable>
             </div>
         );
-        // return (
-        //     <Draggable
-        //         handle=".FocalPoint-move"
-        //         defaultPosition={{ x: 0, y: 0 }}
-        //         // position={null}
-        //         position={pos}
-        //         // grid={[25, 25]}
-        //         onStart={this.handleMoveStart}
-        //         onDrag={this.handleMoveDrag}
-        //         onStop={this.handleMoveStop}
-        //     >
-        //         {/* <DraggableCore
-        //             // allowAnyClick= boolean,
-        //             // cancel= string,
-        //             // disabled= boolean,
-        //             // enableUserSelectHack= boolean,
-        //             // offsetParent= HTMLElement,
-        //             // grid= [number, number],
-        //             handle=".FocalPoint-rotate"
-        //             // onStart={this.handleRotateStart}
-        //             // onDrag={this.handleRotateDrag}
-        //             // onStop={this.handleRotateStop}
-        //             // onMouseDown= (e= MouseEvent) => void
-        //         > */}
-
-        //         <div ref={this.FocalPoint} id={`FocalPoint-${focalPointName}`} className={cn("FocalPoint", { "FocalPoint--selected": isSelected, "FocalPoint--active" : isActive })} onClick={this.props.focalPointSelect}>
-        //             {popupInfo}
-        //             <div className="FocalPoint-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
-        //                 <div className="FocalPoint-container">
-        //                     <div className="FocalPoint-name noselect">
-        //                         {focalPoint.get("name")} : {focalPoint.getIn(["heads",0,"name"])}
-        //                     </div>
-        //                     {/* <div className="FocalPoint-select noselect" onClick={this.props.FocalPoint}>
-        //                             Select
-        //                         </div> */}
-        //                     <div className="FocalPoint-remove noselect" onClick={this.props.focalPointRemove}>
-        //                         X
-        //                         </div>
-        //                     <div ref={this.FocalPointMoveHandle} className="FocalPoint-move noselect">
-        //                         Move
-        //                     </div>
-        //                     <div className="FocalPoint-info noselect" onClick={this.togglePopupInfo}>
-        //                         Info
-        //                     </div>
-
-        //                     { !FocalPointRotator ? null :
-        //                         <div className="FocalPoint-rotate noselect">
-        //                             {/* offset is used for the drag's reference */}
-        //                             <DraggableCore
-        //                                 // allowAnyClick= boolean,
-        //                                 // cancel= string,
-        //                                 // disabled= boolean,
-        //                                 // enableUserSelectHack= boolean,
-        //                                 // offsetParent={this.FocalPointRotateOffset.current} //HTMLElement,
-        //                                 // grid= [number, number],
-        //                                 handle=".FocalPoint-rotate-handle"
-        //                                 onStart={this.handleRotateStart}
-        //                                 onDrag={this.handleRotateDrag}
-        //                                 onStop={this.handleRotateStop}
-        //                             // onMouseDown= (e= MouseEvent) => void
-        //                             >
-        //                                 <div ref={this.FocalPointRotateHandle} className="FocalPoint-rotate-handle"/>
-        //                             </DraggableCore>
-        //                         </div>
-        //                     }
-
-        //                     <div className="FocalPoint-heads">
-        //                         <Heads heads={heads} focalPointIndex={this.props.index} />
-        //                     </div>
-        //                     <div className="FocalPoint-cameras">
-        //                         <Cameras cameras={cameras} focalPointIndex={this.props.index} />
-        //                     </div>
-        //                 </div>
-        //             </div>
-        //         </div>
-        //     </Draggable>
-        // );
     }
 }

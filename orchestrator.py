@@ -149,7 +149,7 @@ class Orchestrator:
                 y = joint.get('globalY')
 
                 if x is not None and y is not None:
-                    name = "k01-0"
+                    name = joint.get('name')
                     self._add_focal_point(name, Vec(x, y))
                     self.act()
 

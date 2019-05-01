@@ -759,6 +759,7 @@ body {
 
 /* Focal Point */
 .FocalPoint {
+  text-align: center;
   position: absolute;
 }
 

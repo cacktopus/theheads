@@ -7,18 +7,16 @@ import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 const createNewFocalPoint = ({
     name = undefined,
     pos = { x: 0, y: 0 },
+    type = "default",
     isActive = false,
     isSelected = false, // Needed????
 } = {}, state) => {
 
-    // if (!name) {
-    //     name = getNewName("focalPoint", state.toJS());
-    // }
-
     return fromJS({
-        name, 
+        name,
         pos,
-        isActive
+        isActive,
+        type
     })
 
     // return {
@@ -45,13 +43,68 @@ const createNewFocalPoint = ({
 //     return temp;
 // };
 
+
+const findFocalIndexByName = (state, name) => {
+    if (state) {
+        return state.findIndex(fp => fp.get("name") === name);
+    }
+    return -1;
+}
+
 const processWebsocketData = (state, payloadDataChunk) => {
     let { type, data } = payloadDataChunk;
     // let headName, heads, focalPointIndex, headIndex, rotation;
-    let newState = state;
-    // let headName, position, heads, focalPointIndex, cameraIndex, headIndex, rotation;
-
+    var newState;
     switch (type) {
+        case "focal-points":
+
+            if (state.size > 30)
+                return state;
+
+            newState = state;
+            if (typeof window !== 'undefined') {
+                window.c__st82 = state;
+            }
+            // Remove all focal points that aren't 'ui'
+            // newState = newState.filter(fp => fp.get('type') === 'ui');
+
+            // Remove all focal points that are kinect
+            // newState = newState.filter(fp => !fp.get('name') || fp.get('name').indexOf("k") !== 0);
+
+            if (data && data.focal_points) {
+                let focalPoints = data.focal_points;
+
+                if (focalPoints.length > 0) {
+                    focalPoints.forEach(fp => {
+                        const name = fp.name;
+                        const pos = fp.pos;
+                        const ttl = fp.ttl;
+                        const type = fp.fp_type || "kinect";
+                        let focalIndex;
+
+                        try {
+                            console.log("name: ", name, newState.toJS()); 
+                            focalIndex = findFocalIndexByName(newState, name);
+                            console.log(focalIndex, "name: ", name, newState.toJS()); 
+                        } catch (e) {
+                            console.log('e', e)
+                        };
+
+                        if (focalIndex >= 0) {
+                            newState = newState.setIn([focalIndex, "pos"], fromJS(pos));
+                            newState = newState.setIn([focalIndex, "ttl"], fromJS(ttl));
+                        } else {
+                            newState = newState.push(createNewFocalPoint({ name, pos, type }, state));
+                        }
+                    });
+
+                    return newState;
+                } else {
+                    console.log("focal points, no payload", data);
+                }
+            }
+            return newState;
+            break;
         case "focalpoint-positioned":
             // headName = data.headName;
             // rotation = data.rotation;
@@ -121,8 +174,7 @@ const focalPoints = (state = fromJS([]), action) => {
 
             return state;
         case 'FOCALPOINT_ADD':
-            console.log('FOCALPOINT_ADD');
-            return state.push(createNewFocalPoint({}, state));
+            return state.push(createNewFocalPoint({ type: 'ui', name: `fp${state.size}` }, state));
         case 'FOCALPOINT_SETIN_FIELDS_BY_INDEX':
             // return state.setIn([action.index,"pos"], fromJS(action.pos));
             let setInLocation = [action.index];
@@ -146,7 +198,7 @@ const focalPoints = (state = fromJS([]), action) => {
         // // Active or not
         // case 'FOCALPOINT_SET_IS_ACTIVE':
         //     tempFocalPointIndex = getFocalPointIndexFromHeadName(state, action.headName);
-            
+
         //     if (tempFocalPointIndex >= 0 ) {
         //         return state.setIn([tempFocalPointIndex, "isActive"], true);
         //     } else {
