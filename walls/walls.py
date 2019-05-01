@@ -35,11 +35,6 @@ inner = Config(
     width=106,
     height=79,
     depth=1.75,
-
-    x0=100,
-    y0=100,
-    max_x=500,
-    max_y=500,
 )
 
 outer = Config(
@@ -51,11 +46,6 @@ outer = Config(
     width=146,
     height=79,
     depth=1.75,
-
-    x0=100,
-    y0=100,
-    max_x=600,
-    max_y=300,
 )
 
 cfg = outer
@@ -189,9 +179,9 @@ def bounding_box(poly):
 
 
 class Wall:
-    def __init__(self, name, cfg, x_offset=0):
-        x0 = cfg.x0 + x_offset
-        y0 = cfg.y0
+    def __init__(self, name, cfg, x_offset=0, y_offset=100):
+        x0 = x_offset
+        y0 = y_offset
         x1 = x0 + cfg.width
         y1 = y0 + cfg.height
 
@@ -391,11 +381,11 @@ def main():
 
     prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
-    for i in range(8):
+    for i in range(2):
         wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
-        # wall.make_stl()
+        wall.make_stl()
 
     prod_svg.save()
     debug_svg.save()
