@@ -269,6 +269,9 @@ class Wall:
         wx0 = min(p[0] for p in self.window[0])
         wx1 = max(p[0] for p in self.window[0])
 
+        wy0 = min(p[1] for p in self.window[0])
+        wy1 = max(p[1] for p in self.window[0])
+
         g0 = Graph(prod_svg, (wx0, wx1), (10, 10 + 30), (0.0, 1.0), "darkblue")
         g1 = Graph(prod_svg, (wx0, wx1), (10 + 30 + 5, 10 + 30 + 5 + 30), (0.0, 1.0), "darkgreen")
 
@@ -279,14 +282,16 @@ class Wall:
 
             fixed = make_convex(cell)
 
-            cx = centroid(fixed)[0]
+            cx, cy = centroid(fixed)
 
             t = cx / (wx1 - wx0)
-            v = 0.85 * (
+            s = cy / (wy1 - wy0)
+
+            v = 0.73 * (
                     0.5
-                    + noise.snoise2(0, 1 * t)
-                    + 0.5 * noise.snoise2(0, 2 * t + 100)
-                    + 0.25 * noise.snoise2(0, 4 * t + 200)
+                    + noise.snoise2(0.5 * s, 0.5 * t)
+                    + 0.5 * noise.snoise2(1 * s, 1 * t + 100)
+                    + 0.25 * noise.snoise2(2 * s, 2 * t + 200)
             )
             v = geom.clamp(0, v, 1)
             g0.plot(cx, v)
@@ -373,7 +378,7 @@ class Graph:
 
 
 def inset_boost(t: float) -> float:
-    return geom.clamp(0, -1 + 2 * t, 0.75)
+    return geom.clamp(0, -1 + 1.75 * t, 0.66)
 
 
 def main():
@@ -381,7 +386,7 @@ def main():
 
     prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
-    for i in range(2):
+    for i in range(8):
         wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
