@@ -83,11 +83,9 @@ const processWebsocketData = (state, payloadDataChunk) => {
                         let focalIndex;
 
                         try {
-                            console.log("name: ", name, newState.toJS()); 
                             focalIndex = findFocalIndexByName(newState, name);
-                            console.log(focalIndex, "name: ", name, newState.toJS()); 
                         } catch (e) {
-                            console.log('e', e)
+                            console.log('Error: focalPoint processWebsocketData. e: ', e)
                         };
 
                         if (focalIndex >= 0) {
