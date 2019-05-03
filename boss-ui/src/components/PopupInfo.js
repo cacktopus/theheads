@@ -110,7 +110,7 @@ export default class Popup extends React.Component {
 
         function getLink(type, name) {
             if (name) {
-                return <a style={{display: "block"}} target="_blank" href={`${consulInstallationUrl}/${type}/${name}.yaml/edit`}>{name}</a>;
+                return <a style={{display: "block"}} target="_blank" href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}>{name}</a>;
             } else {
                 return undefined
             }
