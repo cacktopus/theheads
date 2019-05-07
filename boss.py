@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import json
 from typing import Optional
 
@@ -12,6 +11,7 @@ import util
 import ws
 from config import THE_HEADS_EVENTS, get_args, Config
 from consul_config import ConsulBackend
+from focal_point_manager import FocalPointManager
 from grid import the_grid
 from head_manager import HeadManager
 from installation import build_installation, Installation
@@ -58,7 +58,7 @@ async def run_redis(redis_hostport, broadcast):
             broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
         if msg['type'] in ("head-positioned", "active", "kinect"):
-            print(datetime.datetime.now(), host, msg['type'])
+            # print(datetime.datetime.now(), host, msg['type'])
             broadcast(msg['type'], msg=msg)
 
 
@@ -121,7 +121,12 @@ async def setup(
         broadcast=observer.notify_observers,
     )
 
+    fp_manager = FocalPointManager(
+        broadcast=observer.notify_observers
+    )
+
     observer.register_observer(orchestrator)
+    observer.register_observer(fp_manager)  # perhaps not the best place
     observer.register_observer(ws_manager)
 
     for redis in cfg['redis_servers']:

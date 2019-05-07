@@ -29,6 +29,7 @@ class Stepper:
             motor,
             controller,
             next_controller,
+            gpio,
     ):
         self._pos = 0
         self._target = 0
@@ -39,12 +40,13 @@ class Stepper:
         self.redis = redis
         self._controller = controller
         self._next_controller = next_controller
+        self._gpio = gpio
 
     @property
     def pos(self) -> int:
         return self._pos
 
-    def zero(self):
+    def set_current_position_as_zero(self):
         self._pos = 0
 
     def set_target(self, target: int):
@@ -55,6 +57,10 @@ class Stepper:
 
     def current_rotation(self) -> float:
         return self._pos / NUM_STEPS * 360.0
+
+    def find_zero(self):
+        self._next_controller = Seeker()  # TODO: derive from current controllers
+        self._controller = zero_detector.ZeroDetector(self._gpio)
 
     async def seek(self):
         while True:
@@ -70,6 +76,7 @@ class Stepper:
             if self._controller.is_done():
                 self._controller.finish(self)
                 self._controller = self._next_controller or Idle()
+                await self.publish("active")
 
     async def redis_publisher(self):
         while True:
@@ -87,6 +94,33 @@ class Stepper:
             except asyncio_redis.NotConnectedError:
                 # TODO: emit stats/log
                 print("Not connected")
+
+    def publishing_data(self):
+        return {
+            "component": "head",
+            "name": self.cfg['head']['name'],
+            "extra": {
+                "headName": self.cfg['head']['name'],
+                "stepPosition": self.pos,
+                "rotation": self.current_rotation(),
+            }
+        }
+
+    async def publish(self, msg_type):
+        try:
+            await self.redis.publish(THE_HEADS_EVENTS, json.dumps({
+                "type": msg_type,
+                "data": self.publishing_data(),
+            }))
+        except asyncio_redis.NotConnectedError:
+            # TODO: emit stats/log
+            print("Not connected")
+
+    async def publish_active_loop(self):
+        await self.publish("startup")
+        while True:
+            await asyncio.sleep(5)
+            await self.publish("active")
 
 
 class Seeker:
@@ -143,7 +177,15 @@ def rotation(request):
 
 async def zero(request):
     stepper = request.app['stepper']
-    stepper.zero()
+    stepper.set_current_position_as_zero()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json")
+
+
+async def find_zero(request):
+    stepper = request.app['stepper']
+    stepper.find_zero()
 
     result = json.dumps({"result": "ok"})
     return web.Response(text=result + "\n", content_type="application/json")
@@ -171,39 +213,6 @@ async def get_config(config_endpoint: str, instance: str, port: int):
     return result
 
 
-async def publish_active(app):
-    redis = app['redis']
-    cfg = app['cfg']
-    stepper = app['stepper']
-
-    def data():
-        return {
-            "component": "head",
-            "name": cfg['head']['name'],
-            "extra": {
-                "headName": cfg['head']['name'],
-                "stepPosition": stepper.pos,
-                "rotation": stepper.current_rotation(),
-            }
-        }
-
-    await redis.publish(THE_HEADS_EVENTS, json.dumps({
-        "type": "startup",
-        "data": data(),
-    }))
-
-    while True:
-        await asyncio.sleep(5)
-        try:
-            await redis.publish(THE_HEADS_EVENTS, json.dumps({
-                "type": "active",
-                "data": data(),
-            }))
-        except asyncio_redis.NotConnectedError:
-            # TODO: emit stats/log
-            print("Not connected")
-
-
 async def setup(
         instance: str,
         config_endpoint: Optional[str] = None,
@@ -226,10 +235,16 @@ async def setup(
         motor = motors.setup()
         gpio = zero_detector.GPIO()
 
-    zd = zero_detector.ZeroDetector(gpio)
-    stepper = Stepper(cfg, redis_connection, motor, zd, Seeker())
-    asyncio.ensure_future(stepper.redis_publisher())
-    asyncio.ensure_future(stepper.seek())
+    stepper = Stepper(
+        cfg,
+        redis_connection,
+        motor,
+        Seeker(),
+        Seeker(),
+        gpio,
+    )
+    asyncio.create_task(stepper.redis_publisher())
+    asyncio.create_task(stepper.seek())
 
     app = web.Application()
     app['cfg'] = cfg
@@ -242,9 +257,10 @@ async def setup(
         web.get("/position/{target}", position),
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
+        web.get("/find_zero", find_zero),
     ])
 
-    asyncio.ensure_future(publish_active(app))
+    asyncio.create_task(stepper.publish_active_loop())
 
     return app
 

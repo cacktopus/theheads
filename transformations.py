@@ -67,15 +67,15 @@ class Vec:
 
     @property
     def point2(self):
-        return (self.x, self.y)
+        return self.x, self.y
 
     @property
     def point3(self):
-        return (self.x, self.y, self.z)
+        return self.x, self.y, self.z
 
 
 class Mat:
-    def __init__(self, data):
+    def __init__(self, data: np.array):
         self._data = data
 
     @classmethod
@@ -117,6 +117,11 @@ class Mat:
 
     def inv(self):
         return Mat(np.linalg.inv(self._data))
+
+    def translation(self) -> Vec:
+        """returns the translation vector from the transformation matrix"""
+        column = self._data[:, 3]
+        return Vec(*column)
 
 
 def main():

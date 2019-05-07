@@ -1,6 +1,8 @@
 import asyncio
+import math
 import os
 from glob import glob
+from typing import Dict
 
 import yaml
 from aiohttp import web
@@ -43,6 +45,27 @@ class Head:
         self.m = m
         self.stand = stand
 
+    def point_to(self, point: Vec) -> float:
+        """returns the angle (degrees) the head should be at to face a given point"""
+        m = self.stand.m * self.m
+        m_inv = m.inv()
+
+        to = m_inv * point
+        distance = to.abs()
+        if distance < 0.01:
+            raise ValueError("Point is too close")
+
+        direction = to.unit()
+        return math.atan2(direction.y, direction.x) * 180 / math.pi
+
+    def point_away_from(self, point: Vec) -> float:
+        """returns the angle (degrees) the head should be at to turn away from a given point"""
+        return (self.point_to(point) + 180) % 360
+
+    @property
+    def global_pos(self) -> Vec:
+        return (self.stand.m * self.m).translation()
+
 
 class Stand:
     def __init__(self, name: str, m: Mat):
@@ -64,10 +87,10 @@ class Stand:
 
 class Installation:
     def __init__(self):
-        self.stands = {}
-        self.cameras = {}
-        self.kinects = {}
-        self.heads = {}
+        self.stands: Dict[str, Stand] = {}
+        self.cameras: Dict[str, Camera] = {}
+        self.kinects: Dict[str, Kinect] = {}
+        self.heads: Dict[str, Head] = {}
 
     def add_stand(self, stand: Stand):
         self.stands[stand.name] = stand

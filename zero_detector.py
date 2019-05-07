@@ -68,14 +68,14 @@ class ZeroDetector:
         return self._done
 
     def finish(self, stepper):
-        stepper.zero()
+        stepper.set_current_position_as_zero()
 
     def step_until(self, direction, target_value, count):
         values = deque(maxlen=count)
 
         while True:
             v = self.read_value()
-            print(v, self.remaining_steps)
+            # print(v, self.remaining_steps)
             values.append(v)
             if len(values) == count and all(v == target_value for v in values):
                 return
@@ -94,7 +94,7 @@ class ZeroDetector:
         values = deque(maxlen=STEPS)
         for i in range(STEPS):
             v = self.read_value()
-            print(v)
+            # print(v)
             if v == 0:
                 values.append(i)
             yield from self.step(FORWARD)

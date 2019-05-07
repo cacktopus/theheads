@@ -106,6 +106,11 @@ async def main(inst_name: str):
         names = await head_names(consul_backend)
         for i, name in enumerate(names):
             await consul_backend.register_service_with_agent("head", 18080 + i, ID=name, tags=[name, "frontend"])
+            await consul_backend.register_service_with_agent(
+                "voices", 3030 + i,
+                ID=f"voices-{i+1:02}",
+                tags=[name, "frontend"]
+            )
 
         # redis
         await consul_backend.register_service_with_agent("redis", 6379)

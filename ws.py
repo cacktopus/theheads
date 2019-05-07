@@ -104,5 +104,14 @@ class WebsocketManager:
             client.send(msg)
 
     def notify(self, subject, **kw):
-        if subject in ("head-positioned", "active", "focal-points"):
+        if subject in ("head-positioned", "active"):
             self.send(kw['msg'])
+
+        if subject == "focal-points":
+            focal_points = kw['focal_points']
+            self.send({
+                "type": "focal-points",
+                "data": {
+                    "focal_points": [fp.to_object() for fp in focal_points.values()]
+                }
+            })
