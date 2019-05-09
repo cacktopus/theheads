@@ -15,7 +15,7 @@
     <script>
         function shutdown() {
             var pw = prompt("Confirm shutdown:");
-            location.replace("http://{{ hostname }}{{ home_port }}/shutdown-host?pw="+pw);
+            location.replace("/shutdown-host?pw="+pw);
         }
     </script>
 </head>
@@ -50,7 +50,8 @@
     </ul>
     <hr />
     <div class="smaller">(running on {{hostname}} -
-        <a href="http://{{ hostname }}{{ home_port }}/restart-host">reboot</a>)
+        <!-- <a href="http://{{ hostname }}{{ home_port }}/restart-host">reboot</a>) -->
+        <a href="/restart-host">reboot</a>)
     </div>
     <div class="smaller">(running on {{hostname}} -
         <a href="#shutdown" onclick="shutdown()">shutdown</a>)
