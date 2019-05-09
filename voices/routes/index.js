@@ -6,6 +6,7 @@ const fs = require('fs');
 
 // Config related:
 const OUTPUT_DIR = `outputs`;
+const SAMPLES_DIR = `samples`;
 
 // Holds audio 
 
@@ -27,23 +28,39 @@ function getFullFilename(filename) {
     return `${OUTPUT_DIR}/${filename}`;
 }
 
+// This returns a promise with the resolved value being the 'audio' object
 // This plays it by the filename (not including the outputs directory.
 // This returns the 'audio' object to be used to kill if necessary.
 function playSoundByFilename(audioFilename, callback) {
-    const fullFilename = getFullFilename(audioFilename);
 
-    let audio = player.play(fullFilename, function (err) {
-        if (err && !err.killed) {
-            console.log(err);
-            // throw err
-        } else {
-            if (callback && typeof callback === "function") {
-                callback();
-            }
-        }
-    })
+    return new Promise((resolve, reject) => {
 
-    return audio;
+        const fullFilename = getFullFilename(audioFilename);
+
+        // Play 15hz slightly before playing the actual audio
+        // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
+        const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+        player.play(sampleAudioFullPath);
+
+        const playDelayTime = 150;
+        // console.log(playDelayTime);
+        // let audio = player.play(fullFilename, { timeout: playDelayTime }, function (err) {
+        setTimeout(() => {
+            let audio = player.play(fullFilename, function (err) {
+                console.log('called');
+                if (err && !err.killed) {
+                    console.log(err);
+                    // throw err
+                } else {
+                    if (callback && typeof callback === "function") {
+                        callback();
+                    }
+                }
+            })
+
+            return resolve(audio);
+        }, playDelayTime);
+    });
 }
 
 // function play20HzSound() {
@@ -55,27 +72,35 @@ function playSoundByFilename(audioFilename, callback) {
 //     return playSoundByIndex(index);
 // }
 
+// Returns a promise which resolves to true or false if it played that audio
 function playSoundByText(text) {
     const index = findAudioObjIndexByText(text);
 
     return playSoundByIndex(index);
 }
 
+// Returns a promise which resolves to true or false if it can play that audio.
 function playSoundByIndex(index) {
-    if (index >= 0 && _audioObjs[index]) {
-        const filename = _audioObjs[index].filename;
+    return new Promise((resolve, reject) => {
 
-        // Top the audio if it was already playing.
-        stopAudioForAudioObj(_audioObjs[index]);
+        if (index >= 0 && _audioObjs[index]) {
+            const filename = _audioObjs[index].filename;
 
-        // Play the audio
-        _audioObjs[index].audio = playSoundByFilename(filename);
-        _audioObjs[index].playedAt = new Date();
+            // Top the audio if it was already playing.
+            stopAudioForAudioObj(_audioObjs[index]);
 
-        return true;
-    } else {
-        return false;
-    }
+            playSoundByFilename(filename)
+                .then(audioObj => {
+                    // Play the audio
+                    _audioObjs[index].audio = audioObj;//playSoundByFilename(filename);
+                    _audioObjs[index].playedAt = new Date();
+                })
+
+            return resolve(true);
+        } else {
+            return resolve(false);
+        }
+    });
 }
 
 function stopAudioForAudioObj(audioObj) {
@@ -195,16 +220,20 @@ function playSoundFromReq(req) {
     const audioObjIndex = findAudioObjIndexByText(text);
 
     if (audioObjIndex >= 0) {
-        const playResult = playSoundByIndex(audioObjIndex);
-        return Promise.resolve(playResult);//res.json({ success: playResult });
+        return playSoundByIndex(audioObjIndex);
+        // const playResult = playSoundByIndex(audioObjIndex);
+        // return Promise.resolve(playResult);//res.json({ success: playResult });
 
     } else {
         return processSoundByText(text)
             .then(data => {
-                const success = playSoundByText(text);
-
-                return success; //res.json({ success });
+                // const success = 
+                return playSoundByText(text)
+                // return success; //res.json({ success });
             })
+            // .then(isSuccessful => {
+            //     return isSuccessful
+            // })
             .catch(err => {
                 console.log("Err", err);
                 return false; //res.json({ success: false });
