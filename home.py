@@ -128,11 +128,17 @@ async def restart_host(request):
     return await sudo("--non-interactive", "shutdown", "-r", "now")
 
 async def shutdown_host(request):
-    pw = request.query['pw']
-    if pw == '1199':
-        return await sudo("--non-interactive", "shutdown", "-h", "now")
-    else:
-        return web.Response(text="Invalid \n", content_type="text/plain")
+    return await sudo("--non-interactive", "shutdown", "-h", "now")
+
+# async def shutdown_host(request):
+#     return await sudo("--non-interactive", "shutdown", "-h", "now")
+
+# async def shutdown_host(request):
+#     pw = request.query['pw']
+#     if pw == '1199':
+#         return await sudo("--non-interactive", "shutdown", "-h", "now")
+#     else:
+#         return web.Response(text="Invalid \n", content_type="text/plain")
 
 async def setup(
         port: int,
