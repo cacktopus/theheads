@@ -130,8 +130,8 @@ async def restart_host(request):
 async def shutdown_host(request):
     return await sudo("--non-interactive", "shutdown", "-h", "now")
 
-# async def shutdown_host(request):
-#     return await sudo("--non-interactive", "shutdown", "-h", "now")
+async def sd_host(request):
+    return await sudo("--non-interactive", "shutdown", "-h", "now")
 
 # async def shutdown_host(request):
 #     pw = request.query['pw']
@@ -192,6 +192,7 @@ async def setup(
         web.get('/restart', restart),
         web.get('/restart-host', restart_host),
         web.get('/shutdown-host', shutdown_host),
+        web.get('/sd-host', sd_host),
     ])
 
     return app
