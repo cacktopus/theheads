@@ -38,11 +38,11 @@ function playSoundByFilename(audioFilename, callback) {
         const fullFilename = getFullFilename(audioFilename);
 
         // Play 15hz slightly before playing the actual audio
-        const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
-        // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+        // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
+        const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
         player.play(sampleAudioFullPath);
 
-        const playDelayTime = 200;
+        const playDelayTime = 150;
         // console.log(playDelayTime);
         // let audio = player.play(fullFilename, { timeout: playDelayTime }, function (err) {
         setTimeout(() => {
