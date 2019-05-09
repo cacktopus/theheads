@@ -127,18 +127,15 @@ async def restart(request):
 async def restart_host(request):
     return await sudo("--non-interactive", "shutdown", "-r", "now")
 
-async def shutdown_host(request):
-    return await sudo("--non-interactive", "shutdown", "-h", "now")
-
-async def sd_host(request):
-    return await sudo("--non-interactive", "shutdown", "-h", "now")
-
 # async def shutdown_host(request):
-#     pw = request.query['pw']
-#     if pw == '1199':
-#         return await sudo("--non-interactive", "shutdown", "-h", "now")
-#     else:
-#         return web.Response(text="Invalid \n", content_type="text/plain")
+#     return await sudo("--non-interactive", "shutdown", "-h", "now")
+
+async def shutdown_host(request):
+    pw = request.query['pw']
+    if pw == '1199':
+        return await sudo("--non-interactive", "shutdown", "-h", "now")
+    else:
+        return web.Response(text="Invalid \n", content_type="text/plain")
 
 async def setup(
         port: int,
@@ -191,8 +188,7 @@ async def setup(
         web.get('/start', start),
         web.get('/restart', restart),
         web.get('/restart-host', restart_host),
-        web.get('/shutdown-host', shutdown_host),
-        web.get('/sd-host', sd_host),
+        web.get('/shutdown-host', shutdown_host)
     ])
 
     return app
