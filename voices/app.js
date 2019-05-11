@@ -29,4 +29,7 @@ app.get('/audio', (req, res) => {
     res.send('playing');
 })
 
+// Testing routes
+app.get('/getVoices', [routes.getVoices])
+
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

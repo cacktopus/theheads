@@ -5,10 +5,16 @@ const http = require('http');
 const fs = require('fs');
 const md5 = require('md5');
 
+// Custom APIs
+const MaryTtsApi = require(`../lib/MaryTtsApi`);
+
 // Config related:
 const OUTPUT_DIR = `outputs`;
 const SAMPLES_DIR = `samples`;
 
+const localhost = `http://127.0.0.1:59125/voices`
+
+const endpoint_get_voices = `http://127.0.0.1:59125/voices`
 // Holds audio 
 
 // 
@@ -308,5 +314,37 @@ module.exports = {
             .catch(err => {
                 res.json({ success: false, err });
             });
+    },
+
+    // Testing
+    getVoices: (req, res) => {
+        // return axios.get('https://google.com')
+        //     .then(function (response) {
+        //         console.log(response.data);
+        //         console.log(response.status);
+        //         console.log(response.statusText);
+        //         console.log(response.headers);
+        //         console.log(response.config);
+        //         res.json(Object.keys(response));
+        //     });
+
+
+        MaryTtsApi.getVoices()
+            .then(data => {
+                res.json({ voices: data });
+            })
+            .catch(err => {
+                res.json({ err: JSON.stringify(err) });
+            });
+        // .then(responseData => {
+        //     console.log(2);
+        //     res.json({ok: 3});
+        //     // res.json({responseData});
+        // })
+        // .catch(err => {
+        //     console.log(3);
+        //     res.json({err: JSON.stringify(err)});
+        // });
+        // return res.json({a:23});
     }
 }
