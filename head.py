@@ -67,11 +67,12 @@ class Stepper:
             await asyncio.sleep(1.0 / self._speed)
 
             direction = self._controller.act(self._pos, self._target)
-            if direction is not None:
+            if direction in (1, -1):
                 self._pos += direction
                 self._pos %= NUM_STEPS
-                self.queue.put_nowait(self._pos)
                 self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
+
+            self.queue.put_nowait(self._pos)
 
             if self._controller.is_done():
                 self._controller.finish(self)

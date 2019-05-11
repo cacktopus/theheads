@@ -9,6 +9,7 @@ STEPS = 200
 
 FORWARD = 1
 BACKWARD = -1
+NO_STEP = 0
 
 
 class FakeGPIO:
@@ -88,6 +89,9 @@ class ZeroDetector:
 
         for i in range(steps_to_zero):
             yield from self.step(FORWARD)
+
+        for _ in range(50):
+            yield NO_STEP
 
     def scan(self):
         print("scan")
