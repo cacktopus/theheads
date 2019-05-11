@@ -10,6 +10,10 @@ from scene_follow_evade import follow_evade
 from scene_in_n_out import in_n_out
 
 
+class SceneNotFound(Exception):
+    pass
+
+
 class Orchestrator:
     def __init__(
             self,
@@ -24,6 +28,13 @@ class Orchestrator:
         self._current_orch = None
         self.focal_points = {}
 
+    available_scenes = [
+        conversation,
+        find_zeros,
+        follow_evade,
+        in_n_out,
+    ]
+
     def notify(self, subject, **kw):
         if subject == "head-rotation":
             rotation = kw['rotation']
@@ -33,18 +44,25 @@ class Orchestrator:
         if subject == "focal-points":
             self.focal_points = kw['focal_points']
 
+    @classmethod
+    def find_scene(cls, name: str) -> Callable:
+        for scene in cls.available_scenes:
+            if scene.__name__ == name:
+                return scene
+        else:
+            raise SceneNotFound(f"Scene not found: {name}")
+
     async def _dj(self):
         await asyncio.sleep(1.0)
-        orchs = [
-            follow_evade,
-            conversation,
-            in_n_out,
-            find_zeros,
+
+        scenes = [
+            Orchestrator.find_scene(name)
+            for name in self.inst.scenes
         ]
 
-        for orch in itertools.cycle(orchs):
-            print(f"running {orch.__name__}")
-            task: asyncio.Task = asyncio.create_task(orch(self))
+        for scene in itertools.cycle(scenes):
+            print(f"running {scene.__name__}")
+            task: asyncio.Task = asyncio.create_task(scene(self))
             try:
                 await asyncio.wait_for(task, timeout=15)
             except asyncio.TimeoutError:

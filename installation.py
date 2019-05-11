@@ -1,5 +1,5 @@
 import math
-from typing import Dict
+from typing import Dict, List
 
 import yaml
 
@@ -85,6 +85,7 @@ class Installation:
         self.cameras: Dict[str, Camera] = {}
         self.kinects: Dict[str, Kinect] = {}
         self.heads: Dict[str, Head] = {}
+        self.scenes: List = []
 
     def add_stand(self, stand: Stand):
         self.stands[stand.name] = stand
@@ -136,6 +137,8 @@ class Installation:
                 s.add_head(h)
 
             inst.add_stand(s)
+
+        inst.scenes = list(obj['scenes'])
 
         return inst
 
