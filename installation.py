@@ -1,14 +1,8 @@
-import asyncio
 import math
-import os
-from glob import glob
 from typing import Dict
 
 import yaml
-from aiohttp import web
 
-from consul_config import ConsulBackend
-from const import DEFAULT_CONSUL_ENDPOINT
 from config import Config
 from transformations import Mat, Vec
 
@@ -151,7 +145,6 @@ async def build_installation(cfg: Config):
     kinects = {}
     heads = {}
     stands = {}
-    scale_translate = {}
     scale = 75
     translate_x = 750
     translate_y = 100
@@ -214,73 +207,6 @@ async def build_installation(cfg: Config):
             "x": translate_x,
             "y": translate_y,
         },
-        # kinects=list(kinects.values())
     )
 
     return result
-
-
-def build_installation_from_filesystem(name):
-    """deprecated"""
-    base = os.path.join("etcd", "the-heads", "installations", name)
-    if not os.path.exists(base):
-        raise web.HTTPNotFound()
-
-    cameras = {}
-    for path in glob(os.path.join(base, "cameras/*.yaml")):
-        with open(path) as fp:
-            camera = yaml.safe_load(fp)
-            cameras[camera['name']] = camera
-
-    kinects = {}
-    for path in glob(os.path.join(base, "kinects/*.yaml")):
-        with open(path) as fp:
-            kinect = yaml.safe_load(fp)
-            kinects[kinect['name']] = kinect
-
-    heads = {}
-    for path in glob(os.path.join(base, "heads/*.yaml")):
-        with open(path) as fp:
-            head = yaml.safe_load(fp)
-            heads[head['name']] = head
-
-    stands = {}
-    for path in glob(os.path.join(base, "stands/*.yaml")):
-        with open(path) as fp:
-            stand = yaml.safe_load(fp)
-            if stand.get("enabled", True):
-                stands[stand['name']] = stand
-
-    for stand in stands.values():
-        stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
-        stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
-        stand['heads'] = [heads[h] for h in stand.get('heads', [])]
-
-    result = dict(
-        name=name,
-        stands=list(stands.values()),
-    )
-
-    return result
-
-
-def main():
-    loop = asyncio.get_event_loop()
-
-    cfg = loop.run_until_complete(
-        Config(ConsulBackend(DEFAULT_CONSUL_ENDPOINT)).setup())
-    result = loop.run_until_complete(build_installation("living-room", cfg))
-    inst = Installation.unmarshal(result)
-
-    c0 = inst.cameras['camera0']
-    pos0 = c0.stand.m * c0.m * Vec(0, 0)
-
-    c1 = inst.cameras['camera1']
-    pos1 = c1.stand.m * c1.m * Vec(0, 0)
-
-    print(pos0)
-    print(pos1)
-
-
-if __name__ == '__main__':
-    main()
