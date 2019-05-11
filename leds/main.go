@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"math"
-	"net/http"
 	"os"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
@@ -31,6 +32,12 @@ var (
 	startLed = 10
 )
 
+var (
+	leds      []led
+	positions []Vec2
+	spiConn   spi.Conn
+)
+
 func init() {
 	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
 	if ok {
@@ -49,6 +56,39 @@ func init() {
 			panic(err)
 		}
 	}
+
+	leds = make([]led, numLeds)
+	positions = make([]Vec2, numLeds)
+
+	// Make sure periph is initialized.
+	if _, err := host.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Use spireg SPI port registry to find the first available SPI bus.
+	p, err := spireg.Open("")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// defer p.Close() # TODO
+
+	// Convert the spi.Port into a spi.Conn so it can be used for communication.
+	spiConn, err = p.Connect(3809524*physic.Hertz, spi.Mode3, 8)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Calculate real-world approximate position of LEDS
+	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
+		N := (numLeds - startLed) - 1
+		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
+		u := Vec2{math.Cos(theta), math.Sin(theta)}
+		u = u.Scale(ledRingRadius * 3.333)
+		positions[i] = u
+	}
+
+	// reset
+	send(spiConn, leds)
 }
 
 func adaptForSpi(data []byte) []byte {
@@ -67,9 +107,8 @@ func send(conn spi.Conn, leds []led) {
 	write := make([]byte, numLeds*3)
 
 	for i := 0; i < numLeds; i++ {
-		// TODO: confirm rgb order
-		write[i*3+0] = byte(255.0 * clamp(0, leds[i].r, maxBrightness))
-		write[i*3+1] = byte(255.0 * clamp(0, leds[i].g, maxBrightness))
+		write[i*3+0] = byte(255.0 * clamp(0, leds[i].g, maxBrightness))
+		write[i*3+1] = byte(255.0 * clamp(0, leds[i].r, maxBrightness))
 		write[i*3+2] = byte(255.0 * clamp(0, leds[i].b, maxBrightness))
 	}
 
@@ -94,78 +133,96 @@ type led struct {
 	r, g, b float64
 }
 
-func runLeds() {
-	// Make sure periph is initialized.
-	if _, err := host.Init(); err != nil {
-		log.Fatal(err)
-	}
+type callback func(time.Duration)
 
-	// Use spireg SPI port registry to find the first available SPI bus.
-	p, err := spireg.Open("")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer p.Close()
+func decay(t time.Duration) {
+	decayConstant := 0.99
 
-	// Convert the spi.Port into a spi.Conn so it can be used for communication.
-	c, err := p.Connect(3809524*physic.Hertz, spi.Mode3, 8)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	leds := make([]led, numLeds)
-	positions := make([]Vec2, numLeds)
-
-	// Calculate real-world approximate position of LEDS
-	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
-		N := (numLeds - startLed) - 1
-		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
-		u := Vec2{math.Cos(theta), math.Sin(theta)}
-		u = u.Scale(ledRingRadius * 3.333)
-		positions[i] = u
-	}
-
-	// reset state. TODO: gradually turn this to zero.
-	send(c, leds)
-
-	for t := 0; ; t++ {
+	if t < time.Second*30 {
 		for i := startLed; i < numLeds; i++ {
-			pos := positions[i]
-			leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-				float64(pos.x+000),
-				float64(pos.y+000),
-				float64(t)*0.003,
-			))
-
-			leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-				float64(pos.x+100),
-				float64(pos.y+100),
-				float64(t)*0.003,
-			))
-
-			leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-				float64(pos.x+200),
-				float64(pos.y+200),
-				float64(t)*0.003,
-			))
+			leds[i].r *= decayConstant
+			leds[i].g *= decayConstant
+			leds[i].b *= decayConstant
 		}
+	} else {
+		for i := startLed; i < numLeds; i++ {
+			leds[i].r = 0.10
+			leds[i].g = 0
+			leds[i].b = 0
+		}
+	}
+}
 
-		send(c, leds)
+func rainbow(tick time.Duration) {
+	timeScale := 3E-10
 
-		time.Sleep(time.Millisecond * 30)
+	for i := startLed; i < numLeds; i++ {
+		pos := positions[i]
+		leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			float64(pos.x+000),
+			float64(pos.y+000),
+			float64(tick)*timeScale,
+		))
+
+		leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			float64(pos.x+100),
+			float64(pos.y+100),
+			float64(tick)*timeScale,
+		))
+
+		leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			float64(pos.x+200),
+			float64(pos.y+200),
+			float64(tick)*timeScale,
+		))
+	}
+}
+
+func runLeds(ch <-chan callback) {
+	t0 := time.Now()
+	var cb callback = rainbow
+
+	for {
+		select {
+		case new_cb := <-ch:
+			fmt.Println(new_cb)
+			t0 = time.Now()
+			cb = new_cb
+		case <-time.After(time.Millisecond * 30):
+			t := time.Now().Sub(t0)
+			cb(t)
+			send(spiConn, leds)
+		}
 	}
 }
 
 func main() {
-	go func() {
-		addr := ":8082"
+	addr := ":8082"
+	ch := make(chan callback)
 
-		http.Handle("/metrics", promhttp.Handler())
-		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("OK\n"))
+	r := gin.Default()
+
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"result": "ok",
 		})
-		http.ListenAndServe(addr, nil)
+	})
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	r.GET("/rainbow", func(c *gin.Context) {
+		ch <- rainbow
+		c.JSON(200, gin.H{"result": "ok"})
+	})
+
+	r.GET("/decay", func(c *gin.Context) {
+		ch <- decay
+		c.JSON(200, gin.H{"result": "ok"})
+	})
+
+	go func() {
+		r.Run(addr)
 	}()
 
-	runLeds()
+	runLeds(ch)
 }
