@@ -109,6 +109,7 @@ async def sudo(*cmd):
     else:
         return web.Response(text=f"{stderr.decode()}\n", content_type="text/plain", status=500)
 
+
 async def stop(request):
     service = request.query['service']
     return await sudo("--non-interactive", "systemctl", "stop", service)
@@ -127,6 +128,7 @@ async def restart(request):
 async def restart_host(request):
     return await sudo("--non-interactive", "shutdown", "-r", "now")
 
+
 # async def shutdown_host(request):
 #     return await sudo("--non-interactive", "shutdown", "-h", "now")
 
@@ -136,6 +138,7 @@ async def shutdown_host(request):
         return await sudo("--non-interactive", "shutdown", "-h", "now")
     else:
         return web.Response(text="Invalid \n", content_type="text/plain")
+
 
 async def setup(
         port: int,

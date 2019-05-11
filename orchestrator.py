@@ -43,6 +43,7 @@ class Orchestrator:
         ]
 
         for orch in itertools.cycle(orchs):
+            print(f"running {orch.__name__}")
             task: asyncio.Task = asyncio.create_task(orch(self))
             try:
                 await asyncio.wait_for(task, timeout=15)
