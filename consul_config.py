@@ -1,13 +1,15 @@
 import json
 from typing import Dict, List
 
-from config import get, put
+from config import get, put, NoDefault, NotFound
 from const import DEFAULT_CONSUL_ENDPOINT
 from rpc_util import d64
 
 
 class ConfigError(Exception):
     pass
+
+
 
 
 class ConsulBackend:
@@ -18,12 +20,15 @@ class ConsulBackend:
         assert key.startswith(b"/")
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
 
-        print("hey {0}".format(url))
-
         resp, body = await get(url)
-        assert resp.status == 200
-        result = json.loads(body)
-        return result
+        if resp.status == 200:
+            result = json.loads(body)
+            return result
+
+        elif resp.status == 404:
+            raise NotFound
+
+        assert False, f"Unexpected status code {resp.status}"
 
     async def get_config_str(self, key: bytes) -> bytes:
         result = await self.get(key)
@@ -39,21 +44,22 @@ class ConsulBackend:
 
         resp, body = await get(url)
 
-        # Changed this from "assert resp.status == 200", to a conditional
-        if (resp.status == 200):
-            assert resp.status == 200
+        result = {}
 
+        if resp.status == 200:
             kvs = json.loads(body)
-            result = {}
             for a in kvs:
                 key = a['Key'].encode()
                 val = d64(a['Value'])
                 result[key] = val
 
             return result
+
+        elif resp.status == 404:
+            return result
+
         else:
-            print("\n***WARNING: Failed to load: {0}***\n".format(key))
-            return {}
+            assert False, f"Unexpected status code {resp.status}"
 
     async def get_keys(self, key_prefix: str) -> List[str]:
         assert key_prefix.startswith("/")

@@ -46,6 +46,14 @@ async def put(url, data):
             return response, text
 
 
+class NoDefault:
+    pass
+
+
+class NotFound(Exception):
+    pass
+
+
 class Config:
     def __init__(self, backend):
         self._backend = backend
@@ -55,12 +63,17 @@ class Config:
         self._params['instance'] = instance_name
         return self
 
-    async def get_config_str(self, key_template: str) -> str:
+    async def get_config_str(self, key_template: str, default=NoDefault) -> str:
         key = key_template.format(**self._params).encode()
 
         print("config get", key.decode())
 
-        result = await self._backend.get_config_str(key)
+        try:
+            result = await self._backend.get_config_str(key)
+        except NotFound:
+            if default is not NoDefault:
+                return default
+            raise
 
         return result.decode().strip()
 
