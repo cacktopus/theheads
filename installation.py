@@ -183,16 +183,11 @@ async def build_installation(cfg: Config):
         stand['heads'] = [heads[h] for h in stand.get('heads', [])]
         stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
 
-    try:
-        # for scale,translate, etc. for scene
-        scene = await cfg.get_config_yaml("/the-heads/scene.yaml")
-    except NotFound:
-        print("scene.yaml not found")
-    else:
-        scale = scene.get("scale", scale)
-        translate = scene.get("translate", {"x": translate_x, "y": translate_y})
-        translate_x = translate["x"]
-        translate_y = translate["y"]
+    scene = await cfg.get_config_yaml("/the-heads/scene.yaml")
+    scale = scene.get("scale", scale)
+    translate = scene.get("translate", {"x": translate_x, "y": translate_y})
+    translate_x = translate["x"]
+    translate_y = translate["y"]
 
     for name, body in (await cfg.get_prefix(
             "/the-heads/kinects/"
@@ -208,6 +203,7 @@ async def build_installation(cfg: Config):
             "x": translate_x,
             "y": translate_y,
         },
+        scenes=scene['scenes'],
     )
 
     return result
