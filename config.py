@@ -77,7 +77,7 @@ class Config:
 
         return result.decode().strip()
 
-    async def get_config_yaml(self, key_template: str) -> str:
+    async def get_config_yaml(self, key_template: str) -> Dict:
         key = key_template.format(**self._params)
         assert key.endswith(".yaml")
 
