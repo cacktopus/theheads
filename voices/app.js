@@ -9,8 +9,31 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 })); 
 
+const homeHTML = `
+<html><body>
+  <div>Endpoints</div>
+  <div>
+    <a href="/voices">/voices</a>
+  </div>
+  <div>
+    <a href="/audioeffects">/audioeffects</a>
+  </div>
+  <div>
+    <br/>
+    Example of playing:
+    <ul>
+      <li>
+        Generic (play=____; e.g. play=Hello There ):<br/><a href="/play?text=Hello There">/play?text=Hello There</a>
+      </li>
+      <li>
+        Different Voice (voice=______; e.g. voice=dfki-spike-hsmm ):<br/>
+        <a href="/play?text=Hello There&voice=dfki-spike-hsmm">/play?text=Hello There&voice=dfki-spike-hsmm</a>
+      </li>
+  </div>
+  </body>
+`
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.get('/', (req, res) => res.send(homeHTML))
 
 app.get('/process', [routes.processSound])
 app.post('/process', [routes.processSound])
@@ -30,6 +53,7 @@ app.get('/audio', (req, res) => {
 })
 
 // Testing routes
-app.get('/getVoices', [routes.getVoices])
+app.get('/voices', [routes.getVoices])
+app.get('/audioeffects', [routes.getAudioEffects])
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
