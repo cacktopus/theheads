@@ -24,6 +24,7 @@ def process_text(t):
     parts = [" ".join(p.split()) for p in parts]
 
     parts = [p + "!" for p in parts]
+    parts = ["uh, " + p for p in parts]
     return parts
 
 
@@ -33,6 +34,7 @@ async def conversation(orchestrator: "Orchestrator"):
     parts = process_text(text)
 
     for part in parts:
+        print(f"processing: {part}")
         calls = [orchestrator.head_manager.send("voices", head.name, f"/process?text={part}") for head in heads]
         await asyncio.gather(*calls)
 
