@@ -8,6 +8,15 @@ from scene_conversation import conversation
 from scene_find_zeros import find_zeros
 from scene_follow_evade import follow_evade
 from scene_in_n_out import in_n_out
+from scene_idle import idle
+
+AVAILABLE_SCENES = [
+    conversation,
+    find_zeros,
+    follow_evade,
+    in_n_out,
+    idle,
+]
 
 
 class SceneNotFound(Exception):
@@ -28,13 +37,6 @@ class Orchestrator:
         self._current_orch = None
         self.focal_points = {}
 
-    available_scenes = [
-        conversation,
-        find_zeros,
-        follow_evade,
-        in_n_out,
-    ]
-
     def notify(self, subject, **kw):
         if subject == "head-rotation":
             rotation = kw['rotation']
@@ -46,7 +48,7 @@ class Orchestrator:
 
     @classmethod
     def find_scene(cls, name: str) -> Callable:
-        for scene in cls.available_scenes:
+        for scene in AVAILABLE_SCENES:
             if scene.__name__ == name:
                 return scene
         else:
@@ -63,8 +65,11 @@ class Orchestrator:
         for scene in itertools.cycle(scenes):
             print(f"running {scene.__name__}")
             task: asyncio.Task = asyncio.create_task(scene(self))
+
+            timeout = 60 if len(scenes) > 1 else None
+
             try:
-                await asyncio.wait_for(task, timeout=15)
+                await asyncio.wait_for(task, timeout=timeout)
             except asyncio.TimeoutError:
                 pass
             except Exception as e:

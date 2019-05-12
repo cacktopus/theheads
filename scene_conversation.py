@@ -24,9 +24,7 @@ async def conversation(orchestrator: "Orchestrator"):
 
         t0 = h0.point_to(h1.global_pos)
         path = f"/rotation/{t0:f}"
-        fut = orchestrator.head_manager.send("head", h0.name, path)
-        res = await fut
-        print(res)
+        orchestrator.head_manager.send("head", h0.name, path)
 
         await asyncio.sleep(0.5)
 
