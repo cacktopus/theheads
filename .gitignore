@@ -4,3 +4,5 @@ svg.js
 .DS_Store
 dump.rdb
 .idea/
+*.wav
+*.mp3
