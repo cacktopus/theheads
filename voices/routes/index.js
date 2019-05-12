@@ -142,13 +142,13 @@ class AudioController {
     //     totalDuration: 1117.125
     // }
     // This returns a promise with the resolved value being the 'audio' object
-    // This plays it by the filename (not including the outputs directory.
+    // This plays it by the filename and should include the `output` directory
     // This returns the 'audio' object to be used to kill if necessary.
     playSoundByFilename({audioFilename, isSynchronous}) {
 
         return new Promise((resolve, reject) => {
 
-            const fullFilename = this.getFullFilename(audioFilename);
+            const fullFilename = audioFilename;
 
             // Play 15hz slightly before playing the actual audio
             // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
@@ -240,7 +240,7 @@ class AudioController {
                 // const newFilename = `${++_audioCount}.wav`;
 
                 // Download and save the file.
-                const fullFileNamePath = `${OUTPUT_DIR}/${newFilename}`;
+                const fullFileNamePath = this.getFullFilename(newFilename);
                 const file = fs.createWriteStream(fullFileNamePath);
                 const request = http.get(ttsUrl, function (response) {
                     response.pipe(file);
@@ -286,22 +286,21 @@ class AudioController {
         const self = this;
         const text = this.getTextFromReq(req);
         const options = this.getOptionsFromReq(req);
-        const initialTimestamp = new Date();
         const isSynchronous = options.isSync;
         let preProcessTime = 0;
 
         // const audioObjIndex = findAudioObjIndexByText(text);
 
         const md5Filename = this.getMd5Filename(text, options);
-        // const isFileExists = doesFileExistsByTextAndOptions(text, options);
-        const isFileExists = this.doesFileExist(md5Filename);
+        const filePath = this.getFullFilename(md5Filename);
+        const isFileExists = this.doesFileExist(filePath);
 
         let promisePlaySound;
 
         console.log('isFileExists', isFileExists);
         // Check if file already exists, and if so just play it.
         if (isFileExists) {
-            promisePlaySound = this.playSoundByFilename({audioFilename: md5Filename, isSynchronous})
+            promisePlaySound = this.playSoundByFilename({audioFilename: filePath, isSynchronous})
             // .then(data => {
             //     return Object.assign({preProcessTime: 0}, data)
             // });
@@ -321,7 +320,7 @@ class AudioController {
                     // console.log('pt2: ', processTime)
                     // preProcessTime = data.processTime;
                     // console.log("pro\n\n",preProcessTime);
-                    return this.playSoundByFilename({audioFilename: md5Filename, isSynchronous});
+                    return this.playSoundByFilename({audioFilename: filePath, isSynchronous});
                 })
             // .then(playSoundResults => {
             //     let totalResults = Object.assign({processTime: processAudioResults.processTime}, playSoundResults);
@@ -339,7 +338,7 @@ class AudioController {
 
         return new Promise((resolve, reject) => {
             promisePlaySound.then(results => {
-                self.getWavDurationByFullPath(self.getFullFilename(md5Filename))
+                self.getWavDurationByFullPath(filePath)
                     .then(duration => {
 
                         if (duration > 0) {
@@ -350,7 +349,7 @@ class AudioController {
                             // const timestampDiff = finalTimestamp - initialTimestamp;
                             // const totalDuration = timestampDiff + durationMs;
 
-                            console.log('\n\n', {durationMs, preProcessTime, totalDuration, results});
+                            // console.log('\n\n', {durationMs, preProcessTime, totalDuration, results});
 
                             resolve({
                                 "success": true,
