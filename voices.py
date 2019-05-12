@@ -1,4 +1,6 @@
 # fake voices server
+import asyncio
+
 from aiohttp import web
 
 from util import run_app
@@ -8,6 +10,14 @@ async def play(request):
     name = request.app['cfg']['name']
     text = request.query['text']
     print(f"{name} playing: {text}")
+    return web.Response(text="ok")
+
+
+async def process(request):
+    name = request.app['cfg']['name']
+    text = request.query['text']
+    print(f"{name} processing: {text}")
+    await asyncio.sleep(0.5)
     return web.Response(text="ok")
 
 
@@ -21,6 +31,7 @@ async def run(name: str, port: int):
 
     app.add_routes([
         web.get("/play", play),
+        web.get("/process", process),
     ])
 
     print(f"Running {name} on port {port}")
