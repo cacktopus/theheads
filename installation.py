@@ -86,6 +86,7 @@ class Installation:
         self.kinects: Dict[str, Kinect] = {}
         self.heads: Dict[str, Head] = {}
         self.scenes: List = []
+        self.startup_scenes: List = []
 
     def add_stand(self, stand: Stand):
         self.stands[stand.name] = stand
@@ -139,6 +140,7 @@ class Installation:
             inst.add_stand(s)
 
         inst.scenes = list(obj['scenes'])
+        inst.startup_scenes = list(obj['startup_scenes'])
 
         return inst
 
@@ -207,6 +209,7 @@ async def build_installation(cfg: Config):
             "y": translate_y,
         },
         scenes=scene['scenes'],
+        startup_scenes=scene['startup_scenes']
     )
 
     return result
