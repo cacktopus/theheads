@@ -48,6 +48,7 @@ class Stepper:
 
     def set_current_position_as_zero(self):
         self._pos = 0
+        self._target = 0
 
     def set_target(self, target: int):
         self._target = target
