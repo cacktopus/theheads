@@ -1,9 +1,9 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const port = 3031;
 const routes = require('./routes');
 
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
@@ -31,30 +31,30 @@ const homeHTML = `
       </li>
   </div>
   </body>
-`
+`;
 
-app.get('/', (req, res) => res.send(homeHTML))
+app.get('/', (req, res) => res.send(homeHTML));
 
-app.get('/process', [routes.processSound])
-app.post('/process', [routes.processSound])
+app.get('/process', [routes.processSound]);
+app.post('/process', [routes.processSound]);
 
-app.get('/play', [routes.playSound])
-app.post('/play', [routes.playSound])
+app.get('/play', [routes.playSound]);
+app.post('/play', [routes.playSound]);
 
 // app.get('/killAll', [routes.killSound])
 // app.get('/stop', [routes.stopSound])
 
-app.get('/stopAll', [routes.stopAllSounds])
-app.get('/stopAllAndPlay', [routes.stopAllSoundsAndPlaySound])
+app.get('/stopAll', [routes.stopAllSounds]);
+app.get('/stopAllAndPlay', [routes.stopAllSoundsAndPlaySound]);
 
 app.get('/audio', (req, res) => {
     console.log('hji');
     res.send('playing');
-})
+});
 
 // API routes
-app.get('/voices', [routes.getVoices])
-app.get('/audioeffects', [routes.getAudioEffects])
+app.get('/voices', [routes.getVoices]);
+app.get('/audioeffects', [routes.getAudioEffects]);
 
 // testing routes
 app.get("/testTime", [routes.testTime]);

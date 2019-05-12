@@ -1,5 +1,4 @@
-const player = require('play-sound')(opts = {})
-const axios = require('axios');
+const player = require('play-sound')(opts = {});
 
 const http = require('http');
 const fs = require('fs');
@@ -74,7 +73,7 @@ class AudioController {
     }
 
     // Returns a promise with the duration
-    getWavDurationByFullPath(fullFileNamePath) {;
+    getWavDurationByFullPath(fullFileNamePath) {
         // const fullpath = `${OUTPUT_DIR}/${filename}`
 
         return new Promise((resolve, reject) => {
@@ -83,7 +82,7 @@ class AudioController {
                     return reject(err);
                     // throw err;
                 }
-                
+
                 if (info && info.duration) {
                     return resolve(info.duration);
                 } else {
@@ -95,7 +94,7 @@ class AudioController {
 
     // Check if a file already exists
     doesFileExist(filename) {
-        const fs = require('fs')
+        const fs = require('fs');
 
         try {
             if (fs.existsSync(filename)) {
@@ -172,7 +171,7 @@ class AudioController {
                         //     callback();
                         // }
                     }
-                })
+                });
 
                 // Add the audio object to the class.
                 this.addAudioObj(audio, audioFilename);
@@ -202,8 +201,9 @@ class AudioController {
             } catch (e) {
                 console.log('e: ', e);
             }
-        };
+        }
     }
+
     // stopAllSounds() {
     //     for (let index in this._audioObjs) {
     //         try {
@@ -259,19 +259,24 @@ class AudioController {
                                 const totalDuration = timeDiff + durationMs;
                                 // console.log({ success: true, processTime : timeDiff, duration: durationMs, totalDuration });
 
-                                return resolve({ success: true, processTime : timeDiff, duration: durationMs, totalDuration });
+                                return resolve({
+                                    success: true,
+                                    processTime: timeDiff,
+                                    duration: durationMs,
+                                    totalDuration
+                                });
                             })
                             .catch(err => {
-                                return resolve({ success: true });
+                                return resolve({success: true});
                             });
-                        
-                        
+
+
                     });
                 }).on('error', (err) => {
-                    return reject({ err });
+                    return reject({err});
                 });
             } else {
-                return resolve({ success: false, errMsg: "no filename, probalby due to no text" });
+                return resolve({success: false, errMsg: "no filename, probalby due to no text"});
             }
         });
     }
@@ -297,9 +302,9 @@ class AudioController {
         // Check if file already exists, and if so just play it.
         if (isFileExists) {
             promisePlaySound = this.playSoundByFilename({audioFilename: md5Filename, isSynchronous})
-                // .then(data => {
-                //     return Object.assign({preProcessTime: 0}, data)
-                // });
+            // .then(data => {
+            //     return Object.assign({preProcessTime: 0}, data)
+            // });
             // return playSoundByIndex(audioObjIndex);
 
             // const playResult = playSoundByIndex(audioObjIndex);
@@ -309,7 +314,7 @@ class AudioController {
             // let processAudioResults = {};
             promisePlaySound = this.processSoundByText(text, options)
                 .then(data => {
-                    
+
                     // processAudioResults = data;
                     preProcessTime = data.processTime;
                     console.log('preProcessTime2', preProcessTime);
@@ -318,48 +323,48 @@ class AudioController {
                     // console.log("pro\n\n",preProcessTime);
                     return this.playSoundByFilename({audioFilename: md5Filename, isSynchronous});
                 })
-                // .then(playSoundResults => {
-                //     let totalResults = Object.assign({processTime: processAudioResults.processTime}, playSoundResults);
+            // .then(playSoundResults => {
+            //     let totalResults = Object.assign({processTime: processAudioResults.processTime}, playSoundResults);
 
-                //     // // console.log('\n\n\ntotalResults', totalResults);
-                //     // console.log('processAudioResults', processAudioResults);
-                //     // console.log('\n\nplaySoundResults', playSoundResults);
-                //     return totalResults
-                // })
-                // .catch(err => {
-                //     console.log("Err", err);
-                //     retprocessTimeurn false;
-                // });
+            //     // // console.log('\n\n\ntotalResults', totalResults);
+            //     // console.log('processAudioResults', processAudioResults);
+            //     // console.log('\n\nplaySoundResults', playSoundResults);
+            //     return totalResults
+            // })
+            // .catch(err => {
+            //     console.log("Err", err);
+            //     retprocessTimeurn false;
+            // });
         }
 
         return new Promise((resolve, reject) => {
             promisePlaySound.then(results => {
                 self.getWavDurationByFullPath(self.getFullFilename(md5Filename))
-                .then(duration => {
+                    .then(duration => {
 
-                    if (duration > 0) {
-                        const durationMs = parseFloat(duration) * 1000;
-                        // const processTime = results.processTime;
-                        const totalDuration = durationMs + preProcessTime;
-                        // const finalTimestamp = new Date();
-                        // const timestampDiff = finalTimestamp - initialTimestamp;
-                        // const totalDuration = timestampDiff + durationMs;
+                        if (duration > 0) {
+                            const durationMs = parseFloat(duration) * 1000;
+                            // const processTime = results.processTime;
+                            const totalDuration = durationMs + preProcessTime;
+                            // const finalTimestamp = new Date();
+                            // const timestampDiff = finalTimestamp - initialTimestamp;
+                            // const totalDuration = timestampDiff + durationMs;
 
-                        console.log('\n\n', {durationMs, preProcessTime, totalDuration, results});
+                            console.log('\n\n', {durationMs, preProcessTime, totalDuration, results});
 
-                        resolve({
-                            "success": true,
-                            "processTime": preProcessTime,
-                            "duration": durationMs,
-                            "totalDuration": totalDuration
-                        })
-                    } else {
-                        resolve({
-                            "success": true,
-                            "noduration" : true
-                        });
-                    }
-                });
+                            resolve({
+                                "success": true,
+                                "processTime": preProcessTime,
+                                "duration": durationMs,
+                                "totalDuration": totalDuration
+                            })
+                        } else {
+                            resolve({
+                                "success": true,
+                                "noduration": true
+                            });
+                        }
+                    });
             })
         });
     }
@@ -374,15 +379,15 @@ module.exports = {
 
         // If there was no text.
         if (!text || text.trim() === "") {
-            return res.json({ success: false, errMsg: "no text" })
+            return res.json({success: false, errMsg: "no text"})
         }
 
         _AudioController.processSoundByText(text)
             .then(data => {
-                return res.json({ success: data });
+                return res.json({success: data});
             })
             .catch(err => {
-                return res.json({ success: false });
+                return res.json({success: false});
             });
     },
     playSound: (req, res) => {
@@ -394,7 +399,7 @@ module.exports = {
             })
             .catch(err => {
                 console.log('err', err);
-                res.json({ success: false, err });
+                res.json({success: false, err});
             });
     },
     // stopSound: (req, res) => {
@@ -418,7 +423,7 @@ module.exports = {
                 res.json(playResult);
             })
             .catch(err => {
-                res.json({ success: false, err });
+                res.json({success: false, err});
             });
     },
 
@@ -434,7 +439,7 @@ module.exports = {
                 }
             })
             .catch(err => {
-                res.json({ err: JSON.stringify(err) });
+                res.json({err: JSON.stringify(err)});
             });
     },
     // Testing
@@ -449,7 +454,7 @@ module.exports = {
                 }
             })
             .catch(err => {
-                res.json({ err: JSON.stringify(err) });
+                res.json({err: JSON.stringify(err)});
             });
     },
 
@@ -474,4 +479,4 @@ module.exports = {
 
     //     return ttsUrl;
     // }
-}
+};
