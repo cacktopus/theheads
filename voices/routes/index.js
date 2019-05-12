@@ -145,7 +145,7 @@ class AudioController {
     // This returns a promise with the resolved value being the 'audio' object
     // This plays it by the filename (not including the outputs directory.
     // This returns the 'audio' object to be used to kill if necessary.
-    playSoundByFilename(audioFilename, callback) {
+    playSoundByFilename({audioFilename, isSynchronous}) {
 
         return new Promise((resolve, reject) => {
 
@@ -162,53 +162,26 @@ class AudioController {
 
                     if (err && !err.killed) {
                         console.log(err);
+                        return reject(err);
                         // throw err
                     } else {
-                        if (callback && typeof callback === "function") {
-                            callback();
+                        if (isSynchronous) {
+                            return resolve(audio);
                         }
+                        // if (callback && typeof callback === "function") {
+                        //     callback();
+                        // }
                     }
                 })
 
                 // Add the audio object to the class.
                 this.addAudioObj(audio, audioFilename);
-                return resolve(audio);
+                if (!isSynchronous) {
+                    return resolve(audio);
+                }
             }, playDelayTime);
         });
     }
-
-    // BAD!playSoundByFilename(audioFilename) {
-
-    //     return new Promise((resolve, reject) => {
-
-    //         const fullFilename = this.getFullFilename(audioFilename);
-
-    //         // Play 15hz slightly before playing the actual audio
-    //         // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
-    //         const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
-    //         player.play(sampleAudioFullPath);
-
-    //         // const promiseGetWavDuration = getWavDurationByFullPath(fullFilename);
-
-    //         const playDelayTime = 150;
-    //         setTimeout(() => {
-    //             let audio = player.play(fullFilename, function (err) {
-
-    //                 if (err && !err.killed) {
-    //                     console.log(err);
-    //                     // throw err
-    //                 }
-    //             })
-
-    //             // Add the audio object to the class.
-    //             this.addAudioObj(audio, audioFilename);
-
-    //             return resolve({
-    //                 audio
-    //             });
-    //         }, playDelayTime);
-    //     });
-    // }
 
     stopAudioForAudioObj(audioObj) {
         if (audioObj && audioObj.audio && audioObj.audio.kill) {
@@ -309,6 +282,8 @@ class AudioController {
         const text = this.getTextFromReq(req);
         const options = this.getOptionsFromReq(req);
         const initialTimestamp = new Date();
+        const isSynchronous = options.isSync;
+        let preProcessTime = 0;
 
         // const audioObjIndex = findAudioObjIndexByText(text);
 
@@ -318,9 +293,13 @@ class AudioController {
 
         let promisePlaySound;
 
+        console.log('isFileExists', isFileExists);
         // Check if file already exists, and if so just play it.
         if (isFileExists) {
-            promisePlaySound = this.playSoundByFilename(md5Filename);
+            promisePlaySound = this.playSoundByFilename({audioFilename: md5Filename, isSynchronous})
+                // .then(data => {
+                //     return Object.assign({preProcessTime: 0}, data)
+                // });
             // return playSoundByIndex(audioObjIndex);
 
             // const playResult = playSoundByIndex(audioObjIndex);
@@ -330,18 +309,26 @@ class AudioController {
             // let processAudioResults = {};
             promisePlaySound = this.processSoundByText(text, options)
                 .then(data => {
+                    
                     // processAudioResults = data;
-                    return this.playSoundByFilename(md5Filename);
+                    preProcessTime = data.processTime;
+                    console.log('preProcessTime2', preProcessTime);
+                    // console.log('pt2: ', processTime)
+                    // preProcessTime = data.processTime;
+                    // console.log("pro\n\n",preProcessTime);
+                    return this.playSoundByFilename({audioFilename: md5Filename, isSynchronous});
                 })
                 // .then(playSoundResults => {
-                //     let totalResults = Object.assign(processAudioResults, playSoundResults);
+                //     let totalResults = Object.assign({processTime: processAudioResults.processTime}, playSoundResults);
 
-                //     console.log('\n\n\ntotalResults', totalResults);
+                //     // // console.log('\n\n\ntotalResults', totalResults);
+                //     // console.log('processAudioResults', processAudioResults);
+                //     // console.log('\n\nplaySoundResults', playSoundResults);
                 //     return totalResults
                 // })
                 // .catch(err => {
                 //     console.log("Err", err);
-                //     return false;
+                //     retprocessTimeurn false;
                 // });
         }
 
@@ -352,13 +339,17 @@ class AudioController {
 
                     if (duration > 0) {
                         const durationMs = parseFloat(duration) * 1000;
-                        const finalTimestamp = new Date();
-                        const timestampDiff = finalTimestamp - initialTimestamp;
-                        const totalDuration = timestampDiff + durationMs;
+                        // const processTime = results.processTime;
+                        const totalDuration = durationMs + preProcessTime;
+                        // const finalTimestamp = new Date();
+                        // const timestampDiff = finalTimestamp - initialTimestamp;
+                        // const totalDuration = timestampDiff + durationMs;
+
+                        console.log('\n\n', {durationMs, preProcessTime, totalDuration, results});
 
                         resolve({
                             "success": true,
-                            "processTime": timestampDiff,
+                            "processTime": preProcessTime,
                             "duration": durationMs,
                             "totalDuration": totalDuration
                         })
@@ -395,6 +386,7 @@ module.exports = {
             });
     },
     playSound: (req, res) => {
+
         return _AudioController.playSoundFromReq(req)
             .then(playResult => {
                 let results = Object.assign({}, playResult, {success: true});
@@ -460,6 +452,18 @@ module.exports = {
                 res.json({ err: JSON.stringify(err) });
             });
     },
+
+    testTime: (req, res) => {
+        const initialTime = new Date();
+
+        setTimeout(() => {
+            const timeDiff = new Date() - initialTime;
+            res.json({
+                timeDiff
+            })
+        }, 60 * 1000);
+    }
+
 
     // getMaryTTSUrl(text, options) {
     //     console.log('getMaryTTSUrl: use those options');

@@ -52,8 +52,13 @@ app.get('/audio', (req, res) => {
     res.send('playing');
 })
 
-// Testing routes
+// API routes
 app.get('/voices', [routes.getVoices])
 app.get('/audioeffects', [routes.getAudioEffects])
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+// testing routes
+app.get("/testTime", [routes.testTime]);
+
+const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+const requestTimeoutDur = 5 * 60 * 1000; // 5 mins
+server.timeout = requestTimeoutDur;
