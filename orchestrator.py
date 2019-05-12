@@ -62,6 +62,8 @@ class Orchestrator:
             for name in self.inst.scenes
         ]
 
+        assert len(scenes) > 0
+
         for scene in itertools.cycle(scenes):
             print(f"running {scene.__name__}")
             task: asyncio.Task = asyncio.create_task(scene(self))
