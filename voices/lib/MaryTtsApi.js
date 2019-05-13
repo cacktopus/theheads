@@ -58,7 +58,7 @@ class MaryTtsApiClass {
                 if (response && response.data && response.data.length > 0) {
                     return response.data.split('\n').filter(voice => voice.trim().length > 0).map(voice => {
                         const [voiceName, locale] = voice.split(' ');
-                        return { name: voiceName, locale };
+                        return {name: voiceName, locale};
                     })
 
                 } else {
@@ -113,10 +113,10 @@ class MaryTtsApiClass {
                                     effectParams[effectParamName] = effectParamAmount;
                                 })
 
-                                return { name: effectName, params: effectParams };
+                                return {name: effectName, params: effectParams};
                             } catch (e) {
                                 console.log("Error in MaryTtsApi.getAudioEffects: ", e);
-                                return { name: "", params: "" };
+                                return {name: "", params: ""};
                             }
                         })
 
@@ -199,11 +199,12 @@ class MaryTtsApiClass {
 
         if (indexOfVoice >= 0) {
             let tempVoice = this._list_voices_and_locales[indexOfVoice];
-            return { voice: tempVoice.name, locale: tempVoice.locale }
+            return {voice: tempVoice.name, locale: tempVoice.locale}
         } else {
-            return { voice: undefined, locale: undefined }
+            return {voice: undefined, locale: undefined}
         }
     }
+
     // getLocalFromOptions(options) {
     //     console.log('get local... and return it');
     // }
@@ -220,12 +221,11 @@ class MaryTtsApiClass {
 
     getMaryTTSUrl(text, options = {}) {
         // This gets the voce and locale, and uses default if given voice is invalid
-        const { voice, locale } = this.getVoiceAndLocale(options.voice);
+        const {voice, locale} = this.getVoiceAndLocale(options.voice);
 
         // console.log('options', options, voice, locale);
 
         // const { text 
-        console.log('getMaryTTSUrl: use those options');
         // Encode the text to URL format and create the ttsUrl
         // const encodedText = encodeURI(text);
 
@@ -246,9 +246,9 @@ class MaryTtsApiClass {
         // const ttsUrl = `http://localhost:59125/process?${queryString} INPUT_TYPE=TEXT&OUTPUT_TYPE=${OUTPUT_TYPE}&INPUT_TEXT=${encodedText}&OUTPUT_TEXT=&effect_Volume_selected=&effect_Volume_parameters=amount%3A2.0%3B&effect_Volume_default=Default&effect_Volume_help=Help&effect_TractScaler_selected=&effect_TractScaler_parameters=amount%3A1.5%3B&effect_TractScaler_default=Default&effect_TractScaler_help=Help&effect_F0Scale_selected=&effect_F0Scale_parameters=f0Scale%3A2.0%3B&effect_F0Scale_default=Default&effect_F0Scale_help=Help&effect_F0Add_selected=&effect_F0Add_parameters=f0Add%3A50.0%3B&effect_F0Add_default=Default&effect_F0Add_help=Help&effect_Rate_selected=&effect_Rate_parameters=durScale%3A1.5%3B&effect_Rate_default=Default&effect_Rate_help=Help&effect_Robot_selected=&effect_Robot_parameters=amount%3A100.0%3B&effect_Robot_default=Default&effect_Robot_help=Help&effect_Whisper_selected=&effect_Whisper_parameters=amount%3A100.0%3B&effect_Whisper_default=Default&effect_Whisper_help=Help&effect_Stadium_selected=&effect_Stadium_parameters=amount%3A100.0&effect_Stadium_default=Default&effect_Stadium_help=Help&effect_Chorus_selected=&effect_Chorus_parameters=delay1%3A466%3Bamp1%3A0.54%3Bdelay2%3A600%3Bamp2%3A-0.10%3Bdelay3%3A250%3Bamp3%3A0.30&effect_Chorus_default=Default&effect_Chorus_help=Help&effect_FIRFilter_selected=&effect_FIRFilter_parameters=type%3A3%3Bfc1%3A500.0%3Bfc2%3A2000.0&effect_FIRFilter_default=Default&effect_FIRFilter_help=Help&effect_JetPilot_selected=&effect_JetPilot_parameters=&effect_JetPilot_default=Default&effect_JetPilot_help=Help&HELP_TEXT=&exampleTexts=&VOICE_SELECTIONS=cmu-slt-hsmm%20en_US%20female%20hmm&AUDIO_OUT=WAVE_FILE&LOCALE=en_US&VOICE=cmu-slt-hsmm&AUDIO=WAVE_FILE`; 
         //' -H 'Accept-Encoding: identity;q=1, *;q=0' -H 'Accept-Language: en-US,en;q=0.9' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36' -H 'Accept: */*' -H 'Referer: http://localhost:59125/' -H 'Cookie: _vwo_uuid_v2=DF0E5749002F1F137183F1F57F736BB8B|c2687ce03409733a0ee25030c97c5f26; _ga=GA1.1.550767621.1548186935; __adroll_fpc=8630eb24b37309c255b50f8283059f89; menu-translateY=100; menu-scale=200; menu-translateX=300; CET-Client=s%3AIjkU0Ex_vxfWsHT4-cfxl16_WzxHPF_o.HwlO1MQKTC8cT7brNOXNYEAjsx7aak4w4xvh6WvQb3k; nim=right; __ar_v4=LOMMLKOQ7NES5CPYGS7IEX%3A20190228%3A22%7CNFSSXVP6CJA45FD4HL4PFU%3A20190228%3A22%7CYFMJVVFZZZGPTP4BWJVET6%3A20190228%3A22%7CMYKBYGUXU5EXTEDUE323FL%3A20190207%3A2; CET-Admin=s%3AJ2Ompl5xiHoqDb3RSfFTC_xvcakKiFVF.v6iJmxHTGsUq4e4uy1lz3IzBmI0CTVyvW5u1zvfK2zQ; _gid=GA1.1.267155174.1551688106' -H 'Connection: keep-alive' -H 'Range: bytes=0-' --compressed`;
 
-        console.log(ttsUrl);
         return ttsUrl;
     }
+
     /*
     http://localhost:59125/process
         ?INPUT_TYPE=TEXT
@@ -301,9 +301,9 @@ class MaryTtsApiClass {
                 } else {
                     console.log("NO CONNECTION TO MARY TTS. Cannot init voices.");
                 }
-    
+
             })
-    
+
         // Initialize the list of audio effects & voices
         this.getAudioEffects()
             .then(audioEffectsArray => {
@@ -360,6 +360,6 @@ const MaryTtsApi = new MaryTtsApiClass();
 // }
 
 MaryTtsApi.initializeApiData();
-setInterval(() => MaryTtsApi.initializeApiData() , 60 * 1000); // Every minute refresh data, just in case
+setInterval(() => MaryTtsApi.initializeApiData(), 60 * 1000); // Every minute refresh data, just in case
 
 module.exports = MaryTtsApi;
