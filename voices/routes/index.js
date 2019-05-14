@@ -148,20 +148,16 @@ class AudioController {
             const fullFilename = audioFilename;
             
             // Play 15hz slightly before playing the actual audio
-            const sampleAudioPath = `${SAMPLES_DIR}/300hz-1sec.wav`; 
+            // const sampleAudioPath = `${SAMPLES_DIR}/300hz-1sec.wav`; 
+            // const sampleAudioPath = `${SAMPLES_DIR}/40hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/25hz-1sec.wav`;
+            const sampleAudioPath = `${SAMPLES_DIR}/20hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
             const sampleAudioFullPath = getFileSystemDirectory(sampleAudioPath); 
-            // const file = fs.readFileSync(path.resolve(__dirname, "../file.xml"));
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/40hz-1sec.wav`;
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/25hz-1sec.wav`;
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/20hz-1sec.wav`;
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
-            console.log('sampleAudioFullPath:', sampleAudioFullPath);
             player.play(sampleAudioFullPath, (err) => {
                 if (err && !err.killed) {
                     console.log('Error with ', sampleAudioFullPath, err);
-                } else {
-                    console.log('Finished ', sampleAudioFullPath);
                 }
             });
 
