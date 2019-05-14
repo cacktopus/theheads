@@ -137,11 +137,12 @@ class AudioController {
     // This plays it by the filename and should include the `output` directory
     // This returns the 'audio' object to be used to kill if necessary.
     playSoundByFilename({audioFilename, isSynchronous}) {
-
+        console.log('playSoundByFilename');
         return new Promise((resolve, reject) => {
 
             const fullFilename = audioFilename;
 
+            
             // Play 15hz slightly before playing the actual audio
             const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`; 
             // const sampleAudioFullPath = `${SAMPLES_DIR}/40hz-1sec.wav`;
@@ -149,7 +150,14 @@ class AudioController {
             // const sampleAudioFullPath = `${SAMPLES_DIR}/20hz-1sec.wav`;
             // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
             // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
-            player.play(sampleAudioFullPath);
+            console.log('sampleAudioFullPath:', sampleAudioFullPath);
+            player.play(sampleAudioFullPath, (err) => {
+                if (err && !err.killed) {
+                    console.log('Error with ', sampleAudioFullPath, err);
+                } else {
+                    console.log('Finished ', sampleAudioFullPath);
+                }
+            });
 
             const playDelayTime = 300;
             setTimeout(() => {
