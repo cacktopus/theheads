@@ -41,7 +41,17 @@ li { padding-bottom: 15;}
       <li>
         Using effects (See: <a href="/audioeffect">/audioeffects</a> for list of effects).<br/>
         Then use the effect <b>name</b> with a value. E.g. For <b>F0AddM</b> use "...&<b>F0Add</b>=<b>95</b>..." ):<br/>
-        <a href="play?text=Hey! What are you doing! Should I ignore you! Why are you here?Who are you! What do you want! Stop that&F0Scale=2.0&F0Add=95">/play?text=Hey! What are you doing! Should I ignore you! Why are you here?Who are you! What do you want!<b>&F0Scale=2.0&F0Add=95</b></a>
+        <a href="play?text=Hey! What are you doing! Should I ignore you! Why are you here?Who are you! What do you want! Stop that&F0Scale=2.0&F0Add=95">/play?text=Hey! What are you doing! Should I ignore you! Why are you here?Who are you! What do you want!<b>&F0Scale=2.0&F0Add=95</b></a><br/>
+        <br/>
+        You can experiment with effects <a href="#" id="marylink">here<a><br/><br/>
+
+        <script>
+          window.marylink = document.getElementById("marylink");
+          marylink.href = "http://" + location.hostname + ":59125";
+          marylink.innerHTML = "here (" + marylink.href + ")";
+        </script>
+
+
       </li>
 
   </div>
