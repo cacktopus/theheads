@@ -1,3 +1,6 @@
+import itertools
+
+
 def rotate(items):
     return items[1:] + [items[0]]
 
@@ -12,3 +15,7 @@ def doubles(items):
     for _ in items:
         yield items[:2]
         items = rotate(items)
+
+
+def all_pairs(items):
+    yield from itertools.combinations(items, 2)

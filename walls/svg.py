@@ -1,3 +1,4 @@
+import os
 import random
 import xml.etree.ElementTree as ET
 from typing import Tuple, List
@@ -288,7 +289,9 @@ def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    paths = list(get_paths("sacred 6a.svg"))[:1]
+    fn = "sacred1.svg"
+
+    paths = list(get_paths(fn))[:1]
 
     for num, path in enumerate(paths):
         print(f" {num} ".center(80, '='))
@@ -327,7 +330,9 @@ def main():
     svg.svg.save()
 
     B, A = tess(shapes, holes)
-    make_stl("none", shapes, B, A, 1.75)
+
+    outname = os.path.splitext(fn)[0]
+    make_stl(outname, shapes, B, A, 1.75)
 
 
 if __name__ == '__main__':
