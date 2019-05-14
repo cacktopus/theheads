@@ -264,7 +264,8 @@ class AudioController {
                                     success: true,
                                     processTime: timeDiff,
                                     duration: durationMs,
-                                    totalDuration
+                                    totalDuration,
+                                    done: true
                                 });
                             })
                             .catch(err => {
@@ -356,7 +357,8 @@ class AudioController {
                                 "success": true,
                                 "processTime": preProcessTime,
                                 "duration": durationMs,
-                                "totalDuration": totalDuration
+                                "totalDuration": totalDuration,
+                                done: true
                             })
                         } else {
                             resolve({

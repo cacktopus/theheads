@@ -26,6 +26,9 @@ const homeHTML = `
         Generic (play=____; e.g. play=Hello There ):<br/><a href="/play?text=Hello There">/play?text=Hello There</a>
       </li>
       <li>
+        <a href="/play?text=tick">/play?tick</a>
+      </li>
+      <li>
         Different Voice (voice=______; e.g. voice=dfki-spike-hsmm ):<br/>
         <a href="/play?text=Hello There&voice=dfki-spike-hsmm">/play?text=Hello There&voice=dfki-spike-hsmm</a>
       </li>
