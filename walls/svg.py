@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from typing import Tuple, List
 import re
 
+import Polygon
 from geom import cubic_bezier, tess, make_stl, centroid
 from transformations import Vec
 from debug_svg import DebugSVG
@@ -268,11 +269,26 @@ def parse(d: str) -> Tuple[str, str]:
             assert 0, f"unknown cmd: {cmd}"
 
 
+def resize(shapes):
+    outer = Polygon.Polygon(shapes[0])
+
+    holes = Polygon.Polygon()
+    for shape in shapes[1:]:
+        holes.addContour(shape)
+
+    holes.warpToBox(8, 146 - 8, 4, 79 - 4)
+    outer.warpToBox(0, 146, 0, 79)
+
+    result = outer - holes
+
+    return [result.contour(i) for i in range(len(result))]
+
+
 def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    paths = list(get_paths("sacred.svg"))[:1]
+    paths = list(get_paths("sacred 6a.svg"))[:1]
 
     for num, path in enumerate(paths):
         print(f" {num} ".center(80, '='))
@@ -285,19 +301,21 @@ def main():
         for cmd in list(parse(d)):
             svg.process(cmd[0], *cmd[1:])
 
-    polys = [[v.point2 for v in s] for s in svg._shapes]
+    shapes = [[v.point2 for v in s] for s in svg._shapes]
+
+    for shape in shapes:
+        while shape[-1] == shape[0]:  # TODO: fix this properly
+            shape.pop()
+
+    shapes = resize(shapes)
 
     holes = []
-    for poly in polys:
-        while poly[-1] == poly[0]:  # TODO: fix this properly
-            poly.pop()
-
-    for poly in polys[1:]:
-        for v in poly:
+    for shape in shapes[1:]:
+        for v in shape:
             svg.svg.debug(svg.svg.svg.circle(v, 0.25, fill='magenta'))
             print(v)
 
-        B, A = tess([poly], [])
+        B, A = tess([shape], [])
         indices = B['triangles'][0]
         triangle = [tuple(B['vertices'][i]) for i in indices]
         print(triangle)
@@ -308,8 +326,8 @@ def main():
 
     svg.svg.save()
 
-    B, A = tess(polys, holes)
-    make_stl("none", polys, B, A, 2.83 * 1.75)
+    B, A = tess(shapes, holes)
+    make_stl("none", shapes, B, A, 1.75)
 
 
 if __name__ == '__main__':
