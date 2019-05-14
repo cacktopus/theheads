@@ -144,7 +144,11 @@ class AudioController {
 
             // Play 15hz slightly before playing the actual audio
             // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
-            const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+            // const sampleAudioFullPath = `${SAMPLES_DIR}/40hz-1sec.wav`;
+            // const sampleAudioFullPath = `${SAMPLES_DIR}/25hz-1sec.wav`;
+            const sampleAudioFullPath = `${SAMPLES_DIR}/20hz-1sec.wav`;
+            // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+            // const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
             player.play(sampleAudioFullPath);
 
             const playDelayTime = 300;
