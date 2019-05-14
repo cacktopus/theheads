@@ -58,7 +58,7 @@ class MaryTtsApiClass {
                 if (response && response.data && response.data.length > 0) {
                     return response.data.split('\n').filter(voice => voice.trim().length > 0).map(voice => {
                         const [voiceName, locale] = voice.split(' ');
-                        return {name: voiceName, locale};
+                        return { name: voiceName, locale };
                     })
 
                 } else {
@@ -110,13 +110,14 @@ class MaryTtsApiClass {
 
                                 effectParamsArray.forEach(effectParam => {
                                     let [effectParamName, effectParamAmount] = effectParam.split(":");
-                                    effectParams[effectParamName] = effectParamAmount;
+                                    if (effectParamName && effectParamName !== '')
+                                        effectParams[effectParamName] = effectParamAmount;
                                 })
 
-                                return {name: effectName, params: effectParams};
+                                return { name: effectName, params: effectParams };
                             } catch (e) {
                                 console.log("Error in MaryTtsApi.getAudioEffects: ", e);
-                                return {name: "", params: ""};
+                                return { name: "", params: "" };
                             }
                         })
 
@@ -199,9 +200,78 @@ class MaryTtsApiClass {
 
         if (indexOfVoice >= 0) {
             let tempVoice = this._list_voices_and_locales[indexOfVoice];
-            return {voice: tempVoice.name, locale: tempVoice.locale}
+            return { voice: tempVoice.name, locale: tempVoice.locale }
         } else {
-            return {voice: undefined, locale: undefined}
+            return { voice: undefined, locale: undefined }
+        }
+    }
+
+    // Takes the query options and passes along any valid effects
+    // NOTE! This does not work with effecst that use multiple params  (e.g. not Chorus or FIRFilter)
+    getEffectsOptions(options = {}) {
+        // NOTE: This assumes just one param for the effect
+        // This also assumes validation has already been made for the effect 
+        const getNewOptionsForEffect = (effectName, value) => {
+            let options = {};
+            const effectIndex = this._list_audio_effects.findIndex(fx => fx.name === effectName);
+
+            if (effectIndex >= 0) {
+                try {
+                    const paramName = Object.keys(this._list_audio_effects[effectIndex].params)[0];
+                    options[`effect_${effectName}_selected`] = 'on',
+                        options[`effect_${effectName}_parameters`] = `${paramName}:${value}`;
+
+                    return options;
+                } catch (err) {
+                    console.log('bad getNewOptionsForEffect', err);
+                    return {};
+                }
+            } else {
+                return {};
+            }
+        }
+
+        let returnedOptions = {};
+
+        // Force the volume to be 0.7, otherwise sometimes it distorts.
+        const maxVolume = 0.7;
+        const minVolume = 0.1;
+        let forcedVolume = {
+            effect_Volume_selected: 'on',
+            effect_Volume_parameters: `amount:${maxVolume}`
+        }
+        Object.assign(returnedOptions, forcedVolume);
+
+        // Check which is bigger list of audio effects or list of options...
+        try {
+            this._list_audio_effects
+                .filter(effect => {
+                    // FOR NOW LETS JUST USE EFFECTS THAT USE 1 PARAM (e.g. not Chorus or FIRFilter)
+                    const params = Object.keys(effect.params);
+                    return params && params.length === 1;
+                })
+                .filter(effect => {
+                    // Check if the effect is in the list of options.
+                    return options[effect.name] !== undefined;
+                })
+                .filter(effect => {
+                    // Ensure the value of the option is a number
+                    return !isNaN(options[effect.name])
+                })
+                .forEach(effect => {
+                    
+                    const effectValParsedFloat = parseFloat(options[effect.name])
+                    // If the effect is Volume, ensure its value is less than maxVolume and above 0
+                    if (effect.name !== "Volume" || (effectValParsedFloat < maxVolume && effectValParsedFloat > minVolume)) {
+                        const newOptions = getNewOptionsForEffect(effect.name, options[effect.name]);
+                        Object.assign(returnedOptions, newOptions);
+                    }
+                });
+
+            return returnedOptions;
+        } catch (err) {
+            console.log(err);
+            return {};
         }
     }
 
@@ -221,7 +291,7 @@ class MaryTtsApiClass {
 
     getMaryTTSUrl(text, options = {}) {
         // This gets the voce and locale, and uses default if given voice is invalid
-        const {voice, locale} = this.getVoiceAndLocale(options.voice);
+        const { voice, locale } = this.getVoiceAndLocale(options.voice);
 
         // console.log('options', options, voice, locale);
 
@@ -240,6 +310,10 @@ class MaryTtsApiClass {
         };
 
         // Add effects if needed
+        const effectsOptions = this.getEffectsOptions(options);
+        
+        Object.assign(submitOptions, effectsOptions);
+        // console.log('final: effectsOptions', effectsOptions);
 
         let queryOptions = queryString.stringify(submitOptions);
         const ttsUrl = `http://localhost:59125/process?${queryOptions}`;
