@@ -8,6 +8,9 @@ import Polygon
 from geom import cubic_bezier, tess, make_stl, centroid
 from transformations import Vec
 from debug_svg import DebugSVG
+from inset import inset
+
+import pyclipper
 
 
 # TODO: handle quadratic bezier
@@ -270,11 +273,33 @@ def parse(d: str) -> Tuple[str, str]:
             assert 0, f"unknown cmd: {cmd}"
 
 
+def thicken(shapes):
+    result = []
+
+    factor = 1000
+
+    for shape in shapes:
+        s = pyclipper.scale_to_clipper(shape, factor)
+
+        pco = pyclipper.PyclipperOffset()
+        pco.AddPath(s, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
+        solution = pco.Execute(-0.8 * factor)
+        s2 = pyclipper.scale_from_clipper(solution, factor)
+        assert len(s2) in (0, 1)
+        if len(s2) == 1:
+            result.append(list(s2[0]))
+
+    return result
+
+
 def resize(shapes):
     outer = Polygon.Polygon(shapes[0])
 
+    H = thicken(shapes[1:])
+
     holes = Polygon.Polygon()
-    for shape in shapes[1:]:
+    for shape in H:
+        print(shape)
         holes.addContour(shape)
 
     holes.warpToBox(8, 146 - 8, 4, 79 - 4)
