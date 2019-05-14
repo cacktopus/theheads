@@ -147,7 +147,7 @@ class AudioController {
             const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
             player.play(sampleAudioFullPath);
 
-            const playDelayTime = 150;
+            const playDelayTime = 300;
             setTimeout(() => {
                 let audio = player.play(fullFilename, function (err) {
 
