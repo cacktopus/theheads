@@ -24,7 +24,6 @@ def process_text(t):
     parts = [" ".join(p.split()) for p in parts]
 
     parts = [p + "!" for p in parts]
-    parts = ["uh, " + p for p in parts]
     return parts
 
 
