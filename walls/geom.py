@@ -2,14 +2,13 @@ import math
 from math import cos, pi, sin
 from typing import List, Tuple
 
+import svgwrite
 import triangle as tr
-from matplotlib import pyplot as plt
 
 from gen_stl import build_wall
+from line import Line2D, NoIntersection
 from stl_io import write_stl
-
 from transformations import Vec
-from debug_svg import DebugSVG
 from util import doubles
 
 
@@ -122,6 +121,55 @@ def make_stl(name, polys, B, A, depth):
     write_stl(f"{name}.stl", stl)
 
 
+def poly_line_intersection(svg: svgwrite.Drawing, poly, line: Line2D) -> Vec:
+    # note: this assumes an intersection will take place
+    poly = [Vec(*p) for p in poly]
+
+    results = []
+    for p0, p1 in doubles(poly):
+        segment = Line2D.from_points(p0, p1)
+
+        d = (p1 - p0).abs()
+        try:
+            s = segment.intersect_distance(line)
+        except NoIntersection:
+            continue
+
+        if 0 <= s < d:
+            t = line.intersect_distance(segment)
+            if t > 0:
+                # svg.add(svg.line(p0.point2, p1.point2, stroke="green", stroke_width=0.5))
+                # svg.add(svg.circle(p1.point2, 0.5, fill="magenta"))
+
+                q = segment.p + s * segment.u
+                # svg.add(svg.circle(q.point2, 0.5, fill="yellow"))
+                # svg.save()
+                results.append((q.abs(), q))
+
+    return min(results)[1]
+
+
+def interpolate_poly_circle(svg: svgwrite.Drawing, poly, center, radius, t):
+    center = Vec(*center)
+    points = circle_points(center, radius, 40)
+
+    result = []
+
+    for p in points:
+        # svg.add(svg.circle(p.point2, 0.3, fill="magenta"))
+        line = Line2D.from_points(center, p)
+
+        q = poly_line_intersection(svg, poly, line)
+
+        w = t * q + (1 - t) * p
+        result.append(w)
+
+        svg.add(svg.circle(q.point2, 0.3, fill="blue"))
+        # svg.add(svg.line(center.point2, q.point2, stroke="grey", stroke_width=0.3))
+
+    return result
+
+
 def centroid(triangle: List[Tuple]):
     assert len(triangle) >= 3
     x = sum(p[0] for p in triangle) / len(triangle)
@@ -132,3 +180,13 @@ def centroid(triangle: List[Tuple]):
 
 def distance(p0, p1):
     return math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2)
+
+
+def clamp(a, x, b):
+    if x < a:
+        return a
+
+    if x > b:
+        return b
+
+    return x
