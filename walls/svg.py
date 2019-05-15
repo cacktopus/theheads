@@ -285,9 +285,8 @@ def thicken(shapes):
         pco.AddPath(s, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
         solution = pco.Execute(-0.8 * factor)
         s2 = pyclipper.scale_from_clipper(solution, factor)
-        assert len(s2) in (0, 1)
-        if len(s2) == 1:
-            result.append(list(s2[0]))
+        for x in s2:
+            result.append(list(x))
 
     return result
 
@@ -314,7 +313,7 @@ def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    fn = "sacred1.svg"
+    fn = "sacred.svg"
 
     paths = list(get_paths(fn))[:1]
 
