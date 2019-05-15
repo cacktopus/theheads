@@ -2,6 +2,8 @@ const player = require('play-sound')(opts = {});
 
 const http = require('http');
 const fs = require('fs');
+const path = require("path");
+
 const md5 = require('md5');
 const wavFileInfo = require('wav-file-info');
 
@@ -11,6 +13,11 @@ const MaryTtsApi = require(`../lib/MaryTtsApi`);
 // Config related:
 const OUTPUT_DIR = `outputs`;
 const SAMPLES_DIR = `samples`;
+
+// To get the full pathname for filesystem
+function getFileSystemDirectory(relativeProjectPath) {
+    return path.resolve(__dirname, `../${relativeProjectPath}`); 
+}
 
 // Holds audio 
 // 
@@ -24,7 +31,6 @@ const SAMPLES_DIR = `samples`;
 //         duration : _____ // Maybe we can calculate the estimated duration.
 //     }
 // ]
-
 class AudioController {
     constructor() {
         this._audioObjs = {}
@@ -137,17 +143,25 @@ class AudioController {
     // This plays it by the filename and should include the `output` directory
     // This returns the 'audio' object to be used to kill if necessary.
     playSoundByFilename({audioFilename, isSynchronous}) {
-
         return new Promise((resolve, reject) => {
 
             const fullFilename = audioFilename;
-
+            
             // Play 15hz slightly before playing the actual audio
-            // const sampleAudioFullPath = `${SAMPLES_DIR}/300hz-1sec.wav`;
-            const sampleAudioFullPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
-            player.play(sampleAudioFullPath);
+            // const sampleAudioPath = `${SAMPLES_DIR}/300hz-1sec.wav`; 
+            // const sampleAudioPath = `${SAMPLES_DIR}/40hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/25hz-1sec.wav`;
+            const sampleAudioPath = `${SAMPLES_DIR}/20hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+            // const sampleAudioPath = `${SAMPLES_DIR}/15hz-1sec.wav`;
+            const sampleAudioFullPath = getFileSystemDirectory(sampleAudioPath); 
+            player.play(sampleAudioFullPath, (err) => {
+                if (err && !err.killed) {
+                    console.log('Error with ', sampleAudioFullPath, err);
+                }
+            });
 
-            const playDelayTime = 150;
+            const playDelayTime = 300;
             setTimeout(() => {
                 let audio = player.play(fullFilename, function (err) {
 
@@ -260,7 +274,8 @@ class AudioController {
                                     success: true,
                                     processTime: timeDiff,
                                     duration: durationMs,
-                                    totalDuration
+                                    totalDuration,
+                                    done: true
                                 });
                             })
                             .catch(err => {
@@ -352,7 +367,8 @@ class AudioController {
                                 "success": true,
                                 "processTime": preProcessTime,
                                 "duration": durationMs,
-                                "totalDuration": totalDuration
+                                "totalDuration": totalDuration,
+                                done: true
                             })
                         } else {
                             resolve({
