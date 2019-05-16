@@ -6,9 +6,6 @@ from functools import reduce
 
 from scene_follow_evade import follow_closest_focal_point
 
-# TODO:
-# - If it is the same head speaking next, don't turn back to center
-
 text = """Your training should make you feel better. Workouts should be designed to be light enough that there’s 
 almost no excuse to not do them. Once a rhythm is developed, you can turn the dial up. I need to think about wether 
 it is better to load a lot of exercises onto a single day, or just do more days. There is a lot of startup cost in 
