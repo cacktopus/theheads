@@ -17,13 +17,12 @@ to throw on some clothes, grab a bag, and be in the gym in 5 minutes really lead
 
 def process_text(t):
     t = t.replace("\n", " ")
-    parts = re.compile(r'[.!]').split(t)
+    parts = re.compile(r'[.!?]').split(t)
 
     parts = [p.strip() for p in parts]
     parts = [p for p in parts if len(p) > 0]
     parts = [" ".join(p.split()) for p in parts]
 
-    parts = [p + "!" for p in parts]
     return parts
 
 
@@ -47,7 +46,7 @@ async def conversation(orchestrator: "Orchestrator"):
             theta = head.point_to(center)
             path = f"/rotation/{theta:f}"
             orchestrator.head_manager.send("head", head.name, path)
-        await asyncio.sleep(5.0)
+        await asyncio.sleep(0.5)
 
         random.shuffle(heads)
         h0, h1 = heads[0], heads[1]
@@ -63,7 +62,8 @@ async def conversation(orchestrator: "Orchestrator"):
         orchestrator.head_manager.send("head", h1.name, path)
 
         await asyncio.sleep(0.5)
-        path = f"/play?text={part}"
-        orchestrator.head_manager.send("voices", h0.name, path)
+        path = f"/play?text={part}&isSync=true"
+        future = orchestrator.head_manager.send("voices", h0.name, path)
 
-        await asyncio.sleep(5.0)
+        await future
+        await asyncio.sleep(0.5)
