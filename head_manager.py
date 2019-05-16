@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import sys
 from dataclasses import dataclass
@@ -64,6 +65,7 @@ class HeadQueue:
                 address = msg[0]['Address']
                 port = msg[0]['ServicePort']
                 url = f"http://{address}:{port}{path}"
+                # print(datetime.datetime.now(), url)
                 try:
                     resp, text = await get(url)
                     item.result.set_result((resp, text))
