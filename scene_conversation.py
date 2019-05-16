@@ -51,15 +51,23 @@ async def conversation(orchestrator: "Orchestrator"):
         random.shuffle(heads)
         h0, h1 = heads[0], heads[1]
 
-        t0 = h0.point_to(h1.global_pos)
-        path = f"/rotation/{t0:f}"
-        orchestrator.head_manager.send("head", h0.name, path)
+        if orchestrator.focal_points:
+            p = h0.global_pos
+            selected, distance = orchestrator.closest_focal_point_to(p)
+            t0 = h0.point_to(selected)
+            path = f"/rotation/{t0:f}"
+            orchestrator.head_manager.send("head", h0.name, path)
 
-        await asyncio.sleep(0.5)
+        else:
+            t0 = h0.point_to(h1.global_pos)
+            path = f"/rotation/{t0:f}"
+            orchestrator.head_manager.send("head", h0.name, path)
 
-        t1 = h1.point_to(h0.global_pos)
-        path = f"/rotation/{t1:f}"
-        orchestrator.head_manager.send("head", h1.name, path)
+            await asyncio.sleep(0.5)
+
+            t1 = h1.point_to(h0.global_pos)
+            path = f"/rotation/{t1:f}"
+            orchestrator.head_manager.send("head", h1.name, path)
 
         await asyncio.sleep(0.5)
         path = f"/play?text={part}&isSync=true"

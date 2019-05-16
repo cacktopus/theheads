@@ -1,6 +1,6 @@
 import asyncio
 import itertools
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from head_manager import HeadManager
 from installation import Installation
@@ -9,6 +9,7 @@ from scene_find_zeros import find_zeros
 from scene_follow_evade import follow_evade
 from scene_in_n_out import in_n_out
 from scene_idle import idle
+from transformations import Vec
 
 AVAILABLE_SCENES = [
     conversation,
@@ -47,6 +48,20 @@ class Orchestrator:
 
         if subject == "focal-points":
             self.focal_points = kw['focal_points']
+
+    def closest_focal_point_to(self, p) -> Tuple[Optional[Vec], Optional[float]]:
+        scores = []
+        for fp in self.focal_points.values():
+            to = fp.pos - p
+            distance = to.abs()
+            if distance > 0.01:
+                scores.append((distance, fp.pos))
+
+        if len(scores) == 0:
+            return None, None
+
+        distance, selected = min(scores)
+        return selected, distance
 
     @classmethod
     def find_scene(cls, name: str) -> Callable:
