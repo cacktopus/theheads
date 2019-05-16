@@ -9,7 +9,10 @@ from util import run_app
 async def play(request):
     name = request.app['cfg']['name']
     text = request.query['text']
+    sync = request.query['isSync']
     print(f"{name} playing: {text}")
+    if sync:
+        await asyncio.sleep(0.05 * len(text))
     return web.Response(text="ok")
 
 
@@ -17,7 +20,7 @@ async def process(request):
     name = request.app['cfg']['name']
     text = request.query['text']
     print(f"{name} processing: {text}")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
     return web.Response(text="ok")
 
 

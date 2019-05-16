@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-const port = 3031;
-const routes = require('./routes');
+const port = process.argv[2] || 3031;
+    const routes = require('./routes');
 
 var bodyParser = require('body-parser');
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
