@@ -6,7 +6,8 @@ from functools import reduce
 
 from scene_follow_evade import follow_closest_focal_point
 
-text = """Your training should make you feel better. Workouts should be designed to be light enough that there’s 
+texts = [
+    """Your training should make you feel better. Workouts should be designed to be light enough that there’s 
 almost no excuse to not do them. Once a rhythm is developed, you can turn the dial up. I need to think about wether 
 it is better to load a lot of exercises onto a single day, or just do more days. There is a lot of startup cost in 
 terms of warmups, etc. I need to improve my warmup game and get a lot more variation in there. Perhaps I can track 
@@ -14,7 +15,16 @@ warmups alongside the actual exercises that I do.
 
 Self control is limited. You should cultivate better self-control, but also build systems around your life 
 so that you can apply it to the places that it matters most. A perfect example is optimizing the gym flow. Being able 
-to throw on some clothes, grab a bag, and be in the gym in 5 minutes really leads to a great outcome."""
+to throw on some clothes, grab a bag, and be in the gym in 5 minutes really leads to a great outcome.
+""",
+
+    """Cold shower analogy, round 2.  You're only going to be cold for a second.  You'll be back to comfortable in no 
+    time.  While we're on the subject of overused crossfit analogies, the intensity doesn't last very long.  That 
+    horrible feeling of wanting to die is exactly what you signed up for.  It's the whole reason for coming to the 
+    class.  But once the class is over you'll be comfortable again. You're standing at the edge of the diving board.  Just jump.
+    """
+
+]
 
 
 def process_text(t):
@@ -31,6 +41,7 @@ def process_text(t):
 async def conversation(orchestrator: "Orchestrator"):
     heads = list(orchestrator.inst.heads.values())
 
+    text = random.choice(texts)
     parts = process_text(text)
 
     for part in parts:
