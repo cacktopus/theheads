@@ -4,6 +4,8 @@ import random
 import re
 from functools import reduce
 
+from scene_follow_evade import follow_closest_focal_point
+
 text = """Your training should make you feel better. Workouts should be designed to be light enough that there’s 
 almost no excuse to not do them. Once a rhythm is developed, you can turn the dial up. I need to think about wether 
 it is better to load a lot of exercises onto a single day, or just do more days. There is a lot of startup cost in 
@@ -52,11 +54,16 @@ async def conversation(orchestrator: "Orchestrator"):
         h0, h1 = heads[0], heads[1]
 
         if orchestrator.focal_points:
-            p = h0.global_pos
-            selected, distance = orchestrator.closest_focal_point_to(p)
-            t0 = h0.point_to(selected)
-            path = f"/rotation/{t0:f}"
-            orchestrator.head_manager.send("head", h0.name, path)
+            coro = follow_closest_focal_point(h0, orchestrator)
+            task = asyncio.create_task(coro)
+
+            await asyncio.sleep(0.5)
+            path = f"/play?text={part}&isSync=true"
+            future = orchestrator.head_manager.send("voices", h0.name, path)
+
+            await future
+            await asyncio.sleep(0.5)
+            task.cancel()
 
         else:
             t0 = h0.point_to(h1.global_pos)
@@ -69,9 +76,9 @@ async def conversation(orchestrator: "Orchestrator"):
             path = f"/rotation/{t1:f}"
             orchestrator.head_manager.send("head", h1.name, path)
 
-        await asyncio.sleep(0.5)
-        path = f"/play?text={part}&isSync=true"
-        future = orchestrator.head_manager.send("voices", h0.name, path)
+            await asyncio.sleep(0.5)
+            path = f"/play?text={part}&isSync=true"
+            future = orchestrator.head_manager.send("voices", h0.name, path)
 
-        await future
-        await asyncio.sleep(0.5)
+            await future
+            await asyncio.sleep(0.5)
