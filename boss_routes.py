@@ -5,6 +5,7 @@ import platform
 from string import Template
 
 from aiohttp import web
+from aiohttp.web_request import Request
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from health import health_check
@@ -114,6 +115,12 @@ def frontend_handler(*path_prefix):
     return handler
 
 
+async def text_upload_handler(request: Request):
+    body = await request.read()
+    print(body)
+    return web.Response(text="ok")
+
+
 def setup_routes(app: web.Application, ws_manager: WebsocketManager):
     jinja_env = Environment(
         loader=FileSystemLoader('templates'),
@@ -147,4 +154,6 @@ def setup_routes(app: web.Application, ws_manager: WebsocketManager):
         web.get("/build/js/{filename}", frontend_handler("boss-ui/build/js")),
         web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
         web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
+
+        web.post("/texts", text_upload_handler),
     ])
