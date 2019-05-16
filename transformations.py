@@ -116,6 +116,7 @@ class Mat:
         return str(self._data)
 
     def inv(self):
+        # Investigate why this is ridiculously slow
         return Mat(np.linalg.inv(self._data))
 
     def translation(self) -> Vec:

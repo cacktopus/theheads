@@ -38,13 +38,11 @@ class Head:
         self.name = name
         self.m = m
         self.stand = stand
+        self._m_inv = (self.stand.m * self.m).inv()
 
     def point_to(self, point: Vec) -> float:
         """returns the angle (degrees) the head should be at to face a given point"""
-        m = self.stand.m * self.m
-        m_inv = m.inv()
-
-        to = m_inv * point
+        to = self._m_inv * point
         distance = to.abs()
         if distance < 0.01:
             raise ValueError("Point is too close")

@@ -20,7 +20,7 @@ async def process(request):
     name = request.app['cfg']['name']
     text = request.query['text']
     print(f"{name} processing: {text}")
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.01)
     return web.Response(text="ok")
 
 

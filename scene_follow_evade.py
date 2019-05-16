@@ -23,7 +23,7 @@ async def follow_closest_focal_point(
             path = f"/rotation/{theta:f}"
             orchestrator.head_manager.send("head", head.name, path)
 
-        await asyncio.sleep(0.20)
+        await asyncio.sleep(0.25)
 
 
 async def follow_evade(orchestrator: "Orchestrator"):
