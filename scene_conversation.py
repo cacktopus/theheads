@@ -6,6 +6,9 @@ from functools import reduce
 
 from scene_follow_evade import follow_closest_focal_point
 
+# TODO:
+# - If it is the same head speaking next, don't turn back to center
+
 text = """Your training should make you feel better. Workouts should be designed to be light enough that there’s 
 almost no excuse to not do them. Once a rhythm is developed, you can turn the dial up. I need to think about wether 
 it is better to load a lot of exercises onto a single day, or just do more days. There is a lot of startup cost in 
@@ -39,6 +42,7 @@ async def conversation(orchestrator: "Orchestrator"):
         await asyncio.gather(*calls)
 
     for part in parts:
+        # all point to the center
         for head in heads:
             other_heads = [h for h in heads if h.name != head.name]
             assert len(heads) - len(other_heads) == 1
@@ -48,12 +52,13 @@ async def conversation(orchestrator: "Orchestrator"):
             theta = head.point_to(center)
             path = f"/rotation/{theta:f}"
             orchestrator.head_manager.send("head", head.name, path)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1.0)
 
         random.shuffle(heads)
-        h0, h1 = heads[0], heads[1]
+        h0 = heads[0]
 
-        if orchestrator.focal_points:
+        if orchestrator.focal_points and random.random() < 0.33:
+            # Follow the focal point
             coro = follow_closest_focal_point(h0, orchestrator)
             task = asyncio.create_task(coro)
 
@@ -62,21 +67,27 @@ async def conversation(orchestrator: "Orchestrator"):
             future = orchestrator.head_manager.send("voices", h0.name, path)
 
             await future
-            await asyncio.sleep(0.5)
             task.cancel()
+            await asyncio.sleep(0.5)
 
         else:
-            t0 = h0.point_to(h1.global_pos)
+            # Point towards other head
+            other_heads = heads[1:3] if random.random() < 0.20 else heads[1:2]
+            first = other_heads[0]
+
+            t0 = h0.point_to(first.global_pos)
             path = f"/rotation/{t0:f}"
             orchestrator.head_manager.send("head", h0.name, path)
 
             await asyncio.sleep(0.5)
 
-            t1 = h1.point_to(h0.global_pos)
-            path = f"/rotation/{t1:f}"
-            orchestrator.head_manager.send("head", h1.name, path)
+            for other in other_heads:
+                # Point other heads back towards speaker
+                t1 = other.point_to(h0.global_pos)
+                path = f"/rotation/{t1:f}"
+                orchestrator.head_manager.send("head", other.name, path)
+                await asyncio.sleep(0.5)
 
-            await asyncio.sleep(0.5)
             path = f"/play?text={part}&isSync=true"
             future = orchestrator.head_manager.send("voices", h0.name, path)
 
