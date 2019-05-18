@@ -234,7 +234,7 @@ class MaryTtsApiClass {
         let returnedOptions = {};
 
         // Force the volume to be 0.7, otherwise sometimes it distorts.
-        const maxVolume = 0.9;
+        const maxVolume = 1.0;
         const minVolume = 0.1;
         let forcedVolume = {
             effect_Volume_selected: 'on',
