@@ -33,7 +33,7 @@ async def conversation(orchestrator: "Orchestrator"):
         random.shuffle(heads)
         h0 = heads[0]
 
-        if orchestrator.focal_points and random.random() < 0.33:
+        if orchestrator.focal_points and random.random() < 0.66:
             # Follow the focal point
             coro = follow_closest_focal_point(h0, orchestrator)
             task = asyncio.create_task(coro)
