@@ -15,6 +15,7 @@ async def conversation(orchestrator: "Orchestrator"):
         await asyncio.sleep(5.0)
         return
 
+    print(f"we have {len(texts)} texts")
     parts = random.choice(texts)
     for p in parts:
         print("part", p)
