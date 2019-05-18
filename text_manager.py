@@ -38,7 +38,7 @@ async def text_manager(head_manager: HeadManager, broadcast: Callable):
 
     consul_texts = await cfg.get_prefix("/the-heads/texts")
 
-    await asyncio.sleep(15)  # TODO: 2m
+    await asyncio.sleep(0)  # TODO: 2m
 
     heads = list(inst.heads.values())
 
