@@ -19,7 +19,12 @@ AVAILABLE_SCENES = [
     idle,
 ]
 
-DEFAULT_TIMEOUT = 60.0
+
+def timeouts(scene):
+    return {
+        conversation: None,
+        in_n_out: 30.0,
+    }.get(scene, 60.0)
 
 
 class SceneNotFound(Exception):
@@ -75,10 +80,12 @@ class Orchestrator:
         else:
             raise SceneNotFound(f"Scene not found: {name}")
 
-    async def _run_scenes(self, scenes, timeout=DEFAULT_TIMEOUT):
+    async def _run_scenes(self, scenes):
         for scene in scenes:
             print(f"running {scene.__name__}")
             task: asyncio.Task = asyncio.create_task(scene(self))
+
+            timeout = timeouts(scene)
 
             try:
                 await asyncio.wait_for(task, timeout=timeout)
@@ -106,5 +113,4 @@ class Orchestrator:
         ]
 
         assert len(scenes) > 0
-        timeout = DEFAULT_TIMEOUT if len(scenes) > 1 else None
-        await self._run_scenes(itertools.cycle(scenes), timeout)
+        await self._run_scenes(itertools.cycle(scenes))
