@@ -67,6 +67,7 @@ class HeadQueue:
                 url = f"http://{address}:{port}{path}"
                 # print(datetime.datetime.now(), url)
                 try:
+                    print(url)
                     resp, text = await get(url)
                     item.result.set_result((resp, text))
                 except ClientConnectorError as e:
