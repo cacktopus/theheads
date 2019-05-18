@@ -14,6 +14,8 @@ texts = list()
 
 def process_text(t):
     t = t.replace("\n", " ")
+    t = t.replace("/", " ")
+    t = t.replace("I'm", "eyem")
     parts = re.compile(r'[.!?]').split(t)
 
     parts = [p.strip() for p in parts]
