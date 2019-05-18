@@ -74,15 +74,15 @@ class HeadQueue:
                 except ClientConnectorError as e:
                     # TODO: stats/logging/etc
                     print(e, file=sys.stderr)
-                    item.result.exception(SendError(f"connection error: {e}"))
+                    item.result.exception()
                 except Exception as e:
                     # TODO: stats/logging/etc
                     print(e, file=sys.stderr)
-                    item.result.exception(SendError(f"connection error: {e}"))
+                    item.result.exception()
                 if resp.status != 200:
                     info = f"Got error from {url}: {text}"
                     print(info)
-                    item.result.exception(SendError(info))
+                    item.result.exception()
 
             await asyncio.sleep(_SEND_DELAY)
 
