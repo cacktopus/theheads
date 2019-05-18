@@ -42,10 +42,11 @@ async def text_manager(head_manager: HeadManager, broadcast: Callable):
 
     heads = list(inst.heads.values())
 
-    shuffled = list(consul_texts.values())
+    shuffled = list(consul_texts.items())
     random.shuffle(shuffled)
 
-    for t in shuffled:
+    for name, t in shuffled:
+        print("processing", name.decode())
         text = t.decode()
         parts = process_text(text)
 

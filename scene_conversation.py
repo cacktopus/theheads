@@ -16,9 +16,12 @@ async def conversation(orchestrator: "Orchestrator"):
         return
 
     parts = random.choice(texts)
+    for p in parts:
+        print("part", p)
 
     for part in parts:
         # all point to the center
+        print("saying", part)
         for head in heads:
             other_heads = [h for h in heads if h.name != head.name]
             assert len(heads) - len(other_heads) == 1
