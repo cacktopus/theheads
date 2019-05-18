@@ -50,14 +50,14 @@ async def text_manager(head_manager: HeadManager, broadcast: Callable):
         text = t.decode()
         parts = process_text(text)
 
-        for part in parts:
-            print(f"processing: {part}")
-            calls = [head_manager.send("voices", head.name, f"/process?text={part}") for head in heads]
-            await asyncio.gather(*calls)
+        # for part in parts:
+        #     print(f"processing: {part}")
+        #     calls = [head_manager.send("voices", head.name, f"/process?text={part}") for head in heads]
+        #     await asyncio.gather(*calls)
 
         texts.append(parts)
 
-        broadcast('texts', texts=texts)
+    broadcast('texts', texts=texts)
 
 
 def main():
