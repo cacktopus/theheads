@@ -1,4 +1,5 @@
 import asyncio
+import random
 import re
 from typing import Callable
 
@@ -36,6 +37,7 @@ async def text_manager(head_manager: HeadManager, broadcast: Callable):
     inst = Installation.unmarshal(json_inst)
 
     consul_texts = await cfg.get_prefix("/the-heads/texts")
+    random.shuffle(consul_texts)
 
     await asyncio.sleep(15)  # TODO: 2m
 
