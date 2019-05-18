@@ -75,6 +75,10 @@ class HeadQueue:
                     # TODO: stats/logging/etc
                     print(e, file=sys.stderr)
                     item.result.exception(SendError(f"connection error: {e}"))
+                except Exception as e:
+                    # TODO: stats/logging/etc
+                    print(e, file=sys.stderr)
+                    item.result.exception(SendError(f"connection error: {e}"))
                 if resp.status != 200:
                     info = f"Got error from {url}: {text}"
                     print(info)
