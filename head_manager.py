@@ -42,14 +42,15 @@ class HeadQueue:
     async def _send_loop(self):
         while True:
             item: QueueItem = await self._queue.get()
+            assert isinstance(item, QueueItem)
             path = item.path
             assert path.startswith("/")
 
             # Send only the last item in the queue # TODO: support different policies
-            while not self._queue.empty():
-                # TODO: cancel any futures?
-                item.result.cancel()
-                path = self._queue.get_nowait()
+            # while not self._queue.empty():
+            #     # TODO: cancel any futures?
+            #     item.result.cancel()
+            #     item = self._queue.get_nowait()
 
             resp, text = await self._consul.get_nodes_for_service(self._service_name, tags=[self._head_name])
             assert resp.status == 200
