@@ -50,7 +50,8 @@ class ConsulBackend:
             kvs = json.loads(body)
             for a in kvs:
                 key = a['Key'].encode()
-                val = d64(a['Value'])
+                _val = a['Value']
+                val = d64(_val) if _val else None
                 result[key] = val
 
             return result

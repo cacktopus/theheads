@@ -7,6 +7,7 @@ import prometheus_client
 from aiohttp import web
 
 import boss_routes
+import text_manager
 import util
 import ws
 from config import THE_HEADS_EVENTS, get_args, Config
@@ -128,6 +129,12 @@ async def setup(
     observer.register_observer(orchestrator)
     observer.register_observer(fp_manager)  # perhaps not the best place
     observer.register_observer(ws_manager)
+
+    tm = text_manager.text_manager(
+        head_manager=hm,
+        broadcast=observer.notify_observers,
+    )
+    asyncio.create_task(tm)
 
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))

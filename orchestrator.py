@@ -39,6 +39,7 @@ class Orchestrator:
         asyncio.create_task(self._dj())
         self._current_orch = None
         self.focal_points = {}
+        self.texts = list()
 
     def notify(self, subject, **kw):
         if subject == "head-rotation":
@@ -48,6 +49,9 @@ class Orchestrator:
 
         if subject == "focal-points":
             self.focal_points = kw['focal_points']
+
+        if subject == 'texts':
+            self.texts = kw['texts']
 
     def closest_focal_point_to(self, p) -> Tuple[Optional[Vec], Optional[float]]:
         scores = []
