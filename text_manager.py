@@ -46,6 +46,9 @@ async def text_manager(head_manager: HeadManager, broadcast: Callable):
     random.shuffle(shuffled)
 
     for name, t in shuffled:
+        if name is None or t is None:
+            print("found None")
+            continue
         print("processing", name.decode())
         text = t.decode()
         parts = process_text(text)
