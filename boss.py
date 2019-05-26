@@ -123,7 +123,8 @@ async def setup(
     )
 
     fp_manager = FocalPointManager(
-        broadcast=observer.notify_observers
+        broadcast=observer.notify_observers,
+        inst=inst,
     )
 
     observer.register_observer(orchestrator)

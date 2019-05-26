@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Callable
 
 from grid import the_grid
+from installation import Installation
 from transformations import Vec, Mat
 
 
@@ -43,10 +44,11 @@ class FocalPoint:
 
 
 class FocalPointManager:
-    def __init__(self, broadcast: Callable):
+    def __init__(self, broadcast: Callable, inst: Installation):
         self.broadcast = broadcast
         self._focal_points: Dict[str, FocalPoint] = {}
         asyncio.create_task(self._focal_point_garbage_collector())
+        self.inst = inst
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
