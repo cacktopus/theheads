@@ -65,10 +65,17 @@ class Grid:
         return idx and float(g[idx])
 
     def combined(self):
-        if len(self._grids):
-            return reduce(np.add, self._grids.values())
-        else:
+        if len(self._grids) == 0:
             return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
+
+        grids = []
+        for g in self._grids.values():
+            m = g > 0.01
+            grids.append(m.astype(np.float32))
+        mask = reduce(np.add, grids) > 1.0
+        mask = mask.astype(np.float32)
+
+        return reduce(np.add, self._grids.values()) * mask
 
     def to_png(self):
         shape = (self.img_size_y, self.img_size_x)

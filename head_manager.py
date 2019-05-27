@@ -47,10 +47,10 @@ class HeadQueue:
             assert path.startswith("/")
 
             # Send only the last item in the queue # TODO: support different policies
-            # while not self._queue.empty():
-            #     # TODO: cancel any futures?
-            #     item.result.cancel()
-            #     item = self._queue.get_nowait()
+            while not self._queue.empty():
+                # TODO: cancel any futures?
+                item.result.cancel()
+                item = self._queue.get_nowait()
 
             resp, text = await self._consul.get_nodes_for_service(self._service_name, tags=[self._head_name])
             assert resp.status == 200

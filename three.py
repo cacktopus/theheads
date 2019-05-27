@@ -14,6 +14,7 @@ def main():
     # print(filled(masked_less(a, 2.0), 0.0))
     mask = np.greater(a, 1.0)
     print(mask)
+    print(mask.astype(float32))
     print(a * mask)
 
 
