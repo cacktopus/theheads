@@ -35,7 +35,10 @@ class Grid:
         xidx = int(math.floor((x - self.xmin) / (self.xmax - self.xmin) * self.img_size_x))
         yidx = int(math.floor((y - self.ymin) / (self.ymax - self.ymin) * self.img_size_y))
 
-        if xidx >= self.img_size_x or yidx >= self.img_size_y:
+        if xidx < 0 or xidx >= self.img_size_x:
+            return None
+
+        if yidx < 0 or yidx >= self.img_size_y:
             return None
 
         res = yidx, xidx  # Notice swap here
@@ -118,12 +121,17 @@ class Grid:
                 buffer=mm,
             )
 
+            self.get_grid("origin")
+
             while True:
                 await asyncio.sleep(0.1)
-                buf[:] = self.combined()
+                self.set("origin", 0, 0, 1.0)
+                self.set("origin", 1.0, 0, 1.0)
+                self.set("origin", 0.0, 1.0, 1.0)
+                buf[:] = self.combined() + self.get_grid("origin")
 
 
-the_grid = Grid(-10, -20, 10, 20, (100, 200))  # TODO: not global!
+the_grid = Grid(-2, -4, 4, 2, (200, 200))  # TODO: not global!
 
 
 def main():

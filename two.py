@@ -1,6 +1,6 @@
 import mmap
-import time
 
+import cv2
 import numpy as np
 
 
@@ -10,21 +10,29 @@ def main():
     with open(filename, "rb") as f:
         mm = mmap.mmap(f.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
 
-        x = np.frombuffer(buffer=mm, dtype=np.float32)
+        x = np.ndarray(
+            shape=(200, 200),
+            dtype=np.float32,
+            buffer=mm,
+        )
 
         while True:
-            print(x.data)
-            print(len(bytes(x.data)))
+            # print(x.data)
+            # print(len(bytes(x.data)))
 
             addr = x.__array_interface__['data'][0]
-            print(addr)
+            # print(addr)
 
-            print(x.flags)
-            print(x)
+            # print(x.flags)
+            # print(x)
 
-            print(np.mean(x))
+            # print(np.mean(x))
+            img = cv2.resize(x, None, fx=4.0, fy=4.0)
+            img = cv2.flip(img, 0)
 
-            time.sleep(1)
+            cv2.imshow('frame', img)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
 
 
 if __name__ == '__main__':
