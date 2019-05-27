@@ -1,5 +1,6 @@
 import asyncio
 import math
+import mmap
 from functools import reduce
 from typing import Tuple
 
@@ -102,6 +103,24 @@ class Grid:
             await asyncio.sleep(0.25)
             for g in self._grids.values():
                 g *= 0.75
+
+    async def publish_loop(self):
+        filename = "gridbuf"
+        with open(filename, "wb") as f:
+            f.truncate(self.img_size_x * self.img_size_y * 4)
+
+        with open(filename, "r+b") as f:
+            mm = mmap.mmap(f.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_WRITE)
+
+            buf = np.ndarray(
+                shape=(self.img_size_y, self.img_size_x),
+                dtype=np.float32,
+                buffer=mm,
+            )
+
+            while True:
+                await asyncio.sleep(0.1)
+                buf[:] = self.combined()
 
 
 the_grid = Grid(-10, -20, 10, 20, (100, 200))  # TODO: not global!

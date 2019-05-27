@@ -140,6 +140,8 @@ async def setup(
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))
 
+    asyncio.create_task(the_grid.publish_loop())
+
     return app
 
 
