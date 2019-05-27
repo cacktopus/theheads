@@ -81,7 +81,7 @@ class FocalPointManager:
         dx = to.x / length * step_size
         dy = to.y / length * step_size
 
-        initial = p0 + direction.scale(0.5)
+        initial = p0 + direction.scale(0.10)
         pos_x, pos_y = initial.x, initial.y
 
         steps = int(length / step_size)
