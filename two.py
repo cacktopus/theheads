@@ -5,7 +5,7 @@ import numpy as np
 
 
 def main():
-    filename = "buf"
+    filename = "gridbuf"
 
     with open(filename, "rb") as f:
         mm = mmap.mmap(f.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
@@ -14,7 +14,6 @@ def main():
 
         while True:
             print(x.data)
-            print(bytes(x.data))
             print(len(bytes(x.data)))
 
             addr = x.__array_interface__['data'][0]
@@ -22,6 +21,8 @@ def main():
 
             print(x.flags)
             print(x)
+
+            print(np.mean(x))
 
             time.sleep(1)
 
