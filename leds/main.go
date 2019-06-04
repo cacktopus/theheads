@@ -178,6 +178,14 @@ func rainbow(tick time.Duration) {
 	}
 }
 
+func off(t time.Duration) {
+	for i := startLed; i < numLeds; i++ {
+		leds[i].r = 0
+		leds[i].g = 0
+		leds[i].b = 0
+	}
+}
+
 func runLeds(ch <-chan callback) {
 	t0 := time.Now()
 	var cb callback = rainbow
@@ -217,6 +225,11 @@ func main() {
 
 	r.GET("/decay", func(c *gin.Context) {
 		ch <- decay
+		c.JSON(200, gin.H{"result": "ok"})
+	})
+
+	r.GET("/off", func(c *gin.Context) {
+		ch <- off
 		c.JSON(200, gin.H{"result": "ok"})
 	})
 
