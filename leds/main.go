@@ -146,7 +146,7 @@ func decay(t time.Duration) {
 		}
 	} else {
 		for i := startLed; i < numLeds; i++ {
-			leds[i].r = 0.10
+			leds[i].r = 0.20
 			leds[i].g = 0
 			leds[i].b = 0
 		}
@@ -175,6 +175,10 @@ func rainbow(tick time.Duration) {
 			float64(pos.y+200),
 			float64(tick)*timeScale,
 		))
+
+		leds[i].r *= 2
+		leds[i].g *= 2
+		leds[i].b *= 2
 	}
 }
 
