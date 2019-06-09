@@ -1,10 +1,13 @@
 import asyncio
 import os
+import platform
 
 from aiohttp import web
 
 import process_mary
 import util
+
+play = "afplay" if platform.system() == "darwin" else "aplay"
 
 
 async def play(request):
@@ -21,7 +24,7 @@ async def play(request):
             return web.Response(status=404, text=f"missing {filename}: [{sentence.text}]")
 
         process = await asyncio.create_subprocess_exec(
-            "afplay",
+            play,
             filename,
         )
 
