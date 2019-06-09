@@ -3,12 +3,16 @@ import asyncio
 from aiohttp import web
 
 import util
+from process_mary import split, process_text
 
 
 async def play(request):
     name = request.app['cfg']['name']
     text = request.query['text']
     print(f"{name} playing: {text}")
+
+    parts = split(text)
+    process_text
 
     process = await asyncio.create_subprocess_exec(
         "afplay",

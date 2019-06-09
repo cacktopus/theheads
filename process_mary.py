@@ -5,13 +5,14 @@ import requests
 import hashlib
 
 
-def hash_text(voice_name: str, text: str):
-    key = f"{voice_name}::{text}".encode('ascii')
-    digest = hashlib.md5(key).hexdigest()
-    # path = os.path.join("sounds", digest[:2])
-    path = "sounds"
-    filename = digest[2:] + ".wav"
-    return digest, path, filename
+class Voice:
+    pass
+
+
+class Rms(Voice):
+    name = "rms"
+    voice = "cmu-rms-hsmm"
+    pass
 
 
 def split(text):
@@ -37,54 +38,60 @@ def split(text):
         zip(sentences, endings)
     ]
 
-    print("\n".join(results))
-
     return results
 
 
-def process_text(sentence):
-    sentence = sentence.replace("I'm", "eye'm")
-    sentence = sentence.replace("I've", "eye've")
+class Sentence:
+    def __init__(self, voice: Voice, text: str):
+        self._text = text
+        self._voice = voice
 
-    sentence = sentence.replace("They're", "there")
-    sentence = sentence.replace("they're", "there")
+    def hash(self):
+        key = f"{self._voice.name}::{self.text}".encode('ascii')
+        digest = hashlib.md5(key).hexdigest()
+        path = os.path.join("sounds", self._voice.name, digest[:2])
+        filename = digest[2:] + ".wav"
+        return digest, path, filename
 
-    sentence = sentence.replace("IC", "EYE CEE")
+    def fixup(self):
+        sentence = self._text
+        sentence = sentence.replace("I'm", "eye'm")
+        sentence = sentence.replace("I've", "eye've")
 
-    sentence = sentence.replace("shit", "shiit")
-    sentence = sentence.replace("uber", "oober")
-    return sentence
+        sentence = sentence.replace("They're", "there")
+        sentence = sentence.replace("they're", "there")
+
+        sentence = sentence.replace("IC", "EYE CEE")
+
+        sentence = sentence.replace("shit", "shiit")
+        sentence = sentence.replace("uber", "oober")
+        return sentence
+
+    @property
+    def text(self):
+        return self._text
 
 
-class Voice:
-    pass
+def all_parts(voice: Voice, content: str):
+    parts = split(content)
 
-
-class Rms(Voice):
-    name = "rms"
-    voice = "cmu-rms-hsmm"
-    pass
+    for s in parts:
+        yield Sentence(voice, s)
 
 
 def main():
     with open("text") as fp:
         content = fp.read()
 
-    parts = split(content)
-
     voice = Rms()
 
-    for part in parts:
-        digest, path, filename = hash_text(voice.name, part)
-
-        text = process_text(part)
-
+    for sentence in all_parts(voice, content):
         resp = requests.get(
             url="http://localhost:59125/process",
             params={
                 "INPUT_TYPE": "TEXT",
                 "OUTPUT_TYPE": "AUDIO",
-                "INPUT_TEXT": text,
+                "INPUT_TEXT": sentence.fixup(),
                 "AUDIO_OUT": "WAVE_FILE",
                 "LOCALE": "en_GB",
                 "VOICE": voice.voice,
@@ -92,12 +99,13 @@ def main():
             }
         )
 
+        digest, path, filename = sentence.hash()
+
         os.makedirs(path, exist_ok=True)
 
         fullname = os.path.join(path, filename)
 
-        print("\n" + part)
-        print("\n" + text)
+        print("\n" + sentence.text)
         print(resp.status_code, len(resp.content))
         with open(fullname, "wb") as fp:
             fp.write(resp.content)
