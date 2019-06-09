@@ -7,7 +7,7 @@ from aiohttp import web
 import util
 import voice
 
-play = "afplay" if platform.system() == "darwin" else "aplay"
+play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
 
 async def play(request):
@@ -24,7 +24,7 @@ async def play(request):
             return web.Response(status=404, text=f"missing {filename}: [{sentence.text}]")
 
         process = await asyncio.create_subprocess_exec(
-            play,
+            play_cmd,
             filename,
         )
 
