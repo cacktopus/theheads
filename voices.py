@@ -51,6 +51,7 @@ async def setup(name: str, port: int):
 
 
 def main():
+    os.chdir(os.path.expanduser("~"))  # TODO: use config
     loop = asyncio.get_event_loop()
 
     app = loop.run_until_complete(setup(
