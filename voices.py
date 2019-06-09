@@ -21,14 +21,6 @@ async def play(request):
     return web.Response(text=f"ok: {text}")
 
 
-async def process(request):
-    name = request.app['cfg']['name']
-    text = request.query['text']
-    print(f"{name} processing: {text}")
-    await asyncio.sleep(0.01)
-    return web.Response(text="ok")
-
-
 async def setup(name: str, port: int):
     app = web.Application()
 
@@ -39,7 +31,6 @@ async def setup(name: str, port: int):
 
     app.add_routes([
         web.get("/play", play),
-        web.get("/process", process),
     ])
 
     print(f"Running {name} on port {port}")
