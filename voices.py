@@ -1,9 +1,10 @@
 import asyncio
+import os
 
 from aiohttp import web
 
+import process_mary
 import util
-from process_mary import split, process_text
 
 
 async def play(request):
@@ -11,17 +12,21 @@ async def play(request):
     text = request.query['text']
     print(f"{name} playing: {text}")
 
-    parts = split(text)
-    process_text
+    for sentence in process_mary.all_parts(process_mary.Rms(), text):
+        filename = sentence.hash()
 
-    process = await asyncio.create_subprocess_exec(
-        "afplay",
-        "sounds/8001641fa8a95cd192b2402579fd2f.wav"
-    )
+        print(sentence.text, filename)
 
-    await process.wait()
+        if not os.path.isfile(filename):
+            return web.Response(status=404, text=f"missing {filename}: [{sentence.text}]")
 
-    # await asyncio.sleep(0.05 * len(text))
+        process = await asyncio.create_subprocess_exec(
+            "afplay",
+            filename,
+        )
+
+        await process.wait()
+
     return web.Response(text=f"ok: {text}")
 
 

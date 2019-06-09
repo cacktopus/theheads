@@ -49,9 +49,9 @@ class Sentence:
     def hash(self):
         key = f"{self._voice.name}::{self.text}".encode('ascii')
         digest = hashlib.md5(key).hexdigest()
-        path = os.path.join("sounds", self._voice.name, digest[:2])
+        directory = os.path.join("sounds", self._voice.name, digest[:2])
         filename = digest[2:] + ".wav"
-        return digest, path, filename
+        return os.path.join(directory, filename)
 
     def fixup(self):
         sentence = self._text
@@ -61,10 +61,13 @@ class Sentence:
         sentence = sentence.replace("They're", "there")
         sentence = sentence.replace("they're", "there")
 
+        sentence = sentence.replace("we're", "weer")
+
         sentence = sentence.replace("IC", "EYE CEE")
 
         sentence = sentence.replace("shit", "shiit")
         sentence = sentence.replace("uber", "oober")
+
         return sentence
 
     @property
@@ -99,15 +102,13 @@ def main():
             }
         )
 
-        digest, path, filename = sentence.hash()
-
-        os.makedirs(path, exist_ok=True)
-
-        fullname = os.path.join(path, filename)
+        filename = sentence.hash()
+        directory = os.path.dirname(filename)
+        os.makedirs(directory, exist_ok=True)
 
         print("\n" + sentence.text)
         print(resp.status_code, len(resp.content))
-        with open(fullname, "wb") as fp:
+        with open(filename, "wb") as fp:
             fp.write(resp.content)
 
 
