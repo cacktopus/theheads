@@ -4,8 +4,8 @@ import platform
 
 from aiohttp import web
 
-import process_mary
 import util
+import voice
 
 play = "afplay" if platform.system() == "darwin" else "aplay"
 
@@ -15,7 +15,7 @@ async def play(request):
     text = request.query['text']
     print(f"{name} playing: {text}")
 
-    for sentence in process_mary.all_parts(process_mary.Rms(), text):
+    for sentence in voice.all_parts(voice.Rms(), text):
         filename = sentence.hash()
 
         print(sentence.text, filename)

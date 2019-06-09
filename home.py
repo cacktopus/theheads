@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import json
 import platform
-from asyncio import subprocess
 from typing import Tuple, Dict, Optional
 
 import aiohttp
