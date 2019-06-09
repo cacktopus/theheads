@@ -62,6 +62,7 @@ class Sentence:
         sentence = sentence.replace("they're", "there")
 
         sentence = sentence.replace("we're", "weer")
+        sentence = sentence.replace("We're", "weer")
 
         sentence = sentence.replace("IC", "EYE CEE")
 
