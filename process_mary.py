@@ -13,18 +13,37 @@ def hash_text(text: str):
     return digest, path, filename
 
 
-def process_text(t):
-    t = t.replace("\n", " ")
-    t = t.replace("/", " ")
-    t = t.replace("I'm", "eye'm")
-    t = t.replace("I've", "eye've")
-    parts = re.compile(r'[.!?]+').split(t)
+def split(text):
+    text = text.replace("\n", " ")
+    text = text.replace("/", " ")
 
+    parts = re.compile(r'([.!?]+)').split(text)
     parts = [p.strip() for p in parts]
-    parts = [p for p in parts if len(p) > 0]
-    parts = [" ".join(p.split()) for p in parts]
 
-    return parts
+    # kill any empty string at the end
+    if not parts[-1]:
+        parts.pop()
+
+    sentences = parts[::2]
+    endings = parts[1::2]
+
+    assert len(sentences) == len(endings)
+
+    results = [
+        s + e
+        for s, e in
+        zip(sentences, endings)
+    ]
+
+    print("\n".join(results))
+
+    return results
+
+
+def process_text(sentence):
+    sentence = sentence.replace("I'm", "eye'm")
+    sentence = sentence.replace("I've", "eye've")
+    return sentence
 
 
 class Voice:
@@ -37,18 +56,21 @@ class Rms(Voice):
 
 def main():
     with open("text") as fp:
-        text2 = fp.read()
+        content = fp.read()
 
-    parts = process_text(text2)
+    parts = split(content)
 
     for part in parts:
-        print(part)
+        digest, path, filename = hash_text(part)
+
+        text = process_text(part)
+
         resp = requests.get(
             url="http://localhost:59125/process",
             params={
                 "INPUT_TYPE": "TEXT",
                 "OUTPUT_TYPE": "AUDIO",
-                "INPUT_TEXT": part,
+                "INPUT_TEXT": text,
                 "AUDIO_OUT": "WAVE_FILE",
                 "LOCALE": "en_GB",
                 "VOICE": "dfki-spike-hsmm",
@@ -56,11 +78,11 @@ def main():
             }
         )
 
-        digest, path, filename = hash_text(part)
         os.makedirs(path, exist_ok=True)
 
         fullname = os.path.join(path, filename)
 
+        print("\n" + part)
         print(resp.status_code, len(resp.content))
         with open(fullname, "wb") as fp:
             fp.write(resp.content)
