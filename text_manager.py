@@ -1,6 +1,5 @@
 import asyncio
 import random
-import re
 from typing import Callable
 
 from config import Config
@@ -9,21 +8,9 @@ from consul_config import ConsulBackend
 from head_manager import HeadManager
 from installation import Installation, build_installation
 from observer import Observer
+from process_mary import process_text
 
 texts = list()
-
-
-def process_text(t):
-    t = t.replace("\n", " ")
-    t = t.replace("/", " ")
-    t = t.replace("I'm", "eyem")
-    parts = re.compile(r'[.!?]').split(t)
-
-    parts = [p.strip() for p in parts]
-    parts = [p for p in parts if len(p) > 0]
-    parts = [" ".join(p.split()) for p in parts]
-
-    return parts
 
 
 async def text_manager(head_manager: HeadManager, broadcast: Callable):
