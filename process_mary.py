@@ -4,6 +4,8 @@ import re
 import requests
 import hashlib
 
+import hashicorp_vault
+
 
 class Voice:
     pass
@@ -19,6 +21,7 @@ def split(text):
     text = text.replace("\n", " ")
     text = text.replace("/", " ")
     text = text.replace("\u2019", "'")
+    text = text.replace("\u2026", " ")
 
     parts = re.compile(r'([.!?]+)').split(text)
     parts = [p.strip() for p in parts]
@@ -84,33 +87,43 @@ def all_parts(voice: Voice, content: str):
 
 
 def main():
-    with open("text") as fp:
-        content = fp.read()
-
     voice = Rms()
 
-    for sentence in all_parts(voice, content):
-        resp = requests.get(
-            url="http://localhost:59125/process",
-            params={
-                "INPUT_TYPE": "TEXT",
-                "OUTPUT_TYPE": "AUDIO",
-                "INPUT_TEXT": sentence.fixup(),
-                "AUDIO_OUT": "WAVE_FILE",
-                "LOCALE": "en_GB",
-                "VOICE": voice.voice,
-                "AUDIO": "WAVE_FILE",
-            }
-        )
+    vault_client = hashicorp_vault.Client()
 
-        filename = sentence.hash()
-        directory = os.path.dirname(filename)
-        os.makedirs(directory, exist_ok=True)
+    secret = vault_client.get("texts")
 
-        print("\n" + sentence.text)
-        print(resp.status_code, len(resp.content))
-        with open(filename, "wb") as fp:
-            fp.write(resp.content)
+    for name, content in secret.items():
+        print(name, content)
+
+        for sentence in all_parts(voice, content):
+            print("\n" + sentence.text)
+
+            filename = sentence.hash()
+            if os.path.exists(filename):
+                continue
+
+            resp = requests.get(
+                url="http://localhost:59125/process",
+                params={
+                    "INPUT_TYPE": "TEXT",
+                    "OUTPUT_TYPE": "AUDIO",
+                    "INPUT_TEXT": sentence.fixup(),
+                    "AUDIO_OUT": "WAVE_FILE",
+                    "LOCALE": "en_GB",
+                    "VOICE": voice.voice,
+                    "AUDIO": "WAVE_FILE",
+                }
+            )
+
+            print(resp.status_code, len(resp.content))
+            assert resp.status_code == 200
+
+            directory = os.path.dirname(filename)
+            os.makedirs(directory, exist_ok=True)
+
+            with open(filename, "wb") as fp:
+                fp.write(resp.content)
 
 
 if __name__ == '__main__':
