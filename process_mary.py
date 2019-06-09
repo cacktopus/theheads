@@ -5,8 +5,9 @@ import requests
 import hashlib
 
 
-def hash_text(text: str):
-    digest = hashlib.md5(text.encode()).hexdigest()
+def hash_text(voice_name: str, text: str):
+    key = f"{voice_name}::{text}".encode('ascii')
+    digest = hashlib.md5(key).hexdigest()
     # path = os.path.join("sounds", digest[:2])
     path = "sounds"
     filename = digest[2:] + ".wav"
@@ -16,6 +17,7 @@ def hash_text(text: str):
 def split(text):
     text = text.replace("\n", " ")
     text = text.replace("/", " ")
+    text = text.replace("\u2019", "'")
 
     parts = re.compile(r'([.!?]+)').split(text)
     parts = [p.strip() for p in parts]
@@ -43,6 +45,14 @@ def split(text):
 def process_text(sentence):
     sentence = sentence.replace("I'm", "eye'm")
     sentence = sentence.replace("I've", "eye've")
+
+    sentence = sentence.replace("They're", "there")
+    sentence = sentence.replace("they're", "there")
+
+    sentence = sentence.replace("IC", "EYE CEE")
+
+    sentence = sentence.replace("shit", "shiit")
+    sentence = sentence.replace("uber", "oober")
     return sentence
 
 
@@ -51,6 +61,8 @@ class Voice:
 
 
 class Rms(Voice):
+    name = "rms"
+    voice = "cmu-rms-hsmm"
     pass
 
 
@@ -60,8 +72,10 @@ def main():
 
     parts = split(content)
 
+    voice = Rms()
+
     for part in parts:
-        digest, path, filename = hash_text(part)
+        digest, path, filename = hash_text(voice.name, part)
 
         text = process_text(part)
 
@@ -73,7 +87,7 @@ def main():
                 "INPUT_TEXT": text,
                 "AUDIO_OUT": "WAVE_FILE",
                 "LOCALE": "en_GB",
-                "VOICE": "dfki-spike-hsmm",
+                "VOICE": voice.voice,
                 "AUDIO": "WAVE_FILE",
             }
         )
@@ -83,6 +97,7 @@ def main():
         fullname = os.path.join(path, filename)
 
         print("\n" + part)
+        print("\n" + text)
         print(resp.status_code, len(resp.content))
         with open(fullname, "wb") as fp:
             fp.write(resp.content)
