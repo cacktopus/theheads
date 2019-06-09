@@ -9,7 +9,15 @@ async def play(request):
     name = request.app['cfg']['name']
     text = request.query['text']
     print(f"{name} playing: {text}")
-    await asyncio.sleep(0.05 * len(text))
+
+    process = asyncio.create_subprocess_exec(
+        "afplay",
+        "sounds/8001641fa8a95cd192b2402579fd2f.wav"
+    )
+
+    await process
+
+    # await asyncio.sleep(0.05 * len(text))
     return web.Response(text=f"ok: {text}")
 
 
