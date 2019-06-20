@@ -80,7 +80,7 @@ class SVG:
     def process(self, cmd, *args):
         print(cmd, " ".join(str(a) for a in args))
 
-        if cmd == 'M':
+        if cmd in 'Mm':
             p1 = Vec(*args)
             self.set_pos(p1)
 
@@ -182,8 +182,8 @@ def get_paths(filename):
 
     NS = '{http://www.w3.org/2000/svg}'
 
-    for g in root.findall(f".//{NS}g"):
-        assert len(g.attrib) == 0
+    # for g in root.findall(f".//{NS}g"):
+    #     assert len(g.attrib) == 0
 
     print(len(root.findall(f".//{NS}path")))
 
@@ -194,12 +194,18 @@ def get_paths(filename):
 re_float = re.compile(r'''
 ^
 (
-    -?
+    [+-]?
     \d+
     \.?
     \d*
+    (
+    [eE][-+]?[0-9]+
+    )?
+    
 )
 ''', re.X)
+
+re_float2 = re.compile(r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$")
 
 
 def pop_float(d: str) -> Tuple[float, str]:
@@ -227,24 +233,36 @@ def pop_comma(d: str) -> Tuple[str, str]:
     d = d.lstrip()
 
     ch = d[0]
+    print(f"ch = {ch}")
     if ch == ",":
         return ch, d[1:]
 
     if ch == "-":
         return '', d
 
+    if ch.isnumeric():
+        return '', d
+
     assert 0, "expected comma or ..."
 
 
 def parse(d: str) -> Tuple[str, str]:
+    cmd = None
+
     while True:
         d = d.lstrip()
         if d == "":
             return
 
-        cmd, d = d[0], d[1:]
+        peek = d[0]
 
-        if cmd == "M":
+        if peek.isnumeric() or peek == "-":
+            assert cmd
+
+        else:
+            cmd, d = d[0], d[1:]
+
+        if cmd in "Mm":
             x, d = pop_float(d)
             _, d = pop_comma(d)
             y, d = pop_float(d)
@@ -252,6 +270,7 @@ def parse(d: str) -> Tuple[str, str]:
 
         elif cmd in "Cc":
             points, d = pop_n_floats(d, 6)
+            print(points)
             yield tuple([cmd] + points)
 
         elif cmd in "Ss":
@@ -283,7 +302,7 @@ def thicken(shapes):
 
         pco = pyclipper.PyclipperOffset()
         pco.AddPath(s, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-        solution = pco.Execute(-0.8 * factor)
+        solution = pco.Execute(0.2 * factor)
         s2 = pyclipper.scale_from_clipper(solution, factor)
         for x in s2:
             result.append(list(x))
@@ -313,7 +332,7 @@ def main():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    fn = "sacred.svg"
+    fn = "zoomed c.svg"
 
     paths = list(get_paths(fn))[:1]
 
@@ -324,6 +343,7 @@ def main():
         assert path.attrib.get('clip-rule', None) in ("evenodd", None)
 
         d = path.attrib['d']
+        print(path.attrib['id'])
 
         for cmd in list(parse(d)):
             svg.process(cmd[0], *cmd[1:])

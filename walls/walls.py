@@ -141,7 +141,8 @@ class Wall:
 
             if self.result.isHole(i):
                 h = centroid(cont)
-                holes.append(h)
+                if self.result.isInside(h[0], h[1], i):  # TODO: find a better way to find the point (random sampling?)
+                    holes.append(h)
 
         B, A = tess(contours, holes)
         make_stl(self.name, contours, B, A, 1.75)
@@ -212,9 +213,9 @@ class Wall:
 
             v = 0.73 * (
                     0.5
-                    + noise.snoise2(0.5 * s, 0.5 * t)
-                    + 0.5 * noise.snoise2(1 * s, 1 * t + 100)
-                    + 0.25 * noise.snoise2(2 * s, 2 * t + 200)
+                    + noise.snoise2(0.5 * s, 0.25 * t)
+                    + 0.5 * noise.snoise2(1 * s, 0.5 * t + 100)
+                    + 0.25 * noise.snoise2(2 * s, 1 * t + 200)
             )
             v = geom.clamp(0, v, 1)
             g0.plot(cx, v)
@@ -309,8 +310,8 @@ def main():
 
     prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
-    for i in range(8):
-        wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
+    for i in range(1):
+        wall = Wall(f"wall{i}", inner, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
         wall.make_stl()

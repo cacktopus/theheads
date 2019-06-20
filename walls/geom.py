@@ -1,4 +1,5 @@
 import math
+import random
 from math import cos, pi, sin
 from typing import List, Tuple
 
@@ -8,7 +9,7 @@ import triangle as tr
 from gen_stl import build_wall
 from line import Line2D, NoIntersection
 from stl_io import write_stl
-from transformations import Vec
+from transformations import Vec, Mat
 from util import doubles
 
 
@@ -34,6 +35,22 @@ def circle_points(center: Vec, radius: float, steps: int):
     for i in range(steps):
         t = i / steps
         result.append(circle(center, radius, t))
+    return result
+
+
+def square_points(center, d):
+    m = Mat.rotz(random.random() * 40 - 20)
+
+    i = m * Vec(1, 0)
+    j = m * Vec(0, 1)
+
+    result = list(reversed([
+        center + d * i - d * j,
+        center + d * i + d * j,
+        center - d * i + d * j,
+        center - d * i - d * j,
+    ]))
+
     return result
 
 
