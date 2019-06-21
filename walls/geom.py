@@ -38,8 +38,8 @@ def circle_points(center: Vec, radius: float, steps: int):
     return result
 
 
-def square_points(center, d):
-    m = Mat.rotz(random.random() * 40 - 20)
+def square_points(center, d, theta):
+    m = Mat.rotz(theta)
 
     i = m * Vec(1, 0)
     j = m * Vec(0, 1)

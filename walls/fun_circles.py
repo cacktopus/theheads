@@ -1,6 +1,7 @@
 import random
 
 import Polygon
+import noise
 from bridson import poisson_disc_samples
 
 from config import Config
@@ -36,7 +37,10 @@ def fun_circles(cfg):
     for i, point in enumerate(points):
         r = radii[i] * 0.85
         center = Vec(*point)
-        points = square_points(center, r)
+
+        theta = 25 * noise.snoise2(0.003 * center.x, 0.003 * center.y)
+
+        points = square_points(center, r, theta)
 
         poly = Polygon.Polygon([p.point2 for p in points])
         cut |= poly
