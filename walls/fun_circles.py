@@ -13,7 +13,7 @@ from walls import Wall
 from geom import square_points
 
 circles_cfg = Config(
-    r=8,
+    r=5.5,
     line_width=2,
     pad_x=8,
     pad_y=4,
@@ -29,9 +29,15 @@ def fun_circles(cfg):
     name = "fun-circles"
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
     WIDTH = 146
-    points = poisson_disc_samples(width=cfg.width + 50 + WIDTH * 2 + 10, height=cfg.height + 50, r=cfg.r * 0.80)
+    NUM_WALLS = 6
 
-    for i in range(3):
+    points = poisson_disc_samples(
+        width=cfg.width + 50 + (WIDTH + 10) * NUM_WALLS,
+        height=cfg.height + 50,
+        r=cfg.r
+    )
+
+    for i in range(6):
         x_offset = 25 + i * (WIDTH + 10)
         selected = [p for p in points if x_offset - 25 < p[0] < x_offset + WIDTH + 25]
         make_wall(cfg, selected, f"{name}-{i}", debug_svg, x_offset)
@@ -52,16 +58,16 @@ def make_wall(cfg, points, name, debug_svg, x_offset):
         r = radii[i] * 0.85
         center = Vec(*point)
 
-        a0 = 15
-        f0 = 0.003
+        a0 = 20
+        f0 = 0.006
 
         theta = a0 * noise.snoise2(
             f0 * center.x,
             f0 * center.y,
-        ) + 0.5 * a0 * noise.snoise2(
-            2 * f0 * center.x+1000,
-            2 * f0 * center.y+1000,
-        )
+        ) + 0 * a0 * noise.snoise2(
+            2 * f0 * center.x + 1000,
+            2 * f0 * center.y + 1000,
+        ) + 0.0 * a0 * (random.random() - 0.5)
 
         points: List[Vec] = square_points(center, r, theta)
 
