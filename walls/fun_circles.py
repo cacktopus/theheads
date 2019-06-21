@@ -23,7 +23,7 @@ circles_cfg = Config(
 
 
 def fun_circles(cfg):
-    random.seed(42)
+    # random.seed(42)
     wall = Wall("fun-circles", cfg)
 
     points = poisson_disc_samples(width=cfg.width + 100, height=cfg.height + 100, r=cfg.r * 0.80)
@@ -34,11 +34,18 @@ def fun_circles(cfg):
 
     cut = Polygon.Polygon()
     random.shuffle(points)
+
+    randx = 1000 * random.random()
+    randy = 1000 * random.random()
+
     for i, point in enumerate(points):
         r = radii[i] * 0.85
         center = Vec(*point)
 
-        theta = 25 * noise.snoise2(0.003 * center.x, 0.003 * center.y)
+        theta = 20 * noise.snoise2(
+            0.003 * center.x + 1000 * randx,
+            0.003 * center.y + 1000 * randy,
+        )
 
         points = square_points(center, r, theta)
 
