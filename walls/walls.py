@@ -101,6 +101,19 @@ def bounding_box(poly):
     return (min_x, min_y), (max_x, max_y)
 
 
+def find_inside_point(p: Polygon.Polygon, i: int):
+    # random search
+    xmin, xmax, ymin, ymax = p.boundingBox(i)
+    for _ in range(1000):
+        x = random.random() * (xmax - xmin) + xmin
+        y = random.random() * (ymax - ymin) + ymin
+
+        if p.isInside(x, y, i):
+            return x, y
+
+    raise Exception("Couldn't find interior point")
+
+
 class Wall:
     def __init__(self, name, cfg, x_offset=0, y_offset=100):
         x0 = x_offset
@@ -140,9 +153,8 @@ class Wall:
             print(self.result.orientation(i), self.result.isHole(i), cont)
 
             if self.result.isHole(i):
-                h = centroid(cont)
-                if self.result.isInside(h[0], h[1], i):  # TODO: find a better way to find the point (random sampling?)
-                    holes.append(h)
+                h = find_inside_point(self.result, i)
+                holes.append(h)
 
         B, A = tess(contours, holes)
         make_stl(self.name, contours, B, A, 1.75)
