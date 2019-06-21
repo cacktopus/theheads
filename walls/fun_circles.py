@@ -13,7 +13,7 @@ from walls import Wall
 from geom import square_points
 
 circles_cfg = Config(
-    r=7,
+    r=8,
     line_width=2,
     pad_x=8,
     pad_y=4,
@@ -27,28 +27,40 @@ circles_cfg = Config(
 def fun_circles(cfg):
     # random.seed(42)
     name = "fun-circles"
-    wall = Wall(name, cfg)
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
+    WIDTH = 146
+    points = poisson_disc_samples(width=cfg.width + 50 + WIDTH * 2 + 10, height=cfg.height + 50, r=cfg.r * 0.80)
 
-    points = poisson_disc_samples(width=cfg.width + 100, height=cfg.height + 100, r=cfg.r * 0.80)
+    for i in range(3):
+        x_offset = 25 + i * (WIDTH + 10)
+        selected = [p for p in points if x_offset - 25 < p[0] < x_offset + WIDTH + 25]
+        make_wall(cfg, selected, f"{name}-{i}", debug_svg, x_offset)
+    debug_svg.save()
+
+
+def make_wall(cfg, points, name, debug_svg, x_offset):
+    wall = Wall(name, cfg, x_offset=x_offset, y_offset=25)
 
     radii = {}
+
     for i in range(len(points)):
         radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
 
     cut = Polygon.Polygon()
-    random.shuffle(points)
-
-    randx = 1000 * random.random()
-    randy = 1000 * random.random()
 
     for i, point in enumerate(points):
         r = radii[i] * 0.85
         center = Vec(*point)
 
-        theta = 20 * noise.snoise2(
-            0.003 * center.x + 1000 * randx,
-            0.003 * center.y + 1000 * randy,
+        a0 = 15
+        f0 = 0.003
+
+        theta = a0 * noise.snoise2(
+            f0 * center.x,
+            f0 * center.y,
+        ) + 0.5 * a0 * noise.snoise2(
+            2 * f0 * center.x+1000,
+            2 * f0 * center.y+1000,
         )
 
         points: List[Vec] = square_points(center, r, theta)
@@ -68,7 +80,8 @@ def fun_circles(cfg):
     wall.result = wall.wall - mask
     wall.make_stl()
 
-    debug_svg.save()
+    debug_svg.add(debug_svg.polygon(wall.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+    debug_svg.add(debug_svg.polygon(wall.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
 
 
 def main():
