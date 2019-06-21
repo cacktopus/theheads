@@ -58,13 +58,13 @@ def make_wall(cfg, points, name, debug_svg, x_offset):
         r = radii[i] * 0.85
         center = Vec(*point)
 
-        a0 = 20
-        f0 = 0.006
+        a0 = 15
+        f0 = 0.009
 
         theta = a0 * noise.snoise2(
             f0 * center.x,
             f0 * center.y,
-        ) + 0 * a0 * noise.snoise2(
+        ) + 0.25 * a0 * noise.snoise2(
             2 * f0 * center.x + 1000,
             2 * f0 * center.y + 1000,
         ) + 0.0 * a0 * (random.random() - 0.5)
