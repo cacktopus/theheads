@@ -38,7 +38,7 @@ def circle_points(center: Vec, radius: float, steps: int):
     return result
 
 
-def square_points(center, d, theta):
+def square_points(center: Vec, d: float, theta: float) -> List[Vec]:
     m = Mat.rotz(theta)
 
     i = m * Vec(1, 0)

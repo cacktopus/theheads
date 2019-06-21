@@ -1,7 +1,9 @@
 import random
+from typing import List
 
 import Polygon
 import noise
+import svgwrite
 from bridson import poisson_disc_samples
 
 from config import Config
@@ -24,7 +26,9 @@ circles_cfg = Config(
 
 def fun_circles(cfg):
     # random.seed(42)
-    wall = Wall("fun-circles", cfg)
+    name = "fun-circles"
+    wall = Wall(name, cfg)
+    debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
 
     points = poisson_disc_samples(width=cfg.width + 100, height=cfg.height + 100, r=cfg.r * 0.80)
 
@@ -47,7 +51,14 @@ def fun_circles(cfg):
             0.003 * center.y + 1000 * randy,
         )
 
-        points = square_points(center, r, theta)
+        points: List[Vec] = square_points(center, r, theta)
+
+        debug_svg.add(debug_svg.polygon(
+            [p.point2 for p in points],
+            fill_opacity=0,
+            stroke="black",
+            stroke_width=0.25
+        ))
 
         poly = Polygon.Polygon([p.point2 for p in points])
         cut |= poly
@@ -56,6 +67,8 @@ def fun_circles(cfg):
 
     wall.result = wall.wall - mask
     wall.make_stl()
+
+    debug_svg.save()
 
 
 def main():
