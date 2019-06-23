@@ -30,6 +30,11 @@
 		"value": "bmFtZTogaGVhZC0wMwpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDA="
 	},
 	{
+		"key": "the-heads/scene.yaml",
+		"flags": 0,
+		"value": "c2NlbmVzOgojLSBjb252ZXJzYXRpb24KLSBmb2xsb3dfZXZhZGUKCnN0YXJ0dXBfc2NlbmVzOiBbXQ=="
+	},
+	{
 		"key": "the-heads/stands/stand-01.yaml",
 		"flags": 0,
 		"value": "Y2FtZXJhczogW2NhbWVyYS0wMV0KaGVhZHM6IFtoZWFkLTAxXQpuYW1lOiBzdGFuZC0wMQpwb3M6IHt4OiAtMC43NSwgeTogMH0Kcm90OiAtOTA="
