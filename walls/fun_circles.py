@@ -29,7 +29,7 @@ def fun_circles(cfg):
     name = "fun-circles"
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
     WIDTH = 146
-    NUM_WALLS = 6
+    NUM_WALLS = 2
 
     points = poisson_disc_samples(
         width=cfg.width + 50 + (WIDTH + 10) * NUM_WALLS,
@@ -37,11 +37,11 @@ def fun_circles(cfg):
         r=cfg.r
     )
 
-    for i in range(6):
+    for i in range(NUM_WALLS):
         x_offset = 25 + i * (WIDTH + 10)
         selected = [p for p in points if x_offset - 25 < p[0] < x_offset + WIDTH + 25]
         make_wall(cfg, selected, f"{name}-{i}", debug_svg, x_offset)
-    debug_svg.save()
+        debug_svg.save()
 
 
 def make_wall(cfg, points, name, debug_svg, x_offset):
@@ -54,20 +54,25 @@ def make_wall(cfg, points, name, debug_svg, x_offset):
 
     cut = Polygon.Polygon()
 
+    def map_angle(x: float, y: float) -> float:
+        a0 = 15
+        f0 = 0.009
+
+        return a0 * noise.snoise3(
+            f0 * x,
+            0,
+            f0 * y,
+        ) + 0.25 * a0 * noise.snoise3(
+            2 * f0 * x + 1000,
+            0,
+            2 * f0 * y + 1000,
+        ) + 0.0 * a0 * (random.random() - 0.5)
+
     for i, point in enumerate(points):
         r = radii[i] * 0.85
         center = Vec(*point)
 
-        a0 = 15
-        f0 = 0.009
-
-        theta = a0 * noise.snoise2(
-            f0 * center.x,
-            f0 * center.y,
-        ) + 0.25 * a0 * noise.snoise2(
-            2 * f0 * center.x + 1000,
-            2 * f0 * center.y + 1000,
-        ) + 0.0 * a0 * (random.random() - 0.5)
+        theta = map_angle(center.x, center.y)
 
         points: List[Vec] = square_points(center, r, theta)
 
