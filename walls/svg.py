@@ -85,7 +85,7 @@ class SVG:
             assert path.attrib.get('clip-rule', None) in ("evenodd", None)
 
             d = path.attrib['d']
-            print(path.attrib['id'])
+            print(path.attrib.get('id'))
 
             for cmd in list(parse(d)):
                 self.process_cmd(cmd[0], *cmd[1:])
@@ -398,10 +398,12 @@ def load_icon(filename: str):
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
-    fn = "icons/plus.svg"
+    fn = "icons/star.svg"
 
     paths = list(get_paths(fn))[:1]
     svg.process(paths)
+
+    print(svg._shapes)
 
 
 def main():

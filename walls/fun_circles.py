@@ -8,13 +8,13 @@ import svgwrite
 from bridson import poisson_disc_samples
 
 from config import Config
-from geom import circle_points, distance
+from geom import circle_points, distance, star_points
 from transformations import Vec
 from walls import Wall
 from geom import square_points
 
 circles_cfg = Config(
-    r=5.5,
+    r=6.5,
     line_width=2,
     pad_x=8,
     pad_y=4,
@@ -30,7 +30,7 @@ def fun_circles(cfg):
     name = "fun-circles"
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
     WIDTH = 146
-    NUM_WALLS = 8
+    NUM_WALLS = 1
     PAD = 10
 
     points = poisson_disc_samples(
@@ -59,7 +59,7 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
     cut = Polygon.Polygon()
 
     def map_angle(x_in: float, y_in: float) -> float:
-        a0 = 15
+        a0 = 30 * math.pi / 180
         f0 = 0.009
 
         c = total_x
@@ -82,12 +82,12 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
         ) + 0.0 * a0 * (random.random() - 0.5)
 
     for i, point in enumerate(points):
-        r = radii[i] * 0.85
+        r = radii[i] * 2.5
         center = Vec(*point)
 
         theta = map_angle(center.x, center.y)
 
-        points: List[Vec] = square_points(center, r, theta)
+        points: List[Vec] = star_points(center, r, theta)
 
         debug_svg.add(debug_svg.polygon(
             [p.point2 for p in points],

@@ -54,6 +54,45 @@ def square_points(center: Vec, d: float, theta: float) -> List[Vec]:
     return result
 
 
+def star_points(center, scale, theta_0) -> List[Vec]:
+    # http://mathworld.wolfram.com/Pentagram.html
+    R = 0.200811
+    rho = 0.525731
+    pi = math.pi
+
+    R *= scale
+    rho *= scale
+
+    incr = -2 * pi / 5
+    theta = pi / 2 - incr + theta_0
+
+    outer = []
+    for i in range(5):
+        print(theta * 180 / pi)
+        x = rho * cos(theta)
+        y = rho * sin(theta)
+        outer.append((x, y))
+        theta += incr
+
+    theta = - pi / 2 - 3 * incr + theta_0
+    inner = []
+    for i in range(5):
+        print(theta * 180 / pi)
+        x = R * cos(theta)
+        y = R * sin(theta)
+        inner.append((x, y))
+        theta += incr
+
+    print(outer)
+    print(inner)
+
+    result = []
+    for i in range(5):
+        result.append(Vec(*outer[i]) + center)
+        result.append(Vec(*inner[i]) + center)
+    return result
+
+
 def tess(polys, holes):
     indices = {}
     vertices = []
@@ -207,3 +246,7 @@ def clamp(a, x, b):
         return b
 
     return x
+
+
+if __name__ == '__main__':
+    star_points()
