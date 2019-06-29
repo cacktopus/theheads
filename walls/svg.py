@@ -77,7 +77,20 @@ class SVG:
     def shape_count(self):
         return len(self._shapes)
 
-    def process(self, cmd, *args):
+    def process(self, paths):
+        for num, path in enumerate(paths):
+            print(f" {num} ".center(80, '='))
+
+            assert path.attrib.get('fill-rule', None) in ("evenodd", None)
+            assert path.attrib.get('clip-rule', None) in ("evenodd", None)
+
+            d = path.attrib['d']
+            print(path.attrib['id'])
+
+            for cmd in list(parse(d)):
+                self.process_cmd(cmd[0], *cmd[1:])
+
+    def process_cmd(self, cmd, *args):
         print(cmd, " ".join(str(a) for a in args))
 
         if cmd in 'Mm':
@@ -171,6 +184,15 @@ class SVG:
             self.line(p0, p1)
             self.set_pos(p1)
 
+        elif cmd in 'A':
+            rx, ry, x_rot, lrg, sweep, x, y = args
+            assert rx == ry
+            assert x_rot == 0
+            assert lrg == 0
+            assert sweep == 0
+            print("A:", args)
+            assert 0
+
         else:
             assert 0, f"unknown command {cmd}"
 
@@ -233,7 +255,7 @@ def pop_comma(d: str) -> Tuple[str, str]:
     d = d.lstrip()
 
     ch = d[0]
-    print(f"ch = {ch}")
+    # print(f"ch = {ch}")
     if ch == ",":
         return ch, d[1:]
 
@@ -288,6 +310,10 @@ def parse(d: str) -> Tuple[str, str]:
             x, d = pop_float(d)
             yield cmd, x
 
+        elif cmd in "Aa":
+            points, d = pop_n_floats(d, 7)
+            yield tuple([cmd] + points)
+
         else:
             assert 0, f"unknown cmd: {cmd}"
 
@@ -328,25 +354,14 @@ def resize(shapes):
     return [result.contour(i) for i in range(len(result))]
 
 
-def main():
+def main2():
     svg = SVG("test")
 
     # paths = list(get_paths("cloud.svg"))[:500]
     fn = "zoomed c.svg"
 
     paths = list(get_paths(fn))[:1]
-
-    for num, path in enumerate(paths):
-        print(f" {num} ".center(80, '='))
-
-        assert path.attrib.get('fill-rule', None) in ("evenodd", None)
-        assert path.attrib.get('clip-rule', None) in ("evenodd", None)
-
-        d = path.attrib['d']
-        print(path.attrib['id'])
-
-        for cmd in list(parse(d)):
-            svg.process(cmd[0], *cmd[1:])
+    svg.process(paths)
 
     shapes = [[v.point2 for v in s] for s in svg._shapes]
 
@@ -377,6 +392,20 @@ def main():
 
     outname = os.path.splitext(fn)[0]
     make_stl(outname, shapes, B, A, 1.75)
+
+
+def load_icon(filename: str):
+    svg = SVG("test")
+
+    # paths = list(get_paths("cloud.svg"))[:500]
+    fn = "icons/plus.svg"
+
+    paths = list(get_paths(fn))[:1]
+    svg.process(paths)
+
+
+def main():
+    load_icon("icons/plus.svg")
 
 
 if __name__ == '__main__':
