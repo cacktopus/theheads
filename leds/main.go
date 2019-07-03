@@ -137,6 +137,14 @@ type led struct {
 
 type callback func(time.Duration)
 
+func lowred(t time.Duration) {
+	for i := startLed; i < numLeds; i++ {
+		leds[i].r = 0.10
+		leds[i].g = 0
+		leds[i].b = 0
+	}
+}
+
 func decay(t time.Duration) {
 	decayConstant := 0.99
 
@@ -230,6 +238,11 @@ func main() {
 
 	r.GET("/decay", func(c *gin.Context) {
 		ch <- decay
+		c.JSON(200, gin.H{"result": "ok"})
+	})
+
+	r.GET("/lowred", func(c *gin.Context) {
+		ch <- lowred
 		c.JSON(200, gin.H{"result": "ok"})
 	})
 
