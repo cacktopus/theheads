@@ -42,6 +42,10 @@ class Stepper:
         self._next_controller = next_controller
         self._gpio = gpio
 
+        # step to engage motor
+        self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
+        self._motor.oneStep(MotorHAT.BACKWARD, MotorHAT.DOUBLE)
+
     @property
     def pos(self) -> int:
         return self._pos
