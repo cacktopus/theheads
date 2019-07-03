@@ -8,11 +8,13 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/signal"
 	"periph.io/x/periph/conn/physic"
 	"periph.io/x/periph/conn/spi"
 	"periph.io/x/periph/conn/spi/spireg"
 	"periph.io/x/periph/host"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -178,10 +180,11 @@ func rainbow(tick time.Duration) {
 	}
 }
 
-func runLeds(ch <-chan callback) {
+func runLeds(ch <-chan callback, done <-chan bool) {
 	t0 := time.Now()
 	var cb callback = rainbow
 
+loop:
 	for {
 		select {
 		case new_cb := <-ch:
@@ -192,8 +195,18 @@ func runLeds(ch <-chan callback) {
 			t := time.Now().Sub(t0)
 			cb(t)
 			send(spiConn, leds)
+		case <-done:
+			break loop
 		}
 	}
+
+	// cleanup: set to low red
+	for i := startLed; i < numLeds; i++ {
+		leds[i].r = 0.10
+		leds[i].g = 0
+		leds[i].b = 0
+	}
+	send(spiConn, leds)
 }
 
 func main() {
@@ -224,5 +237,14 @@ func main() {
 		r.Run(addr)
 	}()
 
-	runLeds(ch)
+	signals := make(chan os.Signal, 1)
+	done := make(chan bool)
+	signal.Notify(signals, syscall.SIGTERM)
+
+	go func() {
+		<-signals
+		done <- true
+	}()
+
+	runLeds(ch, done)
 }
