@@ -135,8 +135,7 @@ class Grid:
 
             while True:
                 await asyncio.sleep(0.1)
-                self
-                self.set("origin", 0, 0, 1.0)
-                self.set("origin", 1.0, 0, 1.0)
-                self.set("origin", 0.0, 1.0, 1.0)
+                for stand in self.inst.stands.values():
+                    pos = stand.m.translation()
+                    self.set("origin", pos.x, pos.y, 1.0)
                 buf[:] = self.combined() + self.get_grid("origin")
