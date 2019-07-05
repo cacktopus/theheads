@@ -135,6 +135,7 @@ class Grid:
 
             while True:
                 await asyncio.sleep(0.1)
+                print(" ".join(sorted(self._grids.keys())))
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
                     self.set("origin", pos.x, pos.y, 1.0)

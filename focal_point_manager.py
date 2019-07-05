@@ -87,10 +87,10 @@ class FocalPointManager:
 
         steps = int(length / step_size)
         for i in range(steps):
-            prev_xy = self.grid.get(cam, pos_x, pos_y)
+            prev_xy = self.grid.get(cam.name, pos_x, pos_y)
             if prev_xy is None:
                 break
-            self.grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
+            self.grid.set(cam.name, pos_x, pos_y, prev_xy + 0.025)
             pos_x += dx
             pos_y += dy
 
