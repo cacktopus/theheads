@@ -103,6 +103,11 @@ class Installation:
         inst = Installation()
 
         for stand in obj['stands']:
+            if stand.get('disabled', False):
+                continue
+            if not stand.get('enabled', True):
+                continue
+
             s = Stand(
                 stand['name'],
                 obj_to_m(stand),
@@ -182,8 +187,6 @@ async def build_installation(cfg: Config):
                 stands[stand['name']] = stand
 
     for stand in stands.values():
-        if stand['disabled']:
-            continue
         stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
         stand['heads'] = [heads[h] for h in stand.get('heads', [])]
         stand['kinects'] = [kinects[k] for k in stand.get('kinects', [])]
