@@ -25,6 +25,8 @@ const (
 
 	minArea   = width * height / 200
 	numFrames = 10
+
+	default_port = 5000
 )
 
 type frameGrabber func(dst *gocv.Mat) bool
@@ -57,15 +59,22 @@ func fromRaspi(frames chan []byte) frameGrabber {
 
 func main() {
 	var filename string
-	flag.StringVar(&filename, "filename", "fuck", "stream recording from raw file")
+	var port int
+	var instance string
+	flag.StringVar(&instance, "instance", "", "instance name to run as")
+	flag.StringVar(&filename, "filename", "", "stream recording from raw file")
+	flag.IntVar(&port, "port", default_port, "port to listen on")
 	flag.Parse()
 
 	fmt.Println("filename: ", filename)
-	instance := flag.Args()[0]
+
+	if instance == "" {
+		log.Fatalf("instance not specified")
+	}
 
 	cfg := getConfig(instance)
 
-	go serve()
+	go serve(port)
 
 	redisPublish := NewRedisPublisher(cfg.RedisServer)
 	defer redisPublish.Stop()
