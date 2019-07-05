@@ -2,14 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
-	"os"
 	"time"
-	//"flag"
 )
 
 /*
@@ -57,7 +56,12 @@ func fromRaspi(frames chan []byte) frameGrabber {
 }
 
 func main() {
-	instance := os.Args[1]
+	var filename string
+	flag.StringVar(&filename, "filename", "fuck", "stream recording from raw file")
+	flag.Parse()
+
+	fmt.Println("filename: ", filename)
+	instance := flag.Args()[0]
 
 	cfg := getConfig(instance)
 
@@ -69,15 +73,23 @@ func main() {
 
 	var grabber frameGrabber
 
-	frames, err := runRaspiVid()
-	if err == nil {
-		fmt.Println("Using raspiVid: ", err)
+	if filename != "" {
+		fmt.Println("Streaming from file: ", filename)
+		frames, err := runFileStreamer(filename)
+		if err != nil {
+			panic(err)
+		}
 		grabber = fromRaspi(frames)
 	} else {
-		fmt.Println("Falling back to gocv: ", err)
-		grabber = fromWebCam()
+		frames, err := runRaspiVid()
+		if err == nil {
+			fmt.Println("Using raspiVid")
+			grabber = fromRaspi(frames)
+		} else {
+			fmt.Println("Falling back to gocv: ", err)
+			grabber = fromWebCam()
+		}
 	}
-
 	// TODO: camera warmup
 
 	avg := gocv.NewMat()
