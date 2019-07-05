@@ -7,10 +7,11 @@ from typing import Tuple
 import numpy as np
 
 import png
+from installation import Installation
 
 
 class Grid:
-    def __init__(self, xmin, ymin, xmax, ymax, img_size):
+    def __init__(self, xmin, ymin, xmax, ymax, img_size, installation: Installation):
         """:param img_size (width, height)"""
         assert ymax > ymin
         assert xmax > xmin
@@ -24,6 +25,8 @@ class Grid:
         self.img_size_x, self.img_size_y = img_size
 
         self._grids = {}
+
+        self.inst = installation
 
     def get_grid(self, name: str):
         if name not in self._grids:
@@ -132,25 +135,8 @@ class Grid:
 
             while True:
                 await asyncio.sleep(0.1)
+                self
                 self.set("origin", 0, 0, 1.0)
                 self.set("origin", 1.0, 0, 1.0)
                 self.set("origin", 0.0, 1.0, 1.0)
                 buf[:] = self.combined() + self.get_grid("origin")
-
-
-the_grid = Grid(-2, -4, 4, 2, (200, 200))  # TODO: not global!
-
-
-def main():
-    g = Grid(-10, -20, 10, 20, (40, 80))
-    print(g.idx(-10, -20))
-
-    print(g.idx(10, 0))
-    print(g.idx(9.9999, 0))
-
-    g.set(0, 0, 0.98)
-    print(g.get(0, 0))
-
-
-if __name__ == '__main__':
-    main()

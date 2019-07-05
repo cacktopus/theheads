@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
-from grid import the_grid
+from grid import Grid
 from installation import Installation
 from transformations import Vec, Mat
 
@@ -44,11 +44,12 @@ class FocalPoint:
 
 
 class FocalPointManager:
-    def __init__(self, broadcast: Callable, inst: Installation):
+    def __init__(self, broadcast: Callable, inst: Installation, grid: Grid):
         self.broadcast = broadcast
         self._focal_points: Dict[str, FocalPoint] = {}
         asyncio.create_task(self._focal_point_garbage_collector())
         self.inst = inst
+        self.grid = grid
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
@@ -72,7 +73,7 @@ class FocalPointManager:
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
-        step_size = min(the_grid.get_pixel_size()) / 4.0
+        step_size = min(self.grid.get_pixel_size()) / 4.0
 
         to = p1 - p0
         length = to.abs()
@@ -86,14 +87,14 @@ class FocalPointManager:
 
         steps = int(length / step_size)
         for i in range(steps):
-            prev_xy = the_grid.get(cam, pos_x, pos_y)
+            prev_xy = self.grid.get(cam, pos_x, pos_y)
             if prev_xy is None:
                 break
-            the_grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
+            self.grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
             pos_x += dx
             pos_y += dy
 
-        focal_pos = Vec(*the_grid.idx_to_xy(the_grid.focus()))
+        focal_pos = Vec(*self.grid.idx_to_xy(self.grid.focus()))
         self._add_focal_point("g0", focal_pos)
 
     def handle_kinect_motion(self, msg: Dict):

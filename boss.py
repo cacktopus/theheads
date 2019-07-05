@@ -13,7 +13,7 @@ import ws
 from config import THE_HEADS_EVENTS, get_args, Config
 from consul_config import ConsulBackend
 from focal_point_manager import FocalPointManager
-from grid import the_grid
+from grid import Grid
 from head_manager import HeadManager
 from installation import build_installation, Installation
 from observer import Observer
@@ -104,8 +104,6 @@ async def setup(
 
     ws_manager = ws.WebsocketManager(broadcast=observer.notify_observers)
 
-    asyncio.ensure_future(the_grid.decay())
-
     json_inst = await build_installation(cfg['cfg'])
     inst = Installation.unmarshal(json_inst)
 
@@ -113,6 +111,9 @@ async def setup(
     hm = HeadManager()
 
     app['head_manager'] = hm
+
+    app['grid'] = Grid(-2, -4, 4, 2, (200, 200), installation=inst)  # TODO: not global!
+    asyncio.ensure_future(app['grid'].decay())
 
     boss_routes.setup_routes(app, ws_manager)
 
@@ -125,6 +126,7 @@ async def setup(
     fp_manager = FocalPointManager(
         broadcast=observer.notify_observers,
         inst=inst,
+        grid=app['grid'],
     )
 
     observer.register_observer(orchestrator)
@@ -140,7 +142,7 @@ async def setup(
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))
 
-    asyncio.create_task(the_grid.publish_loop())
+    asyncio.create_task(app['grid'].publish_loop())
 
     return app
 
