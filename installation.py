@@ -103,11 +103,6 @@ class Installation:
         inst = Installation()
 
         for stand in obj['stands']:
-            if stand.get('disabled', False):
-                continue
-            if not stand.get('enabled', True):
-                continue
-
             s = Stand(
                 stand['name'],
                 obj_to_m(stand),
@@ -183,8 +178,13 @@ async def build_installation(cfg: Config):
     )).items():
         if name.endswith(b".yaml"):
             stand = yaml.safe_load(body)
-            if stand.get("enabled", True):
-                stands[stand['name']] = stand
+
+            if stand.get('disabled', False):
+                continue
+            if not stand.get('enabled', True):
+                continue
+
+            stands[stand['name']] = stand
 
     for stand in stands.values():
         stand['cameras'] = [cameras[c] for c in stand.get('cameras', [])]
