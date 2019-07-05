@@ -139,4 +139,6 @@ class Grid:
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
                     self.set("origin", pos.x, pos.y, 1.0)
-                buf[:] = self.combined() + self.get_grid("origin")
+
+                # buf[:] = self.combined() + self.get_grid("origin")
+                buf[:] = self.get_grid("origin") + self.get_grid("camera-42") + self.get_grid("camera-43")
