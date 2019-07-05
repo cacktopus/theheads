@@ -27,7 +27,8 @@ def main():
             # print(x)
 
             # print(np.mean(x))
-            img = cv2.resize(x, None, fx=4.0, fy=4.0)
+            img = x
+            img = cv2.resize(img, None, fx=3.0, fy=3.0)
             img = cv2.flip(img, 0)
 
             cv2.imshow('frame', img)
