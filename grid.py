@@ -111,6 +111,14 @@ class Grid:
 
         return x, y
 
+    def draw_circle(self, grid_name: str, x: float, y: float, r: float, steps: int = 100):
+        center = (x, y)
+        for i in range(steps):
+            theta = 2 * math.pi * (i / steps)
+            x = center[0] + r * math.cos(theta)
+            y = center[1] + r * math.sin(theta)
+            self.set(grid_name, x, y, 1.0)
+
     async def decay(self):
         while True:
             await asyncio.sleep(0.25)
@@ -139,6 +147,7 @@ class Grid:
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
                     self.set("origin", pos.x, pos.y, 1.0)
+                    self.draw_circle("origin", pos.x, pos.y, 0.19)
 
                 # buf[:] = self.combined() + self.get_grid("origin")
                 buf[:] = self.get_grid("origin") + self.get_grid("camera-42") + self.get_grid("camera-43")
