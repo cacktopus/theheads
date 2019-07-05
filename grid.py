@@ -34,6 +34,10 @@ class Grid:
             self._grids[name] = g
         return self._grids[name]
 
+    def reset(self, name):
+        g = self.get_grid(name)
+        g.fill(0.0)
+
     def idx(self, x: float, y: float):
         xidx = int(math.floor((x - self.xmin) / (self.xmax - self.xmin) * self.img_size_x))
         yidx = int(math.floor((y - self.ymin) / (self.ymax - self.ymin) * self.img_size_y))
@@ -60,7 +64,8 @@ class Grid:
     def set(self, name: str, x: float, y: float, val: float):
         g = self.get_grid(name)
         idx = self.idx(x, y)
-        g[idx] = val
+        if idx is not None:
+            g[idx] = val
 
     def get(self, name: str, x: float, y: float) -> float:
         g = self.get_grid(name)
@@ -99,7 +104,7 @@ class Grid:
         buf = np.flipud(buf)
         return png.write_png(buf.tobytes(), self.img_size_x, self.img_size_y)
 
-    def focus(self):
+    def focus(self) -> Tuple[int, int]:
         g = self.combined()
         m = np.argmax(g, axis=None)
         return np.unravel_index(m, g.shape)
@@ -139,15 +144,19 @@ class Grid:
                 buffer=mm,
             )
 
-            self.get_grid("origin")
+            debug_grid = "debug_grid"
 
             while True:
                 await asyncio.sleep(0.1)
+                self.reset(debug_grid)
                 print(" ".join(sorted(self._grids.keys())))
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
-                    self.set("origin", pos.x, pos.y, 1.0)
-                    self.draw_circle("origin", pos.x, pos.y, 0.19)
+                    self.set(debug_grid, pos.x, pos.y, 1.0)
+                    self.draw_circle(debug_grid, pos.x, pos.y, 0.19)
+
+                focal_x, focal_y = self.idx_to_xy(self.focus())
+                self.draw_circle(debug_grid, focal_x, focal_y, 0.25)
 
                 # buf[:] = self.combined() + self.get_grid("origin")
-                buf[:] = self.get_grid("origin") + self.get_grid("camera-42") + self.get_grid("camera-43")
+                buf[:] = self.get_grid(debug_grid) + self.get_grid("camera-42") + self.get_grid("camera-43")
