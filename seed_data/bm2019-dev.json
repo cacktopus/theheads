@@ -1,0 +1,37 @@
+[
+	{
+		"key": "the-heads/cameras/camera-42.yaml",
+		"flags": 0,
+		"value": "ZGVzY3JpcHRpb246IFJhc3BiZXJyeSBQaSBQaU5vaXIgQ2FtZXJhIFYyIFZpZGVvIE1vZHVsZQpmb3Y6IDY0LjMzCm5hbWU6IGNhbWVyYS00Mgpwb3M6IHt4OiAwLjE1LCB5OiAwfQpyb3Q6IDAK"
+	},
+	{
+		"key": "the-heads/cameras/camera-43.yaml",
+		"flags": 0,
+		"value": "ZGVzY3JpcHRpb246IFJhc3BiZXJyeSBQaSBQaU5vaXIgQ2FtZXJhIFYyIFZpZGVvIE1vZHVsZQpmb3Y6IDY0LjMzCm5hbWU6IGNhbWVyYS00Mwpwb3M6IHt4OiAwLjE1LCB5OiAwfQpyb3Q6IDAK"
+	},
+	{
+		"key": "the-heads/heads/head-42.yaml",
+		"flags": 0,
+		"value": "bmFtZTogaGVhZC00Mgpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDAKdmlydHVhbDogdHJ1ZQ=="
+	},
+	{
+		"key": "the-heads/heads/head-43.yaml",
+		"flags": 0,
+		"value": "bmFtZTogaGVhZC00Mwpwb3M6IHt4OiAwLCB5OiAwfQpyb3Q6IDAKdmlydHVhbDogdHJ1ZQ=="
+	},
+	{
+		"key": "the-heads/scene.yaml",
+		"flags": 0,
+		"value": "c3RhcnR1cF9zY2VuZXM6IFtdCgpzY2VuZXM6Ci0gZm9sbG93X2V2YWRl"
+	},
+	{
+		"key": "the-heads/stands/stand-01.yaml",
+		"flags": 0,
+		"value": "Y2FtZXJhczogW2NhbWVyYS00Ml0Ka2luZWN0czogW10KaGVhZHM6IFtoZWFkLTQyXQpuYW1lOiBzdGFuZC0wMQpwb3M6IHt4OiAtMSwgeTogMH0Kcm90OiAtOTA="
+	},
+	{
+		"key": "the-heads/stands/stand-02.yaml",
+		"flags": 0,
+		"value": "Y2FtZXJhczogW2NhbWVyYS00M10Ka2luZWN0czogW10KaGVhZHM6IFtoZWFkLTQzXQpuYW1lOiBzdGFuZC0wMgpwb3M6IHt4OiAxLCB5OiAwfQpyb3Q6IC05MA=="
+	}
+]
