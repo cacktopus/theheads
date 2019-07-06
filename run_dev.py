@@ -12,14 +12,15 @@ from seed_dev_data import head_names
 
 async def run_camera(instance: str, filename: str, port: int):
     process = await asyncio.create_subprocess_exec(
-        "camera/camera",
+        "./camera",
         "-instance", instance,
         "-filename", filename,
         "-port", f"{port}",
         # stdout=asyncio.subprocess.PIPE,
-        # stderr=asyncio.subprocess.PIPE
+        # stderr=asyncio.subprocess.PIPE,
+        cwd="camera",
     )
-    return await process.wait()
+    # return await process.wait()
 
 
 async def run():
@@ -44,7 +45,8 @@ async def run():
         util.run_app(app3),
     ])
 
-    await run_camera("camera-01", "pi42.raw", 5001)
+    await run_camera("camera-42", "../pi42.raw", 5002)
+    await run_camera("camera-43", "../pi42.raw", 5003)  # TODO: pi43
 
 
 def main():
