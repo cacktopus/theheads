@@ -24,7 +24,7 @@ func runRaspiVid() (chan []byte, error) {
 		"-h", fmt.Sprintf("%d", height),
 		"--raw", "-",
 		"-rf", "gray",
-		"-hf",
+		// "-hf",
 		"-vf",
 		"-o", "/dev/null",
 	)

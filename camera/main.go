@@ -26,7 +26,7 @@ const (
 	minArea   = width * height / 200
 	numFrames = 10
 
-	default_port = 5000
+	defaultPort = 5000
 )
 
 type frameGrabber func(dst *gocv.Mat) bool
@@ -63,7 +63,7 @@ func main() {
 	var instance string
 	flag.StringVar(&instance, "instance", "", "instance name to run as")
 	flag.StringVar(&filename, "filename", "", "stream recording from raw file")
-	flag.IntVar(&port, "port", default_port, "port to listen on")
+	flag.IntVar(&port, "port", defaultPort, "port to listen on")
 	flag.Parse()
 
 	fmt.Println("filename: ", filename)
@@ -187,7 +187,7 @@ func main() {
 				pos := maxRect.Min.X + maxRect.Dx()/2
 				half := width / 2
 				t := float64(pos-half) / float64(half)
-				pos2 := int(scale * t)
+				pos2 := -int(scale * t)
 				fmt.Println("pos", pos, "t", t, "pos2", pos2)
 
 				msg := MotionDetected{

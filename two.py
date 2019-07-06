@@ -29,7 +29,7 @@ def main():
 
             # print(np.mean(x))
             img = x
-            img = cv2.resize(img, None, fx=2.0, fy=2.0)
+            img = cv2.resize(img, None, fx=1.5, fy=1.5)
             img = cv2.flip(img, 0)
 
             cv2.imshow('frame', img)

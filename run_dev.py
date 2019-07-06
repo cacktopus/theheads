@@ -46,7 +46,7 @@ async def run():
     ])
 
     await run_camera("camera-42", "../pi42.raw", 5002)
-    await run_camera("camera-43", "../pi42.raw", 5003)  # TODO: pi43
+    await run_camera("camera-43", "../pi43.raw", 5003)
 
 
 def main():
