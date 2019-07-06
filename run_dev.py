@@ -10,6 +10,18 @@ from consul_config import ConsulBackend
 from seed_dev_data import head_names
 
 
+async def run_camera(instance: str, filename: str, port: int):
+    process = await asyncio.create_subprocess_exec(
+        "camera/camera",
+        "-instance", instance,
+        "-filename", filename,
+        "-port", f"{port}",
+        # stdout=asyncio.subprocess.PIPE,
+        # stderr=asyncio.subprocess.PIPE
+    )
+    return await process.wait()
+
+
 async def run():
     consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
     names = await head_names(consul_backend)
@@ -31,6 +43,8 @@ async def run():
         util.run_app(app2),
         util.run_app(app3),
     ])
+
+    await run_camera("camera-01", "pi42.raw", 5001)
 
 
 def main():

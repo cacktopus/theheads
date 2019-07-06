@@ -150,6 +150,7 @@ class Grid:
                 await asyncio.sleep(0.1)
                 self.reset(debug_grid)
                 print(" ".join(sorted(self._grids.keys())))
+
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
                     self.set(debug_grid, pos.x, pos.y, 1.0)
@@ -159,4 +160,7 @@ class Grid:
                 self.draw_circle(debug_grid, focal_x, focal_y, 0.25)
 
                 # buf[:] = self.combined() + self.get_grid("origin")
-                buf[:] = self.get_grid(debug_grid) + self.get_grid("camera-42") + self.get_grid("camera-43")
+                result = self.get_grid(debug_grid)
+                for c in self.inst.cameras.values():
+                    result += self.get_grid(c.name)
+                buf[:] = result
