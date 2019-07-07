@@ -68,14 +68,16 @@ class FocalPointManager:
         # perhaps not the best place for this function to live
         cam = self.inst.cameras[camera_name]
         p0 = Vec(0, 0)
-        p1 = Mat.rotz(position) * Vec(5, 0)
+        p1 = Mat.rotz(position) * Vec(10, 0)
 
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
         self.grid.trace(camera_name, p0, p1)
 
-        focal_pos = self.grid.focus()
+        self.grid.update_state()
+
+        focal_pos, _ = self.grid.focus()
         self._add_focal_point("g0", focal_pos)
 
     def handle_kinect_motion(self, msg: Dict):

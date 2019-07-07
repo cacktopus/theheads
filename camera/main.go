@@ -188,7 +188,7 @@ func main() {
 				half := width / 2
 				t := float64(pos-half) / float64(half)
 				pos2 := -int(scale * t)
-				fmt.Println("pos", pos, "t", t, "pos2", pos2)
+				// fmt.Println("pos", pos, "t", t, "pos2", pos2)
 
 				msg := MotionDetected{
 					MessageHeader{

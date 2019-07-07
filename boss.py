@@ -112,7 +112,7 @@ async def setup(
 
     app['head_manager'] = hm
 
-    app['grid'] = Grid(-4, -4, 4, 4, (400, 400), installation=inst)  # TODO: not global!
+    app['grid'] = Grid(-10, -10, 10, 10, (400, 400), installation=inst)  # TODO: not global!
     asyncio.ensure_future(app['grid'].decay())
 
     boss_routes.setup_routes(app, ws_manager)

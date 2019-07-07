@@ -2,12 +2,22 @@ import asyncio
 import math
 import mmap
 from functools import reduce
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 
 from installation import Installation
 from transformations import Vec
+
+
+class _FocalPoint:
+    def __init__(self, pos: Vec, radius: float):
+        self.pos = pos
+        self.radius = radius
+
+    def point_inside(self, p: Vec):
+        to = p - self.pos
+        return to.abs() < 2 * self.radius
 
 
 class Grid:
@@ -27,6 +37,7 @@ class Grid:
         self._grids = {}
 
         self.inst = installation
+        self._focal_points: List[_FocalPoint] = []
 
     def get_grid(self, name: str):
         if name not in self._grids:
@@ -94,6 +105,17 @@ class Grid:
             pos_x += dx
             pos_y += dy
 
+    def update_state(self):
+        p, val = self.focus()
+        if val <= 0:
+            return
+        for fp in self._focal_points:
+            if fp.point_inside(p):
+                break
+        else:
+            print(val)
+            self._focal_points.append(_FocalPoint(p, 0.80))
+
     def combined(self):
         if len(self._grids) == 0:
             return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
@@ -107,11 +129,12 @@ class Grid:
 
         return reduce(np.add, self._grids.values()) * mask
 
-    def focus(self) -> Vec:
+    def focus(self) -> Tuple[Vec, float]:
         g = self.combined()
         m = np.argmax(g, axis=None)
         idx = np.unravel_index(m, g.shape)
-        return Vec(*self.idx_to_xy(idx))
+        value = g[idx]
+        return Vec(*self.idx_to_xy(idx)), value
 
     def get_pixel_size(self):
         """Returns the size of a grid cell (in meters)"""
@@ -153,15 +176,15 @@ class Grid:
             while True:
                 await asyncio.sleep(0.1)
                 self.reset(debug_grid)
-                print(" ".join(sorted(self._grids.keys())))
+                # print(" ".join(sorted(self._grids.keys())))
 
                 for stand in self.inst.stands.values():
                     pos = stand.m.translation()
                     self.set(debug_grid, pos.x, pos.y, 1.0)
                     self.draw_circle(debug_grid, pos.x, pos.y, 0.19)
 
-                fp = self.focus()
-                self.draw_circle(debug_grid, fp.x, fp.y, 0.25)
+                for fp in self._focal_points:
+                    self.draw_circle(debug_grid, fp.pos.x, fp.pos.y, fp.radius)
 
                 # buf[:] = self.combined() + self.get_grid("origin")
                 result = self.get_grid(debug_grid)
