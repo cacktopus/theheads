@@ -194,6 +194,8 @@ class Grid:
         self._trace_steps(g, pos_x, pos_y, dx, dy, steps)
 
     def _trace_steps(self, g, pos_x, pos_y, dx, dy, steps):
+        """Optimized code"""
+        # convert into "grid coordinates"
         pos_x -= self.xmin
         pos_y -= self.ymin
 
@@ -203,6 +205,10 @@ class Grid:
         dx *= self.xscale
         dy *= self.yscale
 
+        self._trace_steps_internal(g, pos_x, pos_y, dx, dy, steps)
+
+    def _trace_steps_internal(self, g, pos_x, pos_y, dx, dy, steps):
+        """Optimized code"""
         for i in range(steps):
             yidx = int(math.floor(pos_x))  # notice swap
             xidx = int(math.floor(pos_y))  # notice swap
