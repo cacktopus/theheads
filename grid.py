@@ -6,7 +6,6 @@ from typing import Tuple
 
 import numpy as np
 
-import png
 from installation import Installation
 from transformations import Vec
 
@@ -108,29 +107,11 @@ class Grid:
 
         return reduce(np.add, self._grids.values()) * mask
 
-    def to_png(self):
-        shape = (self.img_size_y, self.img_size_x)
-        buf = np.zeros((shape[0], shape[1], 4), dtype=np.uint8)
-
-        focus = self.focus()
-
-        g = self.combined()
-        clipped = np.clip(g, 0, 1.0)
-        channel = (clipped * 255).round().astype(np.uint8)
-        # channel = np.random.randint(40, 200, size=(self.y_res, self.x_res), dtype=np.uint8)
-
-        buf[focus[0], focus[1], 0] = 255
-        buf[focus[0], focus[1], 2] = 255
-        buf[..., 3] = 255
-        buf[..., 1] = channel
-
-        buf = np.flipud(buf)
-        return png.write_png(buf.tobytes(), self.img_size_x, self.img_size_y)
-
-    def focus(self) -> Tuple[int, int]:
+    def focus(self) -> Vec:
         g = self.combined()
         m = np.argmax(g, axis=None)
-        return np.unravel_index(m, g.shape)
+        idx = np.unravel_index(m, g.shape)
+        return Vec(*self.idx_to_xy(idx))
 
     def get_pixel_size(self):
         """Returns the size of a grid cell (in meters)"""
@@ -179,8 +160,8 @@ class Grid:
                     self.set(debug_grid, pos.x, pos.y, 1.0)
                     self.draw_circle(debug_grid, pos.x, pos.y, 0.19)
 
-                focal_x, focal_y = self.idx_to_xy(self.focus())
-                self.draw_circle(debug_grid, focal_x, focal_y, 0.25)
+                fp = self.focus()
+                self.draw_circle(debug_grid, fp.x, fp.y, 0.25)
 
                 # buf[:] = self.combined() + self.get_grid("origin")
                 result = self.get_grid(debug_grid)

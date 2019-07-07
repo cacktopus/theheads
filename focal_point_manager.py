@@ -75,7 +75,7 @@ class FocalPointManager:
 
         self.grid.trace(camera_name, p0, p1)
 
-        focal_pos = Vec(*self.grid.idx_to_xy(self.grid.focus()))
+        focal_pos = self.grid.focus()
         self._add_focal_point("g0", focal_pos)
 
     def handle_kinect_motion(self, msg: Dict):
