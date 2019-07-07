@@ -189,7 +189,7 @@ class Grid:
         return t - t % quantum
 
     def maybe_spawn_new_focal_point(self):
-        p, val = self.focus(self.time_quantum(0.1))
+        p, val = self.focus(self.time_quantum(0.25))
         if val <= 0.10:
             return
 
