@@ -194,9 +194,18 @@ class Grid:
         self._trace_steps(g, pos_x, pos_y, dx, dy, steps)
 
     def _trace_steps(self, g, pos_x, pos_y, dx, dy, steps):
+        pos_x -= self.xmin
+        pos_y -= self.ymin
+
+        pos_x *= self.xscale
+        pos_y *= self.yscale
+
+        dx *= self.xscale
+        dy *= self.yscale
+
         for i in range(steps):
-            xidx = int(math.floor(self.xscale * (pos_x - self.xmin)))
-            yidx = int(math.floor(self.yscale * (pos_y - self.ymin)))
+            xidx = int(math.floor(pos_x))
+            yidx = int(math.floor(pos_y))
             xidx, yidx = yidx, xidx  # notice swap here
 
             g[(xidx, yidx)] += 0.025
