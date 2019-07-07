@@ -236,14 +236,31 @@ class Grid:
             return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
 
         masks = []
-        for g in camera_grids:
-            m = g > 0.01
-            masks.append(m.astype(np.float32))
 
-        mask = reduce(np.add, masks) > 1.0
-        mask = mask.astype(np.float32)
+        def step1():
+            for g in camera_grids:
+                m = g > 0.01
+                masks.append(m)
 
-        result = reduce(np.add, camera_grids) * mask
+        step1()
+
+        def step1b():
+            for i in range(len(masks)):
+                masks[i] = masks[i].astype(np.float32)
+
+        step1b()
+
+        def step2():
+            mask = reduce(np.add, masks) > 1.0
+            mask = mask.astype(np.float32)
+            return mask
+
+        mask = step2()
+
+        def step3():
+            return reduce(np.add, camera_grids) * mask
+
+        result = step3()
 
         return result
 
