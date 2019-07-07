@@ -99,6 +99,8 @@ class Grid:
         self.inst = installation
         self._focal_points: List[_FocalPoint] = []
 
+        asyncio.create_task(self.focal_point_spawner())
+
     @property
     def focal_points(self) -> List[_FocalPoint]:
         return self._focal_points
@@ -189,7 +191,7 @@ class Grid:
         return t - t % quantum
 
     def maybe_spawn_new_focal_point(self):
-        p, val = self.focus(self.time_quantum(0.25))
+        p, val = self.focus()
         if val <= 0.10:
             return
 
@@ -210,8 +212,13 @@ class Grid:
         new_fp.id = _FocalPoint.assign_id()
         self._focal_points.append(new_fp)
 
+    async def focal_point_spawner(self):
+        while True:
+            self.maybe_spawn_new_focal_point()
+            await asyncio.sleep(0.25)
+
     def update_state(self):
-        self.maybe_spawn_new_focal_point()
+        # self.maybe_spawn_new_focal_point()
         self.merge_overlapping_focal_points()
 
     def merge_overlapping_focal_points(self):
@@ -264,8 +271,7 @@ class Grid:
 
         return result
 
-    @functools.lru_cache(maxsize=2)
-    def focus(self, _t) -> Tuple[Vec, float]:
+    def focus(self) -> Tuple[Vec, float]:
         g = self.combined()
         m = np.argmax(g, axis=None)
         idx = np.unravel_index(m, g.shape)
