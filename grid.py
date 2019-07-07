@@ -2,7 +2,7 @@ import asyncio
 import math
 import mmap
 from functools import reduce
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import numpy as np
 
@@ -20,6 +20,41 @@ class _FocalPoint:
     def intersects(self, other: '_FocalPoint'):
         to = other.pos - self.pos
         return to.abs() < (self.radius + other.radius)
+
+    def line_intersection(self, p0: Vec, p1: Vec) -> Optional[Tuple(Vec, Vec)]:
+        # https://math.stackexchange.com/questions/311921/get-location-of-vector-circle-intersection
+
+        # transform to circle's reference frame
+        p0 = p0 - self.pos
+        p1 = p1 - self.pos
+
+        x0, y0 = p0.x, p0.y
+        x1, y1 = p1.x, p1.y
+
+        r = self.radius
+
+        a = (x1 - x0) ** 2 + (y1 - y0) ** 2
+        b = 2 * (x1 - x0) * x0 + 2 * (y1 - y0) * y0
+        c = x0 ** 2 + y0 ** 2 - r ** 2
+
+        disc = b * b - 4 * a * c
+        if disc < 0:
+            return None
+
+        rt = math.sqrt(disc)
+        t0 = (-b - rt) / (2 * a)
+        t1 = (-b + rt) / (2 * a)
+
+        t0, t1 = min(t0, t1), max(t0, t1)
+
+        q0 = (p1 - p0) * t0 + p0
+        q1 = (p1 - p0) * t1 + p0
+
+        # translate back to global reference frame
+        q0 += self.pos
+        q1 += self.pos
+
+        return q0, q1
 
 
 class Grid:
