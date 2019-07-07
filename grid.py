@@ -184,19 +184,19 @@ class Grid:
 
     def maybe_spawn_new_focal_point(self):
         p, val = self.focus()
-        if val <= 0.25:
+        if val <= 0.10:
             return
 
         new_fp = _FocalPoint(p, id=-1)
 
-        # fp already exists
+        # does fp overlap with existing focal point?
         for fp in self._focal_points:
             if new_fp.overlaps(fp):
                 return
 
         # don't create new focal points close to cameras
         for cam in self.inst.cameras.values():
-            fake_fp = _FocalPoint(cam.m.translation(), radius=1.0, id=-1)
+            fake_fp = _FocalPoint(cam.m.translation(), id=-1)
             if new_fp.overlaps(fake_fp):
                 return
 
@@ -221,17 +221,21 @@ class Grid:
                 return
 
     def combined(self):
-        if len(self._grids) == 0:
+        camera_grids = [g for name, g in self._grids.items() if name.startswith("camera")]
+        if len(camera_grids) == 0:
             return np.zeros((self.img_size_y, self.img_size_x), dtype=np.float32)
 
-        grids = []
-        for g in self._grids.values():
+        masks = []
+        for g in camera_grids:
             m = g > 0.01
-            grids.append(m.astype(np.float32))
-        mask = reduce(np.add, grids) > 1.0
+            masks.append(m.astype(np.float32))
+
+        mask = reduce(np.add, masks) > 1.0
         mask = mask.astype(np.float32)
 
-        return reduce(np.add, self._grids.values()) * mask
+        result = reduce(np.add, camera_grids) * mask
+
+        return result
 
     def focus(self) -> Tuple[Vec, float]:
         g = self.combined()
@@ -294,4 +298,5 @@ class Grid:
                 result = self.get_grid(debug_grid)
                 for c in self.inst.cameras.values():
                     result += self.get_grid(c.name)
+                result += self.combined()
                 buf[:] = result
