@@ -170,15 +170,14 @@ class Grid:
 
         to = p1 - p0
         length = to.abs()
-        direction = to.scale(1.0 / length)
 
         dx = to.x / length * step_size
         dy = to.y / length * step_size
 
-        initial = p0 + direction.scale(0.10)
-        pos_x, pos_y = initial.x, initial.y
+        pos_x, pos_y = p0.x, p0.y
 
         steps = int(length / step_size)
+        # print(steps)
         for i in range(steps):
             prev_xy = self.get(camera_name, pos_x, pos_y)
             if prev_xy is None:
