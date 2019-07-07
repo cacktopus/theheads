@@ -38,9 +38,12 @@ class Vec:
     def w(self):
         return float(self._data[3])
 
-    def abs(self):
+    def abs(self) -> float:
+        return math.sqrt(self.abs_sq())
+
+    def abs_sq(self) -> float:
         a = self
-        return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z)
+        return a.x * a.x + a.y * a.y + a.z * a.z
 
     def scale(self, c: float):
         a = self

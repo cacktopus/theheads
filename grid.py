@@ -1,6 +1,5 @@
 import asyncio
 import ctypes
-import functools
 import itertools
 import math
 import mmap
@@ -25,11 +24,30 @@ class _FocalPoint:
         cls.counter += 1
         return f"g{result}"
 
-    def __init__(self, pos: Vec, radius: float = FP_RADIUS, id: int = None):
+    def __init__(self, pos: Vec, radius: float = FP_RADIUS, id: int = None, ttl=None):
         self.pos = pos
         self.radius = radius
         if id is None:
             self.id: str = _FocalPoint.assign_id()
+
+        if ttl is None:
+            self.ttl = 5.0
+        self.updated_at = time.time()
+
+    @property
+    def expiry(self):
+        return self.updated_at + self.ttl
+
+    def time_left(self, t: float = None) -> float:
+        t = t or time.time()
+        return self.expiry - t
+
+    def is_expired(self, t: float = None) -> bool:
+        t = t or time.time()
+        return t > self.expiry
+
+    def refresh(self, t: float = None):
+        self.updated_at = time.time()
 
     def overlaps(self, other: '_FocalPoint', debug=False):
         to = other.pos - self.pos
@@ -106,7 +124,7 @@ class Grid:
         self.tracelib = ctypes.cdll.LoadLibrary("./trace.so")
 
         if spawner:
-            asyncio.create_task(self.focal_point_spawner())
+            asyncio.create_task(self.background_processor())
 
     @property
     def focal_points(self) -> List[_FocalPoint]:
@@ -163,13 +181,19 @@ class Grid:
             self.trace_grid(camera_name, p0, p1)
 
     def trace_focal_points(self, p0: Vec, p1: Vec) -> bool:
+        results = []
         for fp in self._focal_points:
             res = fp.line_intersection(p0, p1)
             if res is not None:
-                q0, q1 = res
-                midpoint = q0 + (q1 - q0).scale(0.5)
-                to = midpoint - fp.pos
-                fp.pos += to.scale(0.2)
+                q0 = res[0]
+                d = (q0 - p0).abs_sq()
+                results.append((d, res, fp))
+
+        if results:
+            _, (q0, q1), fp = min(results)  # only interact with closest intersection
+            midpoint = q0 + (q1 - q0).scale(0.5)
+            to = midpoint - fp.pos
+            fp.pos += to.scale(0.2)
 
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
@@ -261,9 +285,10 @@ class Grid:
         new_fp.id = _FocalPoint.assign_id()
         self._focal_points.append(new_fp)
 
-    async def focal_point_spawner(self):
+    async def background_processor(self):
         while True:
             self.maybe_spawn_new_focal_point()
+            # self.cleanup_stale()
             await asyncio.sleep(0.25)
 
     def update_state(self):
