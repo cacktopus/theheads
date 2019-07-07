@@ -196,9 +196,8 @@ class Grid:
             yidx = int(math.floor(self.yscale * (pos_y - self.ymin)))
             xidx, yidx = yidx, xidx  # notice swap here
 
-            prev_xy = g[(xidx, yidx)]
+            g[(xidx, yidx)] += 0.025
 
-            self.set(camera_name, pos_x, pos_y, prev_xy + 0.025)
             pos_x += dx
             pos_y += dy
 
