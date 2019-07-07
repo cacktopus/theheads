@@ -9,7 +9,7 @@ import numpy as np
 from installation import Installation
 from transformations import Vec
 
-FP_RADIUS = 0.80 / 2
+FP_RADIUS = 0.8
 
 
 class _FocalPoint:
@@ -138,7 +138,9 @@ class Grid:
             res = fp.line_intersection(p0, p1)
             if res is not None:
                 q0, q1 = res
-                print(q0, q1)
+                midpoint = q0 + (q1 - q0).scale(0.5)
+                to = midpoint - fp.pos
+                fp.pos += to.scale(0.2)
 
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
