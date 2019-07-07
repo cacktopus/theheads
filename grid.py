@@ -9,15 +9,17 @@ import numpy as np
 from installation import Installation
 from transformations import Vec
 
+FP_RADIUS = 0.80
+
 
 class _FocalPoint:
-    def __init__(self, pos: Vec, radius: float):
+    def __init__(self, pos: Vec, radius: float = FP_RADIUS):
         self.pos = pos
         self.radius = radius
 
-    def point_inside(self, p: Vec):
-        to = p - self.pos
-        return to.abs() < 2 * self.radius
+    def intersects(self, other: '_FocalPoint'):
+        to = other.pos - self.pos
+        return to.abs() < (self.radius + other.radius)
 
 
 class Grid:
@@ -109,12 +111,21 @@ class Grid:
         p, val = self.focus()
         if val <= 0:
             return
+
+        new_fp = _FocalPoint(p)
+
+        # fp already exists
         for fp in self._focal_points:
-            if fp.point_inside(p):
-                break
-        else:
-            print(val)
-            self._focal_points.append(_FocalPoint(p, 0.80))
+            if new_fp.intersects(fp):
+                return
+
+        for cam in self.inst.cameras.values():
+            fake_fp = _FocalPoint(cam.m.translation())
+            if new_fp.intersects(fake_fp):
+                return
+
+        print(val)
+        self._focal_points.append(new_fp)
 
     def combined(self):
         if len(self._grids) == 0:
