@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import math
 import mmap
 from functools import reduce
@@ -17,9 +18,12 @@ class _FocalPoint:
         self.pos = pos
         self.radius = radius
 
-    def intersects(self, other: '_FocalPoint'):
+    def overlaps(self, other: '_FocalPoint', debug=False):
         to = other.pos - self.pos
-        return to.abs() < (self.radius + other.radius)
+        d = to.abs()
+        if debug:
+            print(d)
+        return d < (self.radius + other.radius)
 
     def line_intersection(self, p0: Vec, p1: Vec) -> Optional[Tuple[Vec, Vec]]:
         # https://math.stackexchange.com/questions/311921/get-location-of-vector-circle-intersection
@@ -164,7 +168,7 @@ class Grid:
             pos_x += dx
             pos_y += dy
 
-    def update_state(self):
+    def maybe_spawn_new_focal_point(self):
         p, val = self.focus()
         if val <= 0.25:
             return
@@ -173,16 +177,33 @@ class Grid:
 
         # fp already exists
         for fp in self._focal_points:
-            if new_fp.intersects(fp):
+            if new_fp.overlaps(fp):
                 return
 
+        # don't create new focal points close to cameras
         for cam in self.inst.cameras.values():
             fake_fp = _FocalPoint(cam.m.translation(), radius=1.0)
-            if new_fp.intersects(fake_fp):
+            if new_fp.overlaps(fake_fp):
                 return
 
-        print(val)
+        # create new focal point
         self._focal_points.append(new_fp)
+
+    def update_state(self):
+        self.maybe_spawn_new_focal_point()
+        self.merge_overlapping_focal_points()
+
+    def merge_overlapping_focal_points(self):
+        # this runs every update and we can tolerate some overlap, so to keep things simple,
+        # if we find a single overlap just deal with it and get to any other overlaps on the
+        # next run
+        for fp0, fp1 in itertools.combinations(self._focal_points, 2):
+            if fp0.overlaps(fp1, debug=False):
+                midpoint = (fp0.pos + fp1.pos).scale(0.5)
+                merged = _FocalPoint(midpoint)
+                self._focal_points = [fp for fp in self._focal_points
+                                      if fp not in (fp0, fp1)] + [merged]
+                return
 
     def combined(self):
         if len(self._grids) == 0:
