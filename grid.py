@@ -191,6 +191,9 @@ class Grid:
 
         g = self.get_grid(camera_name)
 
+        self._trace_steps(g, pos_x, pos_y, dx, dy, steps)
+
+    def _trace_steps(self, g, pos_x, pos_y, dx, dy, steps):
         for i in range(steps):
             xidx = int(math.floor(self.xscale * (pos_x - self.xmin)))
             yidx = int(math.floor(self.yscale * (pos_y - self.ymin)))
