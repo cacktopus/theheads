@@ -75,8 +75,6 @@ class FocalPointManager:
 
         self.grid.trace(camera_name, p0, p1)
 
-        self.grid.update_state()
-
         # sync focal points
         grid_fps = {fp.id: fp for fp in self.grid.focal_points}
         grid_ids = set(grid_fps.keys())

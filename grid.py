@@ -194,6 +194,7 @@ class Grid:
             midpoint = q0 + (q1 - q0).scale(0.5)
             to = midpoint - fp.pos
             fp.pos += to.scale(0.2)
+            fp.refresh()
 
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
@@ -288,12 +289,12 @@ class Grid:
     async def background_processor(self):
         while True:
             self.maybe_spawn_new_focal_point()
-            # self.cleanup_stale()
+            self.merge_overlapping_focal_points()
+            self.cleanup_stale()
             await asyncio.sleep(0.25)
 
-    def update_state(self):
-        # self.maybe_spawn_new_focal_point()
-        self.merge_overlapping_focal_points()
+    def cleanup_stale(self):
+        self._focal_points = [fp for fp in self._focal_points if not fp.is_expired()]
 
     def merge_overlapping_focal_points(self):
         # this runs every update and we can tolerate some overlap, so to keep things simple,
