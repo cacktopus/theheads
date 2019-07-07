@@ -81,7 +81,7 @@ class _FocalPoint:
 
 
 class Grid:
-    def __init__(self, xmin, ymin, xmax, ymax, img_size, installation: Installation):
+    def __init__(self, xmin, ymin, xmax, ymax, img_size, installation: Installation, spawner=True):
         """:param img_size (width, height)"""
         assert ymax > ymin
         assert xmax > xmin
@@ -99,7 +99,8 @@ class Grid:
         self.inst = installation
         self._focal_points: List[_FocalPoint] = []
 
-        asyncio.create_task(self.focal_point_spawner())
+        if spawner:
+            asyncio.create_task(self.focal_point_spawner())
 
     @property
     def focal_points(self) -> List[_FocalPoint]:
