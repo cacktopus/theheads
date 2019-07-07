@@ -204,9 +204,8 @@ class Grid:
         dy *= self.yscale
 
         for i in range(steps):
-            xidx = int(math.floor(pos_x))
-            yidx = int(math.floor(pos_y))
-            xidx, yidx = yidx, xidx  # notice swap here
+            yidx = int(math.floor(pos_x))  # notice swap
+            xidx = int(math.floor(pos_y))  # notice swap
 
             g[(xidx, yidx)] += 0.025
 
