@@ -5,6 +5,16 @@ from math import sin, cos, pi
 import numpy as np
 
 
+def clamp(a, x, b):
+    if x < a:
+        return a
+
+    if x > b:
+        return b
+
+    return x
+
+
 class Vec:
     def __init__(self, x, y, z=0.0, w=1.0):
         self._data = np.array([x, y, z, w])
@@ -63,6 +73,14 @@ class Vec:
             a.z * b.x - a.x * b.z,
             a.x * b.y - a.y * b.x,
             1.0,
+        )
+
+    def clamp(self, xmin, ymin, xmax, ymax):
+        return Vec(
+            clamp(xmin, self.x, xmax),
+            clamp(ymin, self.y, ymax),
+            self.z,
+            self.w,
         )
 
     @property

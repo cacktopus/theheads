@@ -168,20 +168,27 @@ class Grid:
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
 
+        p0 = p0.clamp(self.xmin, self.ymin, self.xmax - 0.001, self.ymax - 0.001)
+        p1 = p1.clamp(self.xmin, self.ymin, self.xmax - 0.001, self.ymax - 0.001)
+
         to = p1 - p0
         length = to.abs()
+
+        if length < step_size:
+            return
 
         dx = to.x / length * step_size
         dy = to.y / length * step_size
 
         pos_x, pos_y = p0.x, p0.y
 
-        steps = int(length / step_size)
+        steps = int(length / step_size) - 1
+
         # print(steps)
         for i in range(steps):
             prev_xy = self.get(camera_name, pos_x, pos_y)
             if prev_xy is None:
-                break
+                assert False, "Should not be possible"
             self.set(camera_name, pos_x, pos_y, prev_xy + 0.025)
             pos_x += dx
             pos_y += dy
