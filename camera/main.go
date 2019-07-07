@@ -23,7 +23,7 @@ const (
 
 	scale = 64.33 / 2
 
-	minArea   = width * height / 200
+	minArea   = width * height / 400
 	numFrames = 10
 
 	defaultPort = 5000
