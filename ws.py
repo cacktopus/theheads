@@ -107,6 +107,12 @@ class WebsocketManager:
         if subject in ("head-positioned", "active"):
             self.send(kw['msg'])
 
+        if subject == "motion-line":
+            self.send({
+                "type": subject,
+                "data": kw
+            })
+
         if subject == "focal-points":
             focal_points = kw['focal_points']
             self.send({

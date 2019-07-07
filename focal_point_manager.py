@@ -73,6 +73,8 @@ class FocalPointManager:
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
+        self.broadcast("motion-line", p0=[p0.x, p0.y], p1=[p1.x, p1.y])
+
         self.grid.trace(camera_name, p0, p1)
 
         # sync focal points
@@ -84,7 +86,6 @@ class FocalPointManager:
         removed = my_ids - grid_ids
         existing = grid_ids & my_ids
 
-        # TODO: deal with TTL
         for name in new:
             fp = grid_fps[name]
             self._add_focal_point(fp.id, fp.pos)
