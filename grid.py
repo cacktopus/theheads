@@ -9,7 +9,7 @@ import numpy as np
 from installation import Installation
 from transformations import Vec
 
-FP_RADIUS = 0.80
+FP_RADIUS = 0.80 / 2
 
 
 class _FocalPoint:
@@ -109,7 +109,7 @@ class Grid:
 
     def update_state(self):
         p, val = self.focus()
-        if val <= 0:
+        if val <= 0.25:
             return
 
         new_fp = _FocalPoint(p)
@@ -120,7 +120,7 @@ class Grid:
                 return
 
         for cam in self.inst.cameras.values():
-            fake_fp = _FocalPoint(cam.m.translation())
+            fake_fp = _FocalPoint(cam.m.translation(), radius=1.0)
             if new_fp.intersects(fake_fp):
                 return
 
