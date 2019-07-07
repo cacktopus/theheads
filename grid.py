@@ -22,10 +22,11 @@ class _FocalPoint:
         cls.counter += 1
         return f"g{result}"
 
-    def __init__(self, pos: Vec, radius: float = FP_RADIUS):
+    def __init__(self, pos: Vec, radius: float = FP_RADIUS, id: int = None):
         self.pos = pos
         self.radius = radius
-        self.id: str = _FocalPoint.assign_id()
+        if id is None:
+            self.id: str = _FocalPoint.assign_id()
 
     def overlaps(self, other: '_FocalPoint', debug=False):
         to = other.pos - self.pos
@@ -186,7 +187,7 @@ class Grid:
         if val <= 0.25:
             return
 
-        new_fp = _FocalPoint(p)
+        new_fp = _FocalPoint(p, id=-1)
 
         # fp already exists
         for fp in self._focal_points:
@@ -195,11 +196,12 @@ class Grid:
 
         # don't create new focal points close to cameras
         for cam in self.inst.cameras.values():
-            fake_fp = _FocalPoint(cam.m.translation(), radius=1.0)
+            fake_fp = _FocalPoint(cam.m.translation(), radius=1.0, id=-1)
             if new_fp.overlaps(fake_fp):
                 return
 
         # create new focal point
+        new_fp.id = _FocalPoint.assign_id()
         self._focal_points.append(new_fp)
 
     def update_state(self):
