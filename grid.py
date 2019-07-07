@@ -103,7 +103,7 @@ class Grid:
         self.inst = installation
         self._focal_points: List[_FocalPoint] = []
 
-        self.tracelib = ctypes.cdll.LoadLibrary("trace.so")
+        self.tracelib = ctypes.cdll.LoadLibrary("./trace.so")
 
         if spawner:
             asyncio.create_task(self.focal_point_spawner())
