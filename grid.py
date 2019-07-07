@@ -1,7 +1,9 @@
 import asyncio
+import functools
 import itertools
 import math
 import mmap
+import time
 from functools import reduce
 from typing import Tuple, List, Optional
 
@@ -182,8 +184,12 @@ class Grid:
             pos_x += dx
             pos_y += dy
 
+    def time_quantum(self, quantum):
+        t = time.time()
+        return t - t % quantum
+
     def maybe_spawn_new_focal_point(self):
-        p, val = self.focus()
+        p, val = self.focus(self.time_quantum(0.1))
         if val <= 0.10:
             return
 
@@ -220,6 +226,10 @@ class Grid:
                                       if fp is not fp1]
                 return
 
+    def time_quantum(self, quantum):
+        t = time.time()
+        return t - t % quantum
+
     def combined(self):
         camera_grids = [g for name, g in self._grids.items() if name.startswith("camera")]
         if len(camera_grids) == 0:
@@ -237,7 +247,8 @@ class Grid:
 
         return result
 
-    def focus(self) -> Tuple[Vec, float]:
+    @functools.lru_cache(maxsize=2)
+    def focus(self, _t) -> Tuple[Vec, float]:
         g = self.combined()
         m = np.argmax(g, axis=None)
         idx = np.unravel_index(m, g.shape)
