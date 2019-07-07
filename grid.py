@@ -14,9 +14,18 @@ FP_RADIUS = 0.8
 
 
 class _FocalPoint:
+    counter = 0
+
+    @classmethod
+    def assign_id(cls) -> str:
+        result = cls.counter
+        cls.counter += 1
+        return f"g{result}"
+
     def __init__(self, pos: Vec, radius: float = FP_RADIUS):
         self.pos = pos
         self.radius = radius
+        self.id: str = _FocalPoint.assign_id()
 
     def overlaps(self, other: '_FocalPoint', debug=False):
         to = other.pos - self.pos
@@ -86,6 +95,10 @@ class Grid:
 
         self.inst = installation
         self._focal_points: List[_FocalPoint] = []
+
+    @property
+    def focal_points(self):
+        return self._focal_points
 
     def get_grid(self, name: str):
         if name not in self._grids:
@@ -200,9 +213,9 @@ class Grid:
         for fp0, fp1 in itertools.combinations(self._focal_points, 2):
             if fp0.overlaps(fp1, debug=False):
                 midpoint = (fp0.pos + fp1.pos).scale(0.5)
-                merged = _FocalPoint(midpoint)
+                fp0.pos = midpoint
                 self._focal_points = [fp for fp in self._focal_points
-                                      if fp not in (fp0, fp1)] + [merged]
+                                      if fp is not fp1]
                 return
 
     def combined(self):
