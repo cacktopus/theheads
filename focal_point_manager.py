@@ -73,26 +73,7 @@ class FocalPointManager:
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
-        step_size = min(self.grid.get_pixel_size()) / 4.0
-
-        to = p1 - p0
-        length = to.abs()
-        direction = to.scale(1.0 / length)
-
-        dx = to.x / length * step_size
-        dy = to.y / length * step_size
-
-        initial = p0 + direction.scale(0.10)
-        pos_x, pos_y = initial.x, initial.y
-
-        steps = int(length / step_size)
-        for i in range(steps):
-            prev_xy = self.grid.get(cam.name, pos_x, pos_y)
-            if prev_xy is None:
-                break
-            self.grid.set(cam.name, pos_x, pos_y, prev_xy + 0.025)
-            pos_x += dx
-            pos_y += dy
+        self.grid.trace(camera_name, p0, p1)
 
         focal_pos = Vec(*self.grid.idx_to_xy(self.grid.focus()))
         self._add_focal_point("g0", focal_pos)

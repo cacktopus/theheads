@@ -8,6 +8,7 @@ import numpy as np
 
 import png
 from installation import Installation
+from transformations import Vec
 
 
 class Grid:
@@ -71,6 +72,28 @@ class Grid:
         g = self.get_grid(name)
         idx = self.idx(x, y)
         return idx and float(g[idx])
+
+    def trace(self, camera_name: str, p0: Vec, p1: Vec):
+        step_size = min(self.get_pixel_size()) / 4.0
+
+        to = p1 - p0
+        length = to.abs()
+        direction = to.scale(1.0 / length)
+
+        dx = to.x / length * step_size
+        dy = to.y / length * step_size
+
+        initial = p0 + direction.scale(0.10)
+        pos_x, pos_y = initial.x, initial.y
+
+        steps = int(length / step_size)
+        for i in range(steps):
+            prev_xy = self.get(camera_name, pos_x, pos_y)
+            if prev_xy is None:
+                break
+            self.set(camera_name, pos_x, pos_y, prev_xy + 0.025)
+            pos_x += dx
+            pos_y += dy
 
     def combined(self):
         if len(self._grids) == 0:
