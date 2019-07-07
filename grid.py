@@ -47,6 +47,13 @@ class _FocalPoint:
 
         t0, t1 = min(t0, t1), max(t0, t1)
 
+        # may want to revist these conditions later
+        if t0 < 0 or t1 < 0:
+            return None
+
+        if t0 > 1 or t1 > 1:
+            return None
+
         q0 = (p1 - p0) * t0 + p0
         q1 = (p1 - p0) * t1 + p0
 
