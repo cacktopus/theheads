@@ -1,4 +1,5 @@
 import asyncio
+import ctypes
 import functools
 import itertools
 import math
@@ -209,14 +210,29 @@ class Grid:
 
     def _trace_steps_internal(self, g, pos_x, pos_y, dx, dy, steps):
         """Optimized code"""
-        for i in range(steps):
-            yidx = int(math.floor(pos_x))  # notice swap
-            xidx = int(math.floor(pos_y))  # notice swap
+        g_ptr = g.ctypes.get_as_parameter()
 
-            g[(xidx, yidx)] += 0.025
+        lib = ctypes.cdll.LoadLibrary("trace.so")
+        lib.trace(
+            g_ptr,
+            ctypes.c_int(self.img_size_x),
+            ctypes.c_int(self.img_size_y),
+            ctypes.c_float(pos_x),
+            ctypes.c_float(pos_y),
+            ctypes.c_float(dx),
+            ctypes.c_float(dy),
+            ctypes.c_int(steps),
+            ctypes.c_float(0.025),
+        )
 
-            pos_x += dx
-            pos_y += dy
+        # for i in range(steps):
+        #     yidx = int(math.floor(pos_x))  # notice swap
+        #     xidx = int(math.floor(pos_y))  # notice swap
+        #
+        #     g[(xidx, yidx)] += 0.025
+        #
+        #     pos_x += dx
+        #     pos_y += dy
 
     def time_quantum(self, quantum):
         t = time.time()
