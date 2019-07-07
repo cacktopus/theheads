@@ -103,6 +103,8 @@ class Grid:
         self.inst = installation
         self._focal_points: List[_FocalPoint] = []
 
+        self.tracelib = ctypes.cdll.LoadLibrary("trace.so")
+
         if spawner:
             asyncio.create_task(self.focal_point_spawner())
 
@@ -212,8 +214,7 @@ class Grid:
         """Optimized code"""
         g_ptr = g.ctypes.get_as_parameter()
 
-        lib = ctypes.cdll.LoadLibrary("trace.so")
-        lib.trace(
+        self.tracelib.trace(
             g_ptr,
             ctypes.c_int(self.img_size_x),
             ctypes.c_int(self.img_size_y),
