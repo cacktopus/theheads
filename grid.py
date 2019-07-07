@@ -21,7 +21,7 @@ class _FocalPoint:
         to = other.pos - self.pos
         return to.abs() < (self.radius + other.radius)
 
-    def line_intersection(self, p0: Vec, p1: Vec) -> Optional[Tuple(Vec, Vec)]:
+    def line_intersection(self, p0: Vec, p1: Vec) -> Optional[Tuple[Vec, Vec]]:
         # https://math.stackexchange.com/questions/311921/get-location-of-vector-circle-intersection
 
         # transform to circle's reference frame
@@ -54,8 +54,8 @@ class _FocalPoint:
         if t0 > 1 or t1 > 1:
             return None
 
-        q0 = (p1 - p0) * t0 + p0
-        q1 = (p1 - p0) * t1 + p0
+        q0 = (p1 - p0).scale(t0) + p0
+        q1 = (p1 - p0).scale(t1) + p0
 
         # translate back to global reference frame
         q0 += self.pos
@@ -128,6 +128,19 @@ class Grid:
         return idx and float(g[idx])
 
     def trace(self, camera_name: str, p0: Vec, p1: Vec):
+        hit = self.trace_focal_points(p0, p1)
+
+        if not hit:
+            self.trace_grid(camera_name, p0, p1)
+
+    def trace_focal_points(self, p0: Vec, p1: Vec) -> bool:
+        for fp in self._focal_points:
+            res = fp.line_intersection(p0, p1)
+            if res is not None:
+                q0, q1 = res
+                print(q0, q1)
+
+    def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
 
         to = p1 - p0
