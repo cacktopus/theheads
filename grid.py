@@ -97,7 +97,7 @@ class Grid:
         self._focal_points: List[_FocalPoint] = []
 
     @property
-    def focal_points(self):
+    def focal_points(self) -> List[_FocalPoint]:
         return self._focal_points
 
     def get_grid(self, name: str):

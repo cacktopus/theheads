@@ -77,8 +77,30 @@ class FocalPointManager:
 
         self.grid.update_state()
 
-        focal_pos, _ = self.grid.focus()
-        self._add_focal_point("g0", focal_pos)
+        # sync focal points
+        grid_fps = {fp.id: fp for fp in self.grid.focal_points}
+        grid_ids = set(grid_fps.keys())
+        my_ids = set(self._focal_points.keys())
+
+        new = grid_ids - my_ids
+        removed = my_ids - grid_ids
+        existing = grid_ids & my_ids
+
+        # TODO: deal with TTL
+        for name in new:
+            fp = grid_fps[name]
+            self._add_focal_point(fp.id, fp.pos)
+
+        for name in removed:
+            self._remove_focal_point(name)
+
+        for name in existing:
+            grid_fp = grid_fps[name]
+            mine = self._focal_points[name]
+            mine.pos = grid_fp.pos
+            mine.ttl = 5.0
+
+        self._publish_focal_points()
 
     def handle_kinect_motion(self, msg: Dict):
         data = msg['data']
