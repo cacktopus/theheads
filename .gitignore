@@ -7,3 +7,5 @@ dump.rdb
 *.wav
 *.mp3
 *.raw
+./gridbuf
+camera/camera
