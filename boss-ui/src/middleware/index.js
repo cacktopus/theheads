@@ -74,22 +74,27 @@ export const customWebsocketMiddleware = store => next => action => {
                 const payloadDataChunkData = payloadDataChunk.data ? payloadDataChunk.data : {};
 
                 switch (payloadType) {
-                    case "draw":
+                    case "motion-line":
                         let lineId = (new Date()).getTime() + "-" + i;
-                        let shape = payloadDataChunkData.shape;
-                        let coords = payloadDataChunkData.coords;
+                        let shape = "line"; //payloadDataChunkData.shape;
+                        let coords = [];
+                        
+                        try {
+                            coords = payloadDataChunkData.p0;
+                            coords = coords.concat(payloadDataChunkData.p1);
+                        } catch(e) {}
 
                         store.dispatch(motionLinesAddLine({
                             lineId,
                             shape,
                             coords
-
                         }))
+
                         setTimeout(() => {
                             store.dispatch(motionLinesRemoveLine({
                                 lineId
                             }));
-                        }, 1500); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
+                        }, 600); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
                         break;
                     case "active":
                         try {

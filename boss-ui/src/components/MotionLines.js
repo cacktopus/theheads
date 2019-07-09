@@ -30,7 +30,7 @@ export default class Menu extends React.Component {
             //     displayedLines.push(<MotionLine key={id} coords={line.coords} shape={line.shape}/>)
             // });
 
-            console.log(displayedLines);
+            // console.log(displayedLines);
 
             // displayedLines = linesJS.map((line, i) => <MotionLine key={i} coords={line.coords} shape={line.shape}/>);
 
