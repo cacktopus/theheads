@@ -6,3 +6,4 @@ dump.rdb
 .idea/
 *.wav
 *.mp3
+*.raw
