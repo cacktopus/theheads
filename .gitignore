@@ -7,5 +7,6 @@ dump.rdb
 *.wav
 *.mp3
 *.raw
-./gridbuf
+gridbuf
 camera/camera
+trace.so
