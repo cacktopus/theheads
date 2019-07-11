@@ -95,7 +95,7 @@ class HeadQueue:
                 except ClientConnectorError as e:
                     self.incr("connection_error")
                     self.error("Connection Error", exception=str(e))
-                    item.result.exception()
+                    item.result.exception(e)
                 except Exception as e:
                     self.incr("exception")
                     self.error("Exception", exception=str(e))
@@ -104,7 +104,7 @@ class HeadQueue:
                 if resp.status != 200:
                     self.incr("not_ok")
                     self.error("Response not ok", status=resp.status, text=str(text))
-                    item.result.exception()
+                    item.result.exception(SendError(str(text)))
 
                 else:
                     self.incr("ok")
