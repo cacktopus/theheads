@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
@@ -50,6 +51,12 @@ func main() {
 		gin.Recovery(),
 	)
 
+	var sceneJson interface{}
+	err := json.Unmarshal([]byte(scene), &sceneJson)
+	if err != nil {
+		panic(err)
+	}
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"result": "ok",
@@ -66,6 +73,19 @@ func main() {
 	//web.get("/build/js/{filename}", frontend_handler("boss-ui/build/js")),
 	//web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
 	//web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
+
+	/*
+			# deprecated, use don't use above instead
+	        web.get('/installation/{installation}/scene.json', installation_handler),
+	        web.get('/installation/{installation}/{name}.html', html_handler),
+	        web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
+	        web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
+
+	*/
+
+	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
+		c.JSON(200, sceneJson)
+	})
 
 	r.Static("/build", "./boss-ui/build")
 	//r.Static("/build/json", "./boss-ui/build")
