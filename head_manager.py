@@ -91,23 +91,22 @@ class HeadQueue:
                 try:
                     # TODO: timeouts
                     resp, text = await get(url)
-                    item.result.set_result((resp, text))
                 except ClientConnectorError as e:
                     self.incr("connection_error")
                     self.error("Connection Error", exception=str(e))
-                    item.result.exception(e)
+                    item.result.set_exception(e)
                 except Exception as e:
                     self.incr("exception")
                     self.error("Exception", exception=str(e))
-                    item.result.exception(e)
-
-                if resp.status != 200:
-                    self.incr("not_ok")
-                    self.error("Response not ok", status=resp.status, text=str(text))
-                    item.result.exception(SendError(str(text)))
-
+                    item.result.set_exception(e)
                 else:
-                    self.incr("ok")
+                    if resp.status != 200:
+                        self.incr("not_ok")
+                        self.error("Response not ok", status=resp.status, text=str(text))
+                        item.result.set_exception(SendError(str(text)))
+                    else:
+                        self.incr("ok")
+                        item.result.set_result((resp, text))
 
             await asyncio.sleep(_SEND_DELAY)
 
