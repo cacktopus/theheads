@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -196,7 +195,6 @@ loop:
 	for {
 		select {
 		case new_cb := <-ch:
-			fmt.Println(new_cb)
 			t0 = time.Now()
 			cb = new_cb
 		case <-time.After(time.Millisecond * 30):
