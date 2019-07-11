@@ -26,7 +26,7 @@ func runRedis(redisServer string) {
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
-			log.Println("message:", v.Channel, string(v.Data))
+			//log.Println("message:", v.Channel, string(v.Data))
 		case redis.Subscription:
 			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 		case error:
@@ -36,13 +36,13 @@ func runRedis(redisServer string) {
 }
 
 func main() {
-	redisServers := []string{"10.0.0.42:6379", "10.0.0.43:6379"}
+	redisServers := []string{"127.0.0.1:6379"}
 
 	for _, redis := range redisServers {
 		go runRedis(redis)
 	}
 
-	addr := ":8081"
+	addr := ":7071"
 
 	r := gin.New()
 	r.Use(
@@ -57,6 +57,19 @@ func main() {
 	})
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	r.StaticFile("/", "./templates/boss.html")
+
+	//web.get("/build/{filename}", frontend_handler("boss-ui/build")),
+	//web.get("/build/json/{filename}", frontend_handler("boss-ui/build/json")),
+	//web.get("/build/media/{filename}", frontend_handler("boss-ui/build/media")),
+	//web.get("/build/js/{filename}", frontend_handler("boss-ui/build/js")),
+	//web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
+	//web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
+
+	r.Static("/build", "./boss-ui/build")
+	//r.Static("/build/json", "./boss-ui/build")
+	r.Static("/static", "boss-ui/build/static")
 
 	go func() {
 		r.Run(addr)
