@@ -37,11 +37,18 @@ class HeadQueue:
         self._service_name = service_name
         self._tag_name = head_name
         asyncio.ensure_future(self._send_loop())
+        self.sessions = {}
 
     def send(self, rotation: float):
         if self._queue.full():
             self._queue.get_nowait()
         return self._queue.put_nowait(rotation)
+
+    def get_session(self, purpose: str):
+        key = "::".join([purpose, self._service_name, self._tag_name])
+        if key not in self.sessions:
+            self.sessions[key] = aiohttp.ClientSession()
+        return self.sessions[key]
 
     def incr(self, type_: str):
         HEAD_MANAGER_SEND.labels(type_, self._service_name, self._tag_name).inc()
@@ -55,69 +62,68 @@ class HeadQueue:
         return f"{self._service_name}[{self._tag_name}]"
 
     async def _send_loop(self):
-        async with aiohttp.ClientSession() as session:
-            while True:
-                item: QueueItem = await self._queue.get()
+        while True:
+            item: QueueItem = await self._queue.get()
 
-                assert isinstance(item, QueueItem)
-                path = item.path
-                assert path.startswith("/")
+            assert isinstance(item, QueueItem)
+            path = item.path
+            assert path.startswith("/")
 
-                # Send only the last item in the queue # TODO: support different policies
-                while not self._queue.empty():
-                    self.incr("cancel")
-                    item.result and item.result.cancel()
-                    item = self._queue.get_nowait()
+            # Send only the last item in the queue # TODO: support different policies
+            while not self._queue.empty():
+                self.incr("cancel")
+                item.result and item.result.cancel()
+                item = self._queue.get_nowait()
 
-                resp, text = await self._consul.get_nodes_for_service(
-                    self._service_name,
-                    tags=[self._tag_name],
-                    session=session,
-                )
+            resp, text = await self._consul.get_nodes_for_service(
+                self._service_name,
+                tags=[self._tag_name],
+                session=self.get_session("consul"),
+            )
 
-                if resp.status != 200:
-                    self.incr("consul_error")
-                    self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
-                    continue
+            if resp.status != 200:
+                self.incr("consul_error")
+                self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
+                continue
 
-                msg = json.loads(text)
+            msg = json.loads(text)
 
-                if len(msg) == 0:
-                    self.error("Could not find registered service")
+            if len(msg) == 0:
+                self.error("Could not find registered service")
 
-                elif len(msg) > 1:
-                    self.error("Found more than one registered service")
+            elif len(msg) > 1:
+                self.error("Found more than one registered service")
 
+            else:
+                address = msg[0]['Address']
+                port = msg[0]['ServicePort']
+                url = f"http://{address}:{port}{path}"
+
+                self.incr("send")
+                try:
+                    # TODO: timeouts
+                    async with self.get_session("http").get(url=url) as _resp:
+                        resp = _resp
+                    text = resp.text
+
+                except ClientConnectorError as e:
+                    self.incr("connection_error")
+                    self.error("Connection Error", exception=str(e))
+                    item.result and item.result.set_exception(e)
+                except Exception as e:
+                    self.incr("exception")
+                    self.error("Exception", exception=str(e))
+                    item.result and item.result.set_exception(e)
                 else:
-                    address = msg[0]['Address']
-                    port = msg[0]['ServicePort']
-                    url = f"http://{address}:{port}{path}"
-
-                    self.incr("send")
-                    try:
-                        # TODO: timeouts
-                        async with session.get(url=url) as _resp:
-                            resp = _resp
-                        text = resp.text
-
-                    except ClientConnectorError as e:
-                        self.incr("connection_error")
-                        self.error("Connection Error", exception=str(e))
-                        item.result and item.result.set_exception(e)
-                    except Exception as e:
-                        self.incr("exception")
-                        self.error("Exception", exception=str(e))
-                        item.result and item.result.set_exception(e)
+                    if resp.status != 200:
+                        self.incr("not_ok")
+                        self.error("Response not ok", status=resp.status, text=str(text))
+                        item.result and item.result.set_exception(SendError(str(text)))
                     else:
-                        if resp.status != 200:
-                            self.incr("not_ok")
-                            self.error("Response not ok", status=resp.status, text=str(text))
-                            item.result and item.result.set_exception(SendError(str(text)))
-                        else:
-                            self.incr("ok")
-                            item.result and item.result.set_result((resp, text))
+                        self.incr("ok")
+                        item.result and item.result.set_result((resp, text))
 
-                await asyncio.sleep(_SEND_DELAY)
+            await asyncio.sleep(_SEND_DELAY)
 
 
 class HeadManager:
