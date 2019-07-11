@@ -4,6 +4,7 @@ import traceback
 from typing import Callable, Optional, Tuple
 
 import log
+import util
 from head_manager import HeadManager
 from installation import Installation
 from scene_conversation import conversation
@@ -43,7 +44,7 @@ class Orchestrator:
         self.inst = inst
         self.head_manager = head_manager
         self.broadcast = broadcast
-        asyncio.create_task(self._dj())
+        util.create_task(self._dj())
         self._current_orch = None
         self.focal_points = {}
         self.texts = list()
@@ -85,7 +86,7 @@ class Orchestrator:
     async def _run_scenes(self, scenes):
         for scene in scenes:
             log.info(f"running scene", scene=scene.__name__)
-            task: asyncio.Task = asyncio.create_task(scene(self))
+            task: asyncio.Task = util.create_task(scene(self))
 
             timeout = timeouts(scene)
 

@@ -9,6 +9,7 @@ from aiohttp import web
 
 import log
 import motors
+import util
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
@@ -250,8 +251,8 @@ async def setup(
         Seeker(),
         gpio,
     )
-    asyncio.create_task(stepper.redis_publisher())
-    asyncio.create_task(stepper.seek())
+    util.create_task(stepper.redis_publisher())
+    util.create_task(stepper.seek())
 
     app = web.Application()
     app['cfg'] = cfg
@@ -268,7 +269,7 @@ async def setup(
         web.get("/find_zero", find_zero),
     ])
 
-    asyncio.create_task(stepper.publish_active_loop())
+    util.create_task(stepper.publish_active_loop())
 
     return app
 

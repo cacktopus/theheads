@@ -9,6 +9,7 @@ from typing import Tuple, List, Optional
 
 import numpy as np
 
+import util
 from installation import Installation
 from transformations import Vec
 
@@ -124,7 +125,7 @@ class Grid:
         self.tracelib = ctypes.cdll.LoadLibrary("./trace.so")
 
         if spawner:
-            asyncio.create_task(self.background_processor())
+            util.create_task(self.background_processor())
 
     @property
     def focal_points(self) -> List[_FocalPoint]:

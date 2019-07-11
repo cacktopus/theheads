@@ -32,4 +32,4 @@ async def _task_wrapper(task):
 
 
 def create_task(task):
-    asyncio.create_task(_task_wrapper(task))
+    return asyncio.create_task(_task_wrapper(task))

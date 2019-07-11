@@ -1,5 +1,6 @@
 import asyncio
 
+import util
 from installation import Head
 
 
@@ -29,7 +30,7 @@ async def follow_closest_focal_point(
 async def follow_evade(orchestrator: "Orchestrator"):
     tasks = []
     for head in orchestrator.inst.heads.values():
-        task = asyncio.create_task(
+        task = util.create_task(
             follow_closest_focal_point(head, orchestrator, -1.0)
         )
         tasks.append(task)
