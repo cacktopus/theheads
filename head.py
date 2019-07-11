@@ -12,6 +12,7 @@ import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
 from health import health_check
+from metrics import handle_metrics
 from util import run_app
 
 STEPPERS_PORT = 8080
@@ -259,6 +260,7 @@ async def setup(
     app.add_routes([
         web.get("/", home),
         web.get('/health', health_check),
+        web.get('/metrics', handle_metrics),
         web.get("/position/{target}", position),
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
