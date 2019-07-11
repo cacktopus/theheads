@@ -46,7 +46,7 @@ async def conversation(orchestrator: "Orchestrator"):
 
             await asyncio.sleep(0.5)
             path = f"/play?text={part}&isSync=true"
-            future = orchestrator.head_manager.send("voices", h0.name, path)
+            future = orchestrator.head_manager.send("voices", h0.name, path, return_future=True)
 
             await future
             task.cancel()
@@ -71,7 +71,7 @@ async def conversation(orchestrator: "Orchestrator"):
                 await asyncio.sleep(0.5)
 
             path = f"/play?text={part}&isSync=true"
-            future = orchestrator.head_manager.send("voices", h0.name, path)
+            future = orchestrator.head_manager.send("voices", h0.name, path, return_future=True)
 
             await future
             await asyncio.sleep(0.5)

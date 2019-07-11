@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import dataclass
+from typing import Optional
 
 import prometheus_client
 from aiohttp import ClientConnectorError
@@ -64,7 +65,7 @@ class HeadQueue:
             while not self._queue.empty():
                 # TODO: cancel any futures?
                 self.incr("cancel")
-                item.result.cancel()
+                item.result and item.result.cancel()
                 item = self._queue.get_nowait()
 
             resp, text = await self._consul.get_nodes_for_service(self._service_name, tags=[self._tag_name])
@@ -94,19 +95,19 @@ class HeadQueue:
                 except ClientConnectorError as e:
                     self.incr("connection_error")
                     self.error("Connection Error", exception=str(e))
-                    item.result.set_exception(e)
+                    item.result and item.result.set_exception(e)
                 except Exception as e:
                     self.incr("exception")
                     self.error("Exception", exception=str(e))
-                    item.result.set_exception(e)
+                    item.result and item.result.set_exception(e)
                 else:
                     if resp.status != 200:
                         self.incr("not_ok")
                         self.error("Response not ok", status=resp.status, text=str(text))
-                        item.result.set_exception(SendError(str(text)))
+                        item.result and item.result.set_exception(SendError(str(text)))
                     else:
                         self.incr("ok")
-                        item.result.set_result((resp, text))
+                        item.result and item.result.set_result((resp, text))
 
             await asyncio.sleep(_SEND_DELAY)
 
@@ -115,12 +116,12 @@ class HeadManager:
     def __init__(self):
         self._queues = dict()
 
-    def send(self, service_name: str, head_name: str, path: str) -> asyncio.Future:
+    def send(self, service_name: str, head_name: str, path: str, return_future: bool = False) -> Optional[asyncio.Future]:
         key = (service_name, head_name)
         if key not in self._queues:
             self._queues[key] = HeadQueue(service_name, head_name)
         queue = self._queues[key]
-        item = QueueItem(path, asyncio.Future())
+        item = QueueItem(path, asyncio.Future() if return_future else None)
         queue.send(item)
 
         return item.result
