@@ -6,6 +6,7 @@ from aiohttp import web
 
 import util
 import voice
+from health import health_check
 
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
@@ -43,6 +44,7 @@ async def setup(name: str, port: int):
 
     app.add_routes([
         web.get("/play", play),
+        web.get('/health', health_check),
     ])
 
     print(f"Running {name} on port {port}")
