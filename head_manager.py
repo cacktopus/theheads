@@ -37,6 +37,7 @@ class HeadQueue:
         self._tag_name = head_name
         asyncio.ensure_future(self._send_loop())
         self.sessions = {}
+        self._name_cache = {}
 
     def send(self, rotation: float):
         if self._queue.full():
@@ -61,6 +62,9 @@ class HeadQueue:
         return f"{self._service_name}[{self._tag_name}]"
 
     async def _lookup_service_url(self, path: str) -> Optional[str]:
+        if path in self._name_cache:
+            return self._name_cache[path]
+
         resp, text = await self._consul.get_nodes_for_service(
             self._service_name,
             tags=[self._tag_name],
@@ -85,14 +89,15 @@ class HeadQueue:
         address = msg[0]['Address']
         port = msg[0]['ServicePort']
         url = f"http://{address}:{port}{path}"
+
+        self._name_cache[path] = url
         return url
 
     async def _send(self, item: QueueItem, url: str):
         self.incr("send")
         try:
-            # TODO: timeouts
-            async with self.get_session("http").get(url=url) as _resp:
-                resp = _resp
+            session = self.get_session("http")
+            resp = await session.get(url=url)
             text = resp.text
 
         except ClientConnectorError as e:
