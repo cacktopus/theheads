@@ -86,7 +86,7 @@ class Orchestrator:
     async def _run_scenes(self, scenes):
         for scene in scenes:
             log.info(f"running scene", scene=scene.__name__)
-            task: asyncio.Task = util.create_task(scene(self))
+            task: asyncio.Task = util.create_task(scene(self), allow_cancel=True)
 
             timeout = timeouts(scene)
 

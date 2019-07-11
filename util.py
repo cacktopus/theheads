@@ -23,13 +23,19 @@ async def run_app(app: web.Application):
     await site.start()
 
 
-async def _task_wrapper(task):
+async def _task_wrapper(task, allow_cancel: bool):
     try:
         await task
+
+    except asyncio.CancelledError:
+        if allow_cancel:
+            log.info("Task was cancelled", task=str(task))
+        else:
+            log.critical("uncaught exception", traceback=traceback.format_exc())
+
     except Exception as e:
-        tb = traceback.format_exc()
-        log.critical("uncaught exception", traceback=tb)
+        log.critical("uncaught exception", traceback=traceback.format_exc())
 
 
-def create_task(task):
-    return asyncio.create_task(_task_wrapper(task))
+def create_task(task, allow_cancel=False):
+    return asyncio.create_task(_task_wrapper(task, allow_cancel))
