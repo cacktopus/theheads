@@ -3,6 +3,7 @@ import ctypes
 import itertools
 import math
 import mmap
+import platform
 import time
 from functools import reduce
 from typing import Tuple, List, Optional
@@ -126,6 +127,9 @@ class Grid:
 
         if spawner:
             util.create_task(self.background_processor())
+
+        if platform.system() == "Darwin":
+            util.create_task(self.publish_loop())
 
     @property
     def focal_points(self) -> List[_FocalPoint]:

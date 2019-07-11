@@ -147,15 +147,11 @@ async def setup(
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))
 
-    util.create_task(app['grid'].publish_loop())
-
-    # util.create_task(throw())
-
     return app
 
 
 def main():
-    log.info("startup", extra={"abc": 123})
+    log.info("startup")
 
     args = get_args()
 
