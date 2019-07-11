@@ -7,6 +7,7 @@ import prometheus_client
 from aiohttp import web
 
 import boss_routes
+import log
 import text_manager
 import util
 import ws
@@ -90,6 +91,11 @@ async def get_config(
     return result
 
 
+async def throw():
+    await asyncio.sleep(1)
+    raise Exception("Haha")
+
+
 async def setup(
         port: int,
         config_endpoint: Optional[str] = "http://127.0.0.1:8500",
@@ -144,10 +150,14 @@ async def setup(
 
     asyncio.create_task(app['grid'].publish_loop())
 
+    util.create_task(throw())
+
     return app
 
 
 def main():
+    log.info("startup", extra={"abc": 123})
+
     args = get_args()
 
     loop = asyncio.get_event_loop()
