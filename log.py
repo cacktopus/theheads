@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from pythonjsonlogger import jsonlogger
 
@@ -37,6 +38,7 @@ def error(message, **extra_fields):
 
 
 def critical(message, **extra_fields):
-    extra = {"level": "CRITICAL"}
+    tb = traceback.format_exc()
+    extra = {"level": "CRITICAL", "traceback": tb}
     extra.update(extra_fields)
     _logger.info(message, extra=extra)

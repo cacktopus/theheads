@@ -31,10 +31,10 @@ async def _task_wrapper(task, allow_cancel: bool):
         if allow_cancel:
             log.info("Task was cancelled", task=str(task))
         else:
-            log.critical("uncaught exception", traceback=traceback.format_exc())
+            log.critical("uncaught exception")
 
     except Exception as e:
-        log.critical("uncaught exception", traceback=traceback.format_exc())
+        log.critical("uncaught exception")
 
 
 def create_task(task, allow_cancel=False):

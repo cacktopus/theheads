@@ -44,23 +44,27 @@ async def run_redis(redis_hostport, broadcast):
     await subscriber.subscribe([THE_HEADS_EVENTS])
 
     while True:
-        reply = await subscriber.next_published()
-        msg = json.loads(reply.value)
+        try:
+            reply = await subscriber.next_published()
+            msg = json.loads(reply.value)
 
-        data = msg['data']
-        src = data.get('cameraName') or data.get('headName') or data['name']
+            data = msg['data']
+            src = data.get('cameraName') or data.get('headName') or data['name']
 
-        REDIS_MESSAGE_RECEIVED.labels(
-            reply.channel,
-            msg['type'],
-            src,
-        ).inc()
+            REDIS_MESSAGE_RECEIVED.labels(
+                reply.channel,
+                msg['type'],
+                src,
+            ).inc()
 
-        if msg['type'] == "motion-detected":
-            broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
+            if msg['type'] == "motion-detected":
+                broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
-        if msg['type'] in ("head-positioned", "active", "kinect"):
-            broadcast(msg['type'], msg=msg)
+            if msg['type'] in ("head-positioned", "active", "kinect"):
+                broadcast(msg['type'], msg=msg)
+
+        except Exception as e:
+            log.critical("Exception processing redis message", exception=e)
 
 
 async def get_config(

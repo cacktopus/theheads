@@ -95,8 +95,7 @@ class Orchestrator:
             except asyncio.TimeoutError:
                 pass
             except Exception as e:
-                tb = traceback.format_exc()
-                log.critical("scene caused exception", exception=str(e), traceback=tb)
+                log.critical("scene caused exception", exception=str(e))
 
     async def _startup(self):
         await asyncio.sleep(1.0)
