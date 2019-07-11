@@ -28,7 +28,7 @@ TEMPERATURE = prometheus_client.Gauge(
 
 
 async def get(url: str) -> Tuple[int, Dict]:
-    log.info("got", url=url)
+    log.debug("got", url=url)
     async with aiohttp.ClientSession() as session:
         async with session.get(url=url) as response:
             resp = await response.text()
@@ -63,7 +63,7 @@ async def get_services(consul_host: str):
     for name, tags in resp.items():
         checks = await get_health_checks_for_service(consul_host, name)
         status = {c['Node']: c['Status'] for c in checks}
-        log.info("status", status=status)
+        log.debug("status", status=status)
 
         nodes = await get_nodes_for_service(consul_host, name)
         result.append(dict(

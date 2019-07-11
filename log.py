@@ -18,6 +18,12 @@ def setup_logging():
 _logger = setup_logging()
 
 
+def debug(message, **extra_fields):
+    extra = {"level": "INFO"}
+    extra.update(extra_fields)
+    _logger.debug(message, extra=extra)
+
+
 def info(message, **extra_fields):
     extra = {"level": "INFO"}
     extra.update(extra_fields)
