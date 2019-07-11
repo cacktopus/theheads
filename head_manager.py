@@ -60,6 +60,58 @@ class HeadQueue:
     def description(self) -> str:
         return f"{self._service_name}[{self._tag_name}]"
 
+    async def _lookup_service_url(self, path: str) -> Optional[str]:
+        resp, text = await self._consul.get_nodes_for_service(
+            self._service_name,
+            tags=[self._tag_name],
+            session=self.get_session("consul"),
+        )
+
+        if resp.status != 200:
+            self.incr("consul_error")
+            self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
+            return None
+
+        msg = json.loads(text)
+
+        if len(msg) == 0:
+            self.error("Could not find registered service")
+            return None
+
+        if len(msg) > 1:
+            self.error("Found more than one registered service")
+            return None
+
+        address = msg[0]['Address']
+        port = msg[0]['ServicePort']
+        url = f"http://{address}:{port}{path}"
+        return url
+
+    async def _send(self, item: QueueItem, url: str):
+        self.incr("send")
+        try:
+            # TODO: timeouts
+            async with self.get_session("http").get(url=url) as _resp:
+                resp = _resp
+            text = resp.text
+
+        except ClientConnectorError as e:
+            self.incr("connection_error")
+            self.error("Connection Error", exception=str(e))
+            item.result and item.result.set_exception(e)
+        except Exception as e:
+            self.incr("exception")
+            self.error("Exception", exception=str(e))
+            item.result and item.result.set_exception(e)
+        else:
+            if resp.status != 200:
+                self.incr("not_ok")
+                self.error("Response not ok", status=resp.status, text=str(text))
+                item.result and item.result.set_exception(SendError(str(text)))
+            else:
+                self.incr("ok")
+                item.result and item.result.set_result((resp, text))
+
     async def _send_loop(self):
         while True:
             item: QueueItem = await self._queue.get()
@@ -74,54 +126,8 @@ class HeadQueue:
                 item.result and item.result.cancel()
                 item = self._queue.get_nowait()
 
-            resp, text = await self._consul.get_nodes_for_service(
-                self._service_name,
-                tags=[self._tag_name],
-                session=self.get_session("consul"),
-            )
-
-            if resp.status != 200:
-                self.incr("consul_error")
-                self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
-                continue
-
-            msg = json.loads(text)
-
-            if len(msg) == 0:
-                self.error("Could not find registered service")
-
-            elif len(msg) > 1:
-                self.error("Found more than one registered service")
-
-            else:
-                address = msg[0]['Address']
-                port = msg[0]['ServicePort']
-                url = f"http://{address}:{port}{path}"
-
-                self.incr("send")
-                try:
-                    # TODO: timeouts
-                    async with self.get_session("http").get(url=url) as _resp:
-                        resp = _resp
-                    text = resp.text
-
-                except ClientConnectorError as e:
-                    self.incr("connection_error")
-                    self.error("Connection Error", exception=str(e))
-                    item.result and item.result.set_exception(e)
-                except Exception as e:
-                    self.incr("exception")
-                    self.error("Exception", exception=str(e))
-                    item.result and item.result.set_exception(e)
-                else:
-                    if resp.status != 200:
-                        self.incr("not_ok")
-                        self.error("Response not ok", status=resp.status, text=str(text))
-                        item.result and item.result.set_exception(SendError(str(text)))
-                    else:
-                        self.incr("ok")
-                        item.result and item.result.set_result((resp, text))
-
+            url = await self._lookup_service_url(path)
+            await self._send(item, url)
             await asyncio.sleep(_SEND_DELAY)
 
 
