@@ -32,8 +32,13 @@ async def post(url, data):
             return response, text
 
 
-async def get(url):
-    async with aiohttp.ClientSession() as session:
+async def get(url, session=None):
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=url) as response:
+                text = await response.text()
+                return response, text
+    else:
         async with session.get(url=url) as response:
             text = await response.text()
             return response, text

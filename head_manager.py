@@ -1,3 +1,4 @@
+import aiohttp
 import asyncio
 import json
 from dataclasses import dataclass
@@ -54,69 +55,77 @@ class HeadQueue:
         return f"{self._service_name}[{self._tag_name}]"
 
     async def _send_loop(self):
-        while True:
-            item: QueueItem = await self._queue.get()
+        async with aiohttp.ClientSession() as session:
+            while True:
+                item: QueueItem = await self._queue.get()
 
-            assert isinstance(item, QueueItem)
-            path = item.path
-            assert path.startswith("/")
+                assert isinstance(item, QueueItem)
+                path = item.path
+                assert path.startswith("/")
 
-            # Send only the last item in the queue # TODO: support different policies
-            while not self._queue.empty():
-                # TODO: cancel any futures?
-                self.incr("cancel")
-                item.result and item.result.cancel()
-                item = self._queue.get_nowait()
+                # Send only the last item in the queue # TODO: support different policies
+                while not self._queue.empty():
+                    self.incr("cancel")
+                    item.result and item.result.cancel()
+                    item = self._queue.get_nowait()
 
-            resp, text = await self._consul.get_nodes_for_service(self._service_name, tags=[self._tag_name])
+                resp, text = await self._consul.get_nodes_for_service(
+                    self._service_name,
+                    tags=[self._tag_name],
+                    session=session,
+                )
 
-            if resp.status != 200:
-                self.incr("consul_error")
-                self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
-                continue
+                if resp.status != 200:
+                    self.incr("consul_error")
+                    self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
+                    continue
 
-            msg = json.loads(text)
+                msg = json.loads(text)
 
-            if len(msg) == 0:
-                self.error("Could not find registered service")
+                if len(msg) == 0:
+                    self.error("Could not find registered service")
 
-            elif len(msg) > 1:
-                self.error("Found more than one registered service")
+                elif len(msg) > 1:
+                    self.error("Found more than one registered service")
 
-            else:
-                address = msg[0]['Address']
-                port = msg[0]['ServicePort']
-                url = f"http://{address}:{port}{path}"
-
-                self.incr("send")
-                try:
-                    # TODO: timeouts
-                    resp, text = await get(url)
-                except ClientConnectorError as e:
-                    self.incr("connection_error")
-                    self.error("Connection Error", exception=str(e))
-                    item.result and item.result.set_exception(e)
-                except Exception as e:
-                    self.incr("exception")
-                    self.error("Exception", exception=str(e))
-                    item.result and item.result.set_exception(e)
                 else:
-                    if resp.status != 200:
-                        self.incr("not_ok")
-                        self.error("Response not ok", status=resp.status, text=str(text))
-                        item.result and item.result.set_exception(SendError(str(text)))
-                    else:
-                        self.incr("ok")
-                        item.result and item.result.set_result((resp, text))
+                    address = msg[0]['Address']
+                    port = msg[0]['ServicePort']
+                    url = f"http://{address}:{port}{path}"
 
-            await asyncio.sleep(_SEND_DELAY)
+                    self.incr("send")
+                    try:
+                        # TODO: timeouts
+                        async with session.get(url=url) as _resp:
+                            resp = _resp
+                        text = resp.text
+
+                    except ClientConnectorError as e:
+                        self.incr("connection_error")
+                        self.error("Connection Error", exception=str(e))
+                        item.result and item.result.set_exception(e)
+                    except Exception as e:
+                        self.incr("exception")
+                        self.error("Exception", exception=str(e))
+                        item.result and item.result.set_exception(e)
+                    else:
+                        if resp.status != 200:
+                            self.incr("not_ok")
+                            self.error("Response not ok", status=resp.status, text=str(text))
+                            item.result and item.result.set_exception(SendError(str(text)))
+                        else:
+                            self.incr("ok")
+                            item.result and item.result.set_result((resp, text))
+
+                await asyncio.sleep(_SEND_DELAY)
 
 
 class HeadManager:
     def __init__(self):
         self._queues = dict()
 
-    def send(self, service_name: str, head_name: str, path: str, return_future: bool = False) -> Optional[asyncio.Future]:
+    def send(self, service_name: str, head_name: str, path: str, return_future: bool = False) -> Optional[
+        asyncio.Future]:
         key = (service_name, head_name)
         if key not in self._queues:
             self._queues[key] = HeadQueue(service_name, head_name)

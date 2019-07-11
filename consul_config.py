@@ -93,7 +93,7 @@ class ConsulBackend:
         data = json.dumps(payload)
         return await put(url, data)
 
-    async def get_nodes_for_service(self, service_name, tags=None):
+    async def get_nodes_for_service(self, service_name, tags=None, session=None):
         tags = tags or []
 
         query_string = "&".join("tag={}".format(t) for t in tags)
@@ -105,4 +105,4 @@ class ConsulBackend:
             query_string,
         )
 
-        return await get(url)
+        return await get(url, session=session)
