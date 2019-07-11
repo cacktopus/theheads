@@ -31,7 +31,8 @@ async def follow_evade(orchestrator: "Orchestrator"):
     tasks = []
     for head in orchestrator.inst.heads.values():
         task = util.create_task(
-            follow_closest_focal_point(head, orchestrator, -1.0)
+            follow_closest_focal_point(head, orchestrator, -1.0),
+            allow_cancel=True,
         )
         tasks.append(task)
     await asyncio.gather(*tasks)

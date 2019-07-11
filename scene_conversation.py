@@ -42,7 +42,7 @@ async def conversation(orchestrator: "Orchestrator"):
         if orchestrator.focal_points and random.random() < 0.66:
             # Follow the focal point
             coro = follow_closest_focal_point(h0, orchestrator)
-            task = util.create_task(coro)
+            task = util.create_task(coro, allow_cancel=True)
 
             await asyncio.sleep(0.5)
             path = f"/play?text={part}&isSync=true"
