@@ -221,7 +221,11 @@ func main() {
 	addr := ":8082"
 	ch := make(chan callback)
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/metrics", "/health"),
+		gin.Recovery(),
+	)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
