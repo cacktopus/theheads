@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
+	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 )
+
+var upgrader = websocket.Upgrader{}
+
 
 func runRedis(redisServer string) {
 	log.Println("Connecting to redis @ ", redisServer)
@@ -90,6 +95,23 @@ func main() {
 	r.Static("/build", "./boss-ui/build")
 	//r.Static("/build/json", "./boss-ui/build")
 	r.Static("/static", "boss-ui/build/static")
+
+	r.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println("Failed to set websocket upgrade: %+v", err)
+			return
+		}
+
+		for {
+			type_, msg, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+			//conn.WriteMessage(type_, msg)
+			log.Println("ws", type_, string(msg))
+		}
+	}))
 
 	go func() {
 		r.Run(addr)
