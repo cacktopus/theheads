@@ -1,17 +1,16 @@
-import aiohttp
 import asyncio
 import json
 from dataclasses import dataclass
 from typing import Optional
 
+import aiohttp
 import prometheus_client
 from aiohttp import ClientConnectorError
 
 import log
-from config import get
 from consul_config import ConsulBackend
 
-_SEND_DELAY = 0.025
+_SEND_DELAY = 0.05
 
 HEAD_MANAGER_SEND = prometheus_client.Counter(
     "head_manager_send",
