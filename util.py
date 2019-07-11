@@ -17,7 +17,7 @@ def is_rpi3():
 
 async def run_app(app: web.Application):
     port = app['cfg']['port']
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, port=port)
     await site.start()

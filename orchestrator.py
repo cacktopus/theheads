@@ -1,7 +1,9 @@
 import asyncio
 import itertools
+import traceback
 from typing import Callable, Optional, Tuple
 
+import log
 from head_manager import HeadManager
 from installation import Installation
 from scene_conversation import conversation
@@ -82,7 +84,7 @@ class Orchestrator:
 
     async def _run_scenes(self, scenes):
         for scene in scenes:
-            print(f"running {scene.__name__}")
+            log.info(f"running scene", scene=scene.__name__)
             task: asyncio.Task = asyncio.create_task(scene(self))
 
             timeout = timeouts(scene)
@@ -92,7 +94,8 @@ class Orchestrator:
             except asyncio.TimeoutError:
                 pass
             except Exception as e:
-                print(f"task {task} caused exception {e}")
+                tb = traceback.format_exc()
+                log.critical("scene caused exception", exception=str(e), traceback=tb)
 
     async def _startup(self):
         await asyncio.sleep(1.0)

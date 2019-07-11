@@ -5,6 +5,8 @@ from typing import Dict, Callable
 import aiohttp
 from aiohttp import web
 
+import log
+
 
 class Closed:
     pass
@@ -18,7 +20,7 @@ class WebsocketConnection:
         self._broadcast = broadcast
 
     async def handle(self, request):
-        print("Websocket connect")
+        log.info("Websocket connect")
         self._ws = web.WebSocketResponse()
 
         await self._ws.prepare(request)
@@ -49,10 +51,9 @@ class WebsocketConnection:
                         )
 
             elif msg.type == aiohttp.WSMsgType.ERROR:
-                print('ws connection closed with exception %s' %
-                      self._ws.exception())
+                log.info("ws connection closed with exception %s", exception=self._ws.exception())
 
-        print('websocket connection closed')
+        log.info("websocket connection closed")
         assert self._ws is not None
         result = self._ws
         self._ws = Closed  # release reference

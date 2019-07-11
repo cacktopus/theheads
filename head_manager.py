@@ -1,11 +1,11 @@
 import asyncio
 import json
-import sys
 from dataclasses import dataclass
 
 import prometheus_client
 from aiohttp import ClientConnectorError
 
+import log
 from config import get
 from consul_config import ConsulBackend
 
@@ -44,6 +44,10 @@ class HeadQueue:
     def incr(self, type_: str):
         HEAD_MANAGER_SEND.labels(type_, self._service_name, self._tag_name).inc()
 
+    def error(self, message, **kw):
+        # TODO: try/catch here?
+        log.error(message, component="HeadQueue", service=self._service_name, tag=self._tag_name, **kw)
+
     @property
     def description(self) -> str:
         return f"{self._service_name}[{self._tag_name}]"
@@ -64,14 +68,19 @@ class HeadQueue:
                 item = self._queue.get_nowait()
 
             resp, text = await self._consul.get_nodes_for_service(self._service_name, tags=[self._tag_name])
-            assert resp.status == 200  # TODO: no no no
+
+            if resp.status != 200:
+                self.incr("consul_error")
+                self.error("Error getting nodes for service", status=resp.status, text=str(resp.text))
+                continue
+
             msg = json.loads(text)
 
             if len(msg) == 0:
-                print(f"Could not find service registered for {self.description}")
+                self.error("Could not find registered service")
 
             elif len(msg) > 1:
-                print(f"Found more than one service registered for {self.description}")
+                self.error("Found more than one registered service")
 
             else:
                 address = msg[0]['Address']
@@ -80,24 +89,21 @@ class HeadQueue:
 
                 self.incr("send")
                 try:
-                    # print("head_manager:", url)
+                    # TODO: timeouts
                     resp, text = await get(url)
                     item.result.set_result((resp, text))
                 except ClientConnectorError as e:
                     self.incr("connection_error")
-                    # TODO: stats/logging/etc
-                    print(e, file=sys.stderr)
+                    self.error("Connection Error", exception=str(e))
                     item.result.exception()
                 except Exception as e:
                     self.incr("exception")
-                    # TODO: stats/logging/etc
-                    print(e, file=sys.stderr)
-                    item.result.exception()
+                    self.error("Exception", exception=str(e))
+                    item.result.exception(e)
 
                 if resp.status != 200:
                     self.incr("not_ok")
-                    info = f"Got error from {url}: {text}"
-                    print(info)
+                    self.error("Response not ok", status=resp.status, text=str(text))
                     item.result.exception()
 
                 else:

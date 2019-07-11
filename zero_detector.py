@@ -2,6 +2,7 @@ import os
 from collections import deque
 from typing import Optional
 
+import log
 import motors
 
 GPIO_PIN = 21
@@ -76,7 +77,6 @@ class ZeroDetector:
 
         while True:
             v = self.read_value()
-            # print(v, self.remaining_steps)
             values.append(v)
             if len(values) == count and all(v == target_value for v in values):
                 return
@@ -94,11 +94,10 @@ class ZeroDetector:
             yield NO_STEP
 
     def scan(self):
-        print("scan")
+        log.info("scan")
         values = deque(maxlen=STEPS)
         for i in range(STEPS):
             v = self.read_value()
-            # print(v)
             if v == 0:
                 values.append(i)
             yield from self.step(FORWARD)

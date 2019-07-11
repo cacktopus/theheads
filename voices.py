@@ -3,6 +3,7 @@ import asyncio
 
 from aiohttp import web
 
+import log
 from util import run_app
 
 
@@ -37,6 +38,6 @@ async def run(name: str, port: int):
         web.get("/process", process),
     ])
 
-    print(f"Running {name} on port {port}")
+    log.info("Running", service="voices", port=port)
 
     await run_app(app)

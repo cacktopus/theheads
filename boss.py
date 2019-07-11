@@ -36,10 +36,10 @@ TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
 
 
 async def run_redis(redis_hostport, broadcast):
-    print("Connecting to redis:", redis_hostport)
+    log.info("Connecting to redis:", redis=redis_hostport)
     host, port = redis_hostport.split(":")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
-    print("Connected to redis", redis_hostport)
+    log.info("Connected to redis", redis=redis_hostport)
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe([THE_HEADS_EVENTS])
 
@@ -60,7 +60,6 @@ async def run_redis(redis_hostport, broadcast):
             broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
         if msg['type'] in ("head-positioned", "active", "kinect"):
-            # print(datetime.datetime.now(), host, msg['type'])
             broadcast(msg['type'], msg=msg)
 
 
@@ -143,14 +142,14 @@ async def setup(
         head_manager=hm,
         broadcast=observer.notify_observers,
     )
-    asyncio.create_task(tm)
+    util.create_task(tm)
 
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))
 
-    asyncio.create_task(app['grid'].publish_loop())
+    util.create_task(app['grid'].publish_loop())
 
-    util.create_task(throw())
+    # util.create_task(throw())
 
     return app
 

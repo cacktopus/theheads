@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
+import util
 from grid import Grid
 from installation import Installation
 from transformations import Vec, Mat
@@ -47,7 +48,7 @@ class FocalPointManager:
     def __init__(self, broadcast: Callable, inst: Installation, grid: Grid):
         self.broadcast = broadcast
         self._focal_points: Dict[str, FocalPoint] = {}
-        asyncio.create_task(self._focal_point_garbage_collector())
+        util.create_task(self._focal_point_garbage_collector())
         self.inst = inst
         self.grid = grid
 

@@ -3,6 +3,7 @@ import operator
 import random
 from functools import reduce
 
+import log
 from scene_follow_evade import follow_closest_focal_point
 
 
@@ -11,18 +12,18 @@ async def conversation(orchestrator: "Orchestrator"):
 
     texts = orchestrator.texts
     if len(texts) == 0:
-        print("no texts")
+        log.info("no texts")
         await asyncio.sleep(5.0)
         return
 
-    print(f"we have {len(texts)} texts")
+    log.info("found texts", count=len(texts))
     parts = random.choice(texts)
     for p in parts:
-        print("part", p)
+        log.info("found part", part=p)
 
     for part in parts:
         # all point to the center
-        print("saying", part)
+        log.info("saying", part=part)
         for head in heads:
             other_heads = [h for h in heads if h.name != head.name]
             assert len(heads) - len(other_heads) == 1

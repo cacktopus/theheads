@@ -7,6 +7,7 @@ import asyncio_redis
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
+import log
 import motors
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
@@ -98,8 +99,8 @@ class Stepper:
             try:
                 await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
             except asyncio_redis.NotConnectedError:
-                # TODO: emit stats/log
-                print("Not connected")
+                # TODO: stats
+                log.error("Not connected")
 
     def publishing_data(self):
         return {
@@ -119,8 +120,8 @@ class Stepper:
                 "data": self.publishing_data(),
             }))
         except asyncio_redis.NotConnectedError:
-            # TODO: emit stats/log
-            print("Not connected")
+            # TODO: emit stats
+            log.error("Not connected")
 
     async def publish_active_loop(self):
         await self.publish("startup")
@@ -230,9 +231,9 @@ async def setup(
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
-    print("connecting to redis: {}:{}".format(redis_host, redis_port))
+    log.info("connecting to redis", host=redis_host, port=redis_port)
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
-    print("connected to redis: {}:{}".format(redis_host, redis_port))
+    log.info("connected to redis", host=redis_host, port=redis_port)
 
     if cfg['head'].get('virtual', False):
         motor = motors.FakeStepper()
