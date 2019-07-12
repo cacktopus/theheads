@@ -13,8 +13,23 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
+type HeadEvent struct {
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
 
-func runRedis(redisServer string) {
+type MotionDetected struct {
+	CameraName string  `json:"cameraName"`
+	Position   float32 `json:"position"`
+}
+
+type HeadPositioned struct {
+	HeadName     string  `json:"headName"`
+	StepPosition float32 `json:"stepPosition"`
+	Rotation     float32 `json:"rotation"`
+}
+
+func runRedis(broker *Broker, redisServer string) {
 	log.Println("Connecting to redis @ ", redisServer)
 	redisClient, err := redis.Dial("tcp", redisServer)
 	if err != nil {
@@ -32,7 +47,21 @@ func runRedis(redisServer string) {
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
-			//log.Println("message:", v.Channel, string(v.Data))
+			log.Println("message:", v.Channel, string(v.Data))
+			event := HeadEvent{}
+			err := json.Unmarshal(v.Data, &event)
+			if err != nil {
+				panic(err)
+			}
+			switch event.Type {
+			case "head-positioned":
+				msg := HeadPositioned{}
+				err = json.Unmarshal(event.Data, &msg)
+				if err != nil {
+					panic(err)
+				}
+				broker.Publish(msg)
+			}
 		case redis.Subscription:
 			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 		case error:
@@ -42,10 +71,13 @@ func runRedis(redisServer string) {
 }
 
 func main() {
+	broker := NewBroker()
+	go broker.Start()
+
 	redisServers := []string{"127.0.0.1:6379"}
 
 	for _, redis := range redisServers {
-		go runRedis(redis)
+		go runRedis(broker, redis)
 	}
 
 	addr := ":7071"
@@ -80,11 +112,11 @@ func main() {
 	//web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
 
 	/*
-			# deprecated, use don't use above instead
-	        web.get('/installation/{installation}/scene.json', installation_handler),
-	        web.get('/installation/{installation}/{name}.html', html_handler),
-	        web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
-	        web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
+				# deprecated, use don't use above instead
+		        web.get('/installation/{installation}/scene.json', installation_handler),
+		        web.get('/installation/{installation}/{name}.html', html_handler),
+		        web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
+		        web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
 
 	*/
 
@@ -103,13 +135,36 @@ func main() {
 			return
 		}
 
+		msgs := broker.Subscribe()
+
 		for {
-			type_, msg, err := conn.ReadMessage()
-			if err != nil {
-				break
-			}
+			//type_, msg, err := conn.ReadMessage()
+			//if err != nil {
+			//	break
+			//}
 			//conn.WriteMessage(type_, msg)
-			log.Println("ws", type_, string(msg))
+			//log.Println("ws", type_, string(msg))
+
+			for i := range msgs {
+				m := i.(HeadPositioned)
+
+				data, err := json.Marshal(m)
+				if err != nil {
+					panic(err)
+				}
+
+				events := []HeadEvent{{
+					Type: "head-positioned",
+					Data: data,
+				}}
+
+				payload, err := json.Marshal(events)
+				if err != nil {
+					panic(err)
+				}
+
+				conn.WriteMessage(1, payload)
+			}
 		}
 	}))
 
