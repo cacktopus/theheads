@@ -69,6 +69,13 @@ func runRedis(broker *Broker, redisServer string) {
 					panic(err)
 				}
 				broker.Publish(msg)
+			case "motion-detected":
+				msg := MotionDetected{}
+				err = json.Unmarshal(event.Data, &msg)
+				if err != nil {
+					panic(err)
+				}
+				broker.Publish(msg)
 			}
 		case redis.Subscription:
 			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
