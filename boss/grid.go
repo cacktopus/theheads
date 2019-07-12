@@ -91,6 +91,7 @@ func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
 	if !hit {
 		g.traceGrid(cameraName, p0, p1)
 	}
+	g.publishFocalPoints()
 }
 
 func (g *Grid) traceFocalPoints(p0, p1 geom.Vec) bool {
@@ -180,6 +181,7 @@ func (g *Grid) Start() {
 		time.Sleep(250 * time.Millisecond)
 		g.maybeSpawnFocalPoint()
 		g.decay()
+		g.cleanupStale()
 	}
 }
 
@@ -304,12 +306,15 @@ func (g *Grid) publishFocalPoints() {
 	g.broker.Publish(msg)
 
 	/*
-		self.send({
-	                "type": "focal-points",
-	                "data": {
-	                    "focal_points": [fp.to_object() for fp in focal_points.values()]
-	                }
-	            })
+			self.send({
+		                "type": "focal-points",
+		                "data": {
+		                    "focal_points": [fp.to_object() for fp in focal_points.values()]
+		                }
+		            })
 
 	*/
+}
+func (g *Grid) cleanupStale() {
+
 }

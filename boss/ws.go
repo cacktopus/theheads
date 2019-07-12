@@ -19,7 +19,6 @@ func manageWebsocket(conn *websocket.Conn, msgBroker *broker.Broker) {
 
 		for m := range msgs {
 			switch msg := m.(type) {
-			// TODO: need to translate MotionDetected to "motion-line"
 			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints:
 				data, err := json.Marshal(msg)
 				if err != nil {
