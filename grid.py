@@ -201,6 +201,8 @@ class Grid:
             fp.pos += to.scale(0.2)
             fp.refresh()
 
+        return bool(results)
+
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0
 

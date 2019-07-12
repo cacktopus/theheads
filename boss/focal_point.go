@@ -33,6 +33,10 @@ func (fp *FocalPoint) overlaps(other *FocalPoint) bool {
 	return d < fp.radius+other.radius
 }
 
+func (fp *FocalPoint) refresh() {
+	fp.updatedAt = time.Now()
+}
+
 func sq(a float64) float64 {
 	return a * a
 }

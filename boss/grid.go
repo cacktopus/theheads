@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+const (
+	maxFloat = 1e99
+)
+
 func argmax(l *mat.Dense) (int, int, float64) {
 	result := mat.DenseCopyOf(l)
 	var maxI, maxJ int
@@ -28,12 +32,9 @@ type Grid struct {
 	minX, minY, maxX, maxY float64
 	imgsizeX, imgsizeY     int
 	scene                  *scene.Scene
-	layers                 map[string]*mat.Dense
 	scaleX, scaleY         float64
-	/*
-		self.xscale = self.img_size_x / (self.xmax - self.xmin)
-		self.yscale = self.img_size_y / (self.xmax - self.xmin)
-	*/
+	layers                 map[string]*mat.Dense
+	focalPoints            map[string]*FocalPoint
 }
 
 func NewGrid(
@@ -44,10 +45,11 @@ func NewGrid(
 	g := &Grid{
 		minX: minX, minY: minY, maxX: maxX, maxY: maxY,
 		imgsizeX: imgsizeX, imgsizeY: imgsizeY,
-		scene:  scene,
-		layers: map[string]*mat.Dense{},
-		scaleX: float64(imgsizeX) / (maxX - minX),
-		scaleY: float64(imgsizeY) / (maxY - minY),
+		scene:       scene,
+		scaleX:      float64(imgsizeX) / (maxX - minX),
+		scaleY:      float64(imgsizeY) / (maxY - minY),
+		layers:      map[string]*mat.Dense{},
+		focalPoints: map[string]*FocalPoint{},
 	}
 
 	return g
@@ -71,9 +73,40 @@ func (g *Grid) getLayer(cameraName string) *mat.Dense {
 }
 
 func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
-	// TODO: trace focal points
+	hit := g.traceFocalPoints(p0, p1)
 
-	g.traceGrid(cameraName, p0, p1)
+	if !hit {
+		g.traceGrid(cameraName, p0, p1)
+	}
+}
+
+func (g *Grid) traceFocalPoints(p0, p1 geom.Vec) bool {
+	minDist := maxFloat
+	var minFp *FocalPoint
+	var m0, m1 geom.Vec
+
+	for _, fp := range g.focalPoints {
+		q0, q1, hit := fp.lineIntersection(p0, p1)
+		if hit {
+			d := q0.Sub(p0).AbsSq()
+			if d < minDist {
+				m0, m1 = q0, q1
+				minDist = d
+				minFp = fp
+			}
+		}
+	}
+
+	// only interact with closest fp
+	if minFp != nil {
+		midpoint := m0.Add(m1.Sub(m0).Scale(0.5))
+		to := midpoint.Sub(minFp.pos)
+		minFp.pos = minFp.pos.Add(to.Scale(0.2))
+		minFp.refresh()
+		return true
+	}
+
+	return false
 }
 
 func (g *Grid) traceGrid(cameraName string, p0, p1 geom.Vec) {

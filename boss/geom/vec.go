@@ -40,6 +40,10 @@ func (v Vec) Abs() float64 {
 	return math.Sqrt(mat.Dot(v.data, v.data))
 }
 
+func (v Vec) AbsSq() float64 {
+	return mat.Dot(v.data, v.data)
+}
+
 func (v Vec) X() float64 {
 	return v.data.AtVec(0)
 }
