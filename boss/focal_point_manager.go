@@ -44,7 +44,7 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker, grid *Grid) {
 				log.Info(ml)
 				broker.Publish(ml)
 
-				//grid.traceGrid(msg.CameraName, q0, q1)
+				grid.Trace(msg.CameraName, p0, p1)
 			}
 		}
 	}

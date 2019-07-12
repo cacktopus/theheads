@@ -1,6 +1,7 @@
 package geom
 
 import (
+	"fmt"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -39,6 +40,10 @@ func (v Vec) X() float64 {
 
 func (v Vec) Y() float64 {
 	return v.data.AtVec(1)
+}
+
+func (v Vec) AsStr() string {
+	return fmt.Sprintf("(%f, %f)", v.X(), v.Y())
 }
 
 func (v Vec) Clamp(minX, minY, maxX, maxY float64) Vec {

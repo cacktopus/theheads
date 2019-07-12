@@ -82,9 +82,9 @@ func (g *Grid) traceGrid(cameraName string, p0, p1 geom.Vec) {
 
 	steps := int(length / stepSize)
 
-	data := g.getLayer(cameraName)
+	layer := g.getLayer(cameraName)
 
-	g.traceSteps(data, posX, posY, dX, dY, steps, 0.025)
+	g.traceSteps(layer, posX, posY, dX, dY, steps, 0.025)
 }
 
 // this code is optimized for speed
@@ -105,6 +105,9 @@ func (g *Grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps in
 
 		value := layer.At(xidx, yidx) + 0.025
 		layer.Set(xidx, yidx, value)
+
+		posX += dX
+		posY += dY
 	}
 }
 
