@@ -96,6 +96,13 @@ func main() {
 	}
 	theScene.Denormalize()
 
+	// TODO: need this due to a bunch of drift in theScene due to denormalization
+	var jsonScene interface{}
+	err = json.Unmarshal([]byte(scene.Json), &jsonScene)
+	if err != nil {
+		panic(err)
+	}
+
 	redisServers := []string{"127.0.0.1:6379"}
 
 	for _, redis := range redisServers {
@@ -123,7 +130,7 @@ func main() {
 	r.StaticFile("/", "./templates/boss.html")
 
 	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
-		c.JSON(200, scene.Json)
+		c.JSON(200, jsonScene)
 	})
 
 	r.Static("/build", "./boss-ui/build")
@@ -135,39 +142,7 @@ func main() {
 			fmt.Println("Failed to set websocket upgrade: %+v", err)
 			return
 		}
-
-		msgs := broker.Subscribe()
-
-		for {
-			//type_, msg, err := conn.ReadMessage()
-			//if err != nil {
-			//	break
-			//}
-			//conn.WriteMessage(type_, msg)
-			//log.Println("ws", type_, string(msg))
-
-			for m := range msgs {
-				switch msg := m.(type) {
-				// TODO: need to translate MotionDetected to "motion-line"
-				case HeadPositioned:
-					data, err := json.Marshal(msg)
-					if err != nil {
-						panic(err)
-					}
-
-					events := []HeadEvent{{
-						Type: msg.Name(),
-						Data: data,
-					}}
-
-					payload, err := json.Marshal(events)
-					if err != nil {
-						panic(err)
-					}
-					conn.WriteMessage(1, payload)
-				}
-			}
-		}
+		manageWebsocket(conn, broker)
 	}))
 
 	go func() {

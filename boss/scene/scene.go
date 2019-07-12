@@ -86,13 +86,13 @@ var Json = `
 `
 
 type Scene struct {
-	Stands        []Stand       `json:"stands"`
+	Stands        []*Stand      `json:"stands"`
 	Scale         int           `json:"scale"`
 	Translate     Translate     `json:"translate"`
 	Scenes        []string      `json:"scenes"`
 	StartupScenes []interface{} `json:"startup_scenes"`
 
-	Cameras map[string]Camera
+	Cameras map[string]*Camera
 }
 type Pos struct {
 	X float64 `json:"x"`
@@ -114,9 +114,9 @@ type Head struct {
 	Virtual bool   `json:"virtual"`
 }
 type Stand struct {
-	Cameras []Camera      `json:"cameras"`
+	Cameras []*Camera     `json:"cameras"`
 	Kinects []interface{} `json:"kinects"`
-	Heads   []Head        `json:"heads"`
+	Heads   []*Head       `json:"heads"`
 	Name    string        `json:"name"`
 	Pos     Pos           `json:"pos"`
 	Rot     float64       `json:"rot"`
@@ -128,7 +128,7 @@ type Translate struct {
 }
 
 func (sc *Scene) Denormalize() {
-	sc.Cameras = map[string]Camera{}
+	sc.Cameras = map[string]*Camera{}
 	for _, st := range sc.Stands {
 		st.M = geom.ToM(st.Pos.X, st.Pos.Y, st.Rot)
 
@@ -136,7 +136,7 @@ func (sc *Scene) Denormalize() {
 			if _, ok := sc.Cameras[c.Name]; ok {
 				panic("Duplicate camera")
 			}
-			c.Stand = &st
+			c.Stand = st
 			c.M = geom.ToM(c.Pos.X, c.Pos.Y, c.Rot)
 			sc.Cameras[c.Name] = c
 		}
