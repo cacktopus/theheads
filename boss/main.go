@@ -145,6 +145,7 @@ func main() {
 
 			for msg := range msgs {
 				switch msg.(type) {
+				// TODO: need to translate MotionDetected to "motion-line"
 				case HeadPositioned, MotionDetected:
 					data, err := json.Marshal(msg)
 					if err != nil {
