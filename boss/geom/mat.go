@@ -29,3 +29,8 @@ func (m Mat) MulVec(v Vec) Vec {
 	result.data.MulVec(m.data, v.data)
 	return result
 }
+
+func (m Mat) Translation() Vec {
+	col := m.data.ColView(2)
+	return NewVec(col.AtVec(0), col.AtVec(1))
+}

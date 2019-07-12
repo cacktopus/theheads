@@ -1,4 +1,4 @@
-package main
+package broker
 
 // https://stackoverflow.com/questions/36417199/how-to-broadcast-message-using-channel
 

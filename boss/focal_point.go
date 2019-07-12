@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"math"
 	"time"
@@ -20,6 +21,14 @@ func NewFocalPoint(pos geom.Vec, radius float64, id string) *FocalPoint {
 		radius:    radius,
 		id:        id,
 		updatedAt: time.Now(),
+	}
+}
+
+func (fp *FocalPoint) ToMsg() *broker.FocalPoint {
+	return &broker.FocalPoint{
+		Name: fp.id,
+		Pos:  broker.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
+		Ttl:  float64(fp.ttl / time.Second),
 	}
 }
 
@@ -61,7 +70,7 @@ func (fp *FocalPoint) lineIntersection(p0 geom.Vec, p1 geom.Vec) (geom.Vec, geom
 		return geom.ZeroVec(), geom.ZeroVec(), false
 	}
 
-	rt := math.sqrt(disc)
+	rt := math.Sqrt(disc)
 	t0 := (-b - rt) / (2 * a)
 	t1 := (-b + rt) / (2 * a)
 

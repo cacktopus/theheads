@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/cacktopus/heads/boss/broker"
 	"github.com/gorilla/websocket"
 )
 
-func manageWebsocket(conn *websocket.Conn, broker *Broker) {
-	msgs := broker.Subscribe()
+func manageWebsocket(conn *websocket.Conn, msgBroker *broker.Broker) {
+	msgs := msgBroker.Subscribe()
 
 	for {
 		//type_, msg, err := conn.ReadMessage()
@@ -19,13 +20,13 @@ func manageWebsocket(conn *websocket.Conn, broker *Broker) {
 		for m := range msgs {
 			switch msg := m.(type) {
 			// TODO: need to translate MotionDetected to "motion-line"
-			case HeadPositioned, MotionLine:
+			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints:
 				data, err := json.Marshal(msg)
 				if err != nil {
 					panic(err)
 				}
 
-				events := []HeadEvent{{
+				events := []broker.HeadEvent{{
 					Type: msg.Name(),
 					Data: data,
 				}}

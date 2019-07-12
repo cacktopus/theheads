@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
@@ -14,31 +15,7 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-type HeadEvent struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
-}
-
-type MotionDetected struct {
-	CameraName string  `json:"cameraName"`
-	Position   float64 `json:"position"`
-}
-
-func (MotionDetected) Name() string {
-	return "motion-detected"
-}
-
-type HeadPositioned struct {
-	HeadName     string  `json:"headName"`
-	StepPosition float32 `json:"stepPosition"`
-	Rotation     float32 `json:"rotation"`
-}
-
-func (HeadPositioned) Name() string {
-	return "head-positioned"
-}
-
-func runRedis(broker *Broker, redisServer string) {
+func runRedis(msgBroker *broker.Broker, redisServer string) {
 	log.Println("Connecting to redis @ ", redisServer)
 	redisClient, err := redis.Dial("tcp", redisServer)
 	if err != nil {
@@ -56,26 +33,26 @@ func runRedis(broker *Broker, redisServer string) {
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
-			event := HeadEvent{}
+			event := broker.HeadEvent{}
 			err := json.Unmarshal(v.Data, &event)
 			if err != nil {
 				panic(err)
 			}
 			switch event.Type {
 			case "head-positioned":
-				msg := HeadPositioned{}
+				msg := broker.HeadPositioned{}
 				err = json.Unmarshal(event.Data, &msg)
 				if err != nil {
 					panic(err)
 				}
-				broker.Publish(msg)
+				msgBroker.Publish(msg)
 			case "motion-detected":
-				msg := MotionDetected{}
+				msg := broker.MotionDetected{}
 				err = json.Unmarshal(event.Data, &msg)
 				if err != nil {
 					panic(err)
 				}
-				broker.Publish(msg)
+				msgBroker.Publish(msg)
 			}
 		case redis.Subscription:
 			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
@@ -86,7 +63,7 @@ func runRedis(broker *Broker, redisServer string) {
 }
 
 func main() {
-	broker := NewBroker()
+	broker := broker.NewBroker()
 	go broker.Start()
 
 	var theScene scene.Scene
@@ -100,6 +77,7 @@ func main() {
 		-10, -10, 10, 10,
 		400, 400,
 		&theScene,
+		broker,
 	)
 	go grid.Start()
 

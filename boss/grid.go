@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
 	"gonum.org/v1/gonum/mat"
@@ -12,7 +13,16 @@ import (
 
 const (
 	maxFloat = 1e99
+	fpRadius = 0.8
 )
+
+var idCounter int // TODO: atomic, etc
+
+func assignID() string {
+	result := idCounter
+	idCounter++
+	return fmt.Sprintf("g%d", result)
+}
 
 func argmax(l *mat.Dense) (int, int, float64) {
 	result := mat.DenseCopyOf(l)
@@ -31,16 +41,18 @@ func argmax(l *mat.Dense) (int, int, float64) {
 type Grid struct {
 	minX, minY, maxX, maxY float64
 	imgsizeX, imgsizeY     int
-	scene                  *scene.Scene
 	scaleX, scaleY         float64
 	layers                 map[string]*mat.Dense
 	focalPoints            map[string]*FocalPoint
+	scene                  *scene.Scene
+	broker                 *broker.Broker
 }
 
 func NewGrid(
 	minX, minY, maxX, maxY float64,
 	imgsizeX, imgsizeY int,
 	scene *scene.Scene,
+	broker *broker.Broker,
 ) *Grid {
 	g := &Grid{
 		minX: minX, minY: minY, maxX: maxX, maxY: maxY,
@@ -50,6 +62,7 @@ func NewGrid(
 		scaleY:      float64(imgsizeY) / (maxY - minY),
 		layers:      map[string]*mat.Dense{},
 		focalPoints: map[string]*FocalPoint{},
+		broker:      broker,
 	}
 
 	return g
@@ -254,5 +267,49 @@ func (g *Grid) maybeSpawnFocalPoint() {
 	if val < 0.10 {
 		return
 	}
+
+	newFp := NewFocalPoint(p, fpRadius, "")
+
+	for _, fp := range g.focalPoints {
+		if newFp.overlaps(fp) {
+			return
+		}
+	}
+
+	for _, cam := range g.scene.Cameras {
+		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "")
+		if newFp.overlaps(fakeFp) {
+			return
+		}
+	}
+
+	// create new focal point
+	newFp.id = assignID()
 	fmt.Println("Spawning new focal point at ", p.AsStr())
+
+	g.focalPoints[newFp.id] = newFp
+	g.publishFocalPoints()
+}
+
+func (g *Grid) publishFocalPoints() {
+	var points []*broker.FocalPoint
+	for _, fp := range g.focalPoints {
+		points = append(points, fp.ToMsg())
+	}
+
+	msg := broker.FocalPoints{
+		FocalPoints: points,
+	}
+
+	g.broker.Publish(msg)
+
+	/*
+		self.send({
+	                "type": "focal-points",
+	                "data": {
+	                    "focal_points": [fp.to_object() for fp in focal_points.values()]
+	                }
+	            })
+
+	*/
 }
