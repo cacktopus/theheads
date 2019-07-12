@@ -20,7 +20,7 @@ type HeadEvent struct {
 
 type MotionDetected struct {
 	CameraName string  `json:"cameraName"`
-	Position   float32 `json:"position"`
+	Position   float64 `json:"position"`
 }
 
 func (MotionDetected) Name() string {

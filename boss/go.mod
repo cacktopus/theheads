@@ -9,4 +9,5 @@ require (
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/common v0.4.1
 	github.com/sirupsen/logrus v1.2.0
+	gonum.org/v1/gonum v0.0.0-20190710053202-4340aa3071a0
 )
