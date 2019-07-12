@@ -4,7 +4,6 @@ import (
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/prometheus/common/log"
-	"gonum.org/v1/gonum/mat"
 )
 
 type MotionLine struct {
@@ -16,7 +15,7 @@ func (MotionLine) Name() string {
 	return "motion-line"
 }
 
-func ManageFocalPoints(theScene scene.Scene, broker *Broker) {
+func ManageFocalPoints(theScene scene.Scene, broker *Broker, grid *Grid) {
 	msgs := broker.Subscribe()
 
 	for i := range msgs {
@@ -30,23 +29,22 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker) {
 
 				rotz := geom.Rotz(msg.Position)
 
-				p0 := mat.NewVecDense(3, []float64{0, 0, 1})
-				p1 := mat.NewVecDense(3, nil)
-				p1.MulVec(rotz, mat.NewVecDense(3, []float64{10, 0, 1}))
+				p0 := geom.ZeroVec()
+				p1 := rotz.MulVec(geom.NewVec(10, 0))
 
-				q0 := mat.NewVecDense(3, nil)
-				q1 := mat.NewVecDense(3, nil)
+				m := cam.Stand.M.Mul(cam.M)
 
-				m := geom.MatMul(cam.Stand.M, cam.M)
-				q0.MulVec(m, p0)
-				q1.MulVec(m, p1)
+				p0 = m.MulVec(p0)
+				p1 = m.MulVec(p1)
 
 				ml := MotionLine{
-					P0: [2]float64{q0.AtVec(0), q0.AtVec(1)},
-					P1: [2]float64{q1.AtVec(0), q1.AtVec(1)},
+					P0: [2]float64{p0.X(), p0.Y()},
+					P1: [2]float64{p1.X(), p1.Y()},
 				}
 				log.Info(ml)
 				broker.Publish(ml)
+
+				//grid.traceGrid(msg.CameraName, q0, q1)
 			}
 		}
 	}

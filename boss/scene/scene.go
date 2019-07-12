@@ -2,7 +2,6 @@ package scene
 
 import (
 	"github.com/cacktopus/heads/boss/geom"
-	"gonum.org/v1/gonum/mat"
 )
 
 var Json = `
@@ -104,7 +103,7 @@ type Camera struct {
 	Name        string  `json:"name"`
 	Pos         Pos     `json:"pos"`
 	Rot         float64 `json:"rot"`
-	M           *mat.Dense
+	M           geom.Mat
 	Stand       *Stand
 }
 type Head struct {
@@ -120,7 +119,7 @@ type Stand struct {
 	Name    string        `json:"name"`
 	Pos     Pos           `json:"pos"`
 	Rot     float64       `json:"rot"`
-	M       *mat.Dense
+	M       geom.Mat
 }
 type Translate struct {
 	X int `json:"x"`

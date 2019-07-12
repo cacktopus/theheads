@@ -96,6 +96,12 @@ func main() {
 	}
 	theScene.Denormalize()
 
+	grid := NewGrid(
+		-10, -10, 10, 10,
+		400, 400,
+		&theScene,
+	)
+
 	// TODO: need this due to a bunch of drift in theScene due to denormalization
 	var jsonScene interface{}
 	err = json.Unmarshal([]byte(scene.Json), &jsonScene)
@@ -109,7 +115,7 @@ func main() {
 		go runRedis(broker, redis)
 	}
 
-	go ManageFocalPoints(theScene, broker)
+	go ManageFocalPoints(theScene, broker, grid)
 
 	addr := ":7071"
 

@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-type grid struct {
+type Grid struct {
 	minX, minY, maxX, maxY float64
 	imgsizeX, imgsizeY     int
 	scene                  *scene.Scene
@@ -23,8 +23,8 @@ func NewGrid(
 	minX, minY, maxX, maxY float64,
 	imgsizeX, imgsizeY int,
 	scene *scene.Scene,
-) *grid {
-	g := &grid{
+) *Grid {
+	g := &Grid{
 		minX: minX, minY: minY, maxX: maxX, maxY: maxY,
 		imgsizeX: imgsizeX, imgsizeY: imgsizeY,
 		scene:  scene,
@@ -36,15 +36,15 @@ func NewGrid(
 	return g
 }
 
-// Returns the size of a grid cell (in meters)
-func (g *grid) getPixelSize() (float64, float64) {
+// Returns the size of a Grid cell (in meters)
+func (g *Grid) getPixelSize() (float64, float64) {
 	x := (g.maxX - g.minX) / float64(g.imgsizeX)
 	y := (g.maxY - g.minY) / float64(g.imgsizeY)
 
 	return x, y
 }
 
-func (g *grid) getLayer(cameraName string) *mat.Dense {
+func (g *Grid) getLayer(cameraName string) *mat.Dense {
 	layer, ok := g.layers[cameraName]
 	if !ok {
 		layer = mat.NewDense(g.imgsizeY, g.imgsizeY, nil)
@@ -53,7 +53,13 @@ func (g *grid) getLayer(cameraName string) *mat.Dense {
 	return layer
 }
 
-func (g *grid) TraceGrid(cameraName string, p0, p1 geom.Vec) {
+func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
+	// TODO: trace focal points
+
+	g.traceGrid(cameraName, p0, p1)
+}
+
+func (g *Grid) traceGrid(cameraName string, p0, p1 geom.Vec) {
 	szX, szY := g.getPixelSize()
 	stepSize := math.Min(szX, szY) / 4.0
 
@@ -82,8 +88,8 @@ func (g *grid) TraceGrid(cameraName string, p0, p1 geom.Vec) {
 }
 
 // this code is optimized for speed
-func (g *grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps int, incr float64) {
-	// convert into "grid coordinates"
+func (g *Grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps int, incr float64) {
+	// convert into "Grid coordinates"
 	posX -= g.minX
 	posY -= g.minY
 
@@ -113,18 +119,18 @@ func (g *grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps in
         #     pos_y += dy
 */
 
-func (g *grid) Start() {
+func (g *Grid) Start() {
 
 }
 
-func (g *grid) focus() {
+func (g *Grid) focus() {
 
 }
 
-func (g *grid) maybeSpawnFocalPoint() {
+func (g *Grid) maybeSpawnFocalPoint() {
 
 }
 
-func (g *grid) backgroundProcessor() {
+func (g *Grid) backgroundProcessor() {
 
 }

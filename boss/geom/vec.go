@@ -5,22 +5,12 @@ import (
 	"math"
 )
 
-func Clamp(a, x, b float64) float64 {
-	if x < a {
-		return a
-	}
-	if x > b {
-		return b
-	}
-	return x
-}
-
 type Vec struct {
 	data *mat.VecDense
 }
 
-func Zero() Vec {
-	return Vec{mat.NewVecDense(3, nil)}
+func ZeroVec() Vec {
+	return NewVec(0, 0) // z is implicitly 1.0
 }
 
 func NewVec(x float64, y float64) Vec {
@@ -28,13 +18,13 @@ func NewVec(x float64, y float64) Vec {
 }
 
 func (v Vec) Add(other Vec) Vec {
-	result := Zero()
+	result := ZeroVec()
 	result.data.AddVec(v.data, other.data)
 	return result
 }
 
 func (v Vec) Sub(other Vec) Vec {
-	result := Zero()
+	result := ZeroVec()
 	result.data.SubVec(v.data, other.data)
 	return result
 }
