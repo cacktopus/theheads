@@ -104,28 +104,11 @@ func main() {
 
 	r.StaticFile("/", "./templates/boss.html")
 
-	//web.get("/build/{filename}", frontend_handler("boss-ui/build")),
-	//web.get("/build/json/{filename}", frontend_handler("boss-ui/build/json")),
-	//web.get("/build/media/{filename}", frontend_handler("boss-ui/build/media")),
-	//web.get("/build/js/{filename}", frontend_handler("boss-ui/build/js")),
-	//web.get("/static/js/{filename}", frontend_handler("boss-ui/build/static/js")),
-	//web.get("/static/css/{filename}", frontend_handler("boss-ui/build/static/css")),
-
-	/*
-				# deprecated, use don't use above instead
-		        web.get('/installation/{installation}/scene.json', installation_handler),
-		        web.get('/installation/{installation}/{name}.html', html_handler),
-		        web.get('/installation/{installation}/{name}.js', static_text_handler("js")),
-		        web.get('/installation/{installation}/{name}.png', static_binary_handler("png")),
-
-	*/
-
 	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
 		c.JSON(200, sceneJson)
 	})
 
 	r.Static("/build", "./boss-ui/build")
-	//r.Static("/build/json", "./boss-ui/build")
 	r.Static("/static", "boss-ui/build/static")
 
 	r.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
