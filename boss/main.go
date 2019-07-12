@@ -141,7 +141,7 @@ func main() {
 					}
 
 					events := []HeadEvent{{
-						Type: "head-positioned",
+						Type: msg.Name(),
 						Data: data,
 					}}
 

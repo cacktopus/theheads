@@ -2,7 +2,9 @@ package main
 
 // https://stackoverflow.com/questions/36417199/how-to-broadcast-message-using-channel
 
-type Message interface{}
+type Message interface {
+	Name() string
+}
 
 type Broker struct {
 	stopCh    chan struct{}
