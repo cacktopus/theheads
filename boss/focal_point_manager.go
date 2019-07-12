@@ -1,15 +1,21 @@
 package main
 
-import "fmt"
+import (
+	"github.com/prometheus/common/log"
+)
 
-func ManageFocalPoints(broker *Broker) {
+func ManageFocalPoints(scene Scene, broker *Broker) {
 	msgs := broker.Subscribe()
 
-	for m := range msgs {
-		switch msg := m.(type) {
+	for i := range msgs {
+		switch msg := i.(type) {
 		case MotionDetected:
-			fmt.Println("Detected motion for camrea:", msg.CameraName)
+			cam, ok := scene.Cameras[msg.CameraName]
+			if !ok {
+				log.Error("Unknown camera: ", msg.CameraName)
+			} else {
+				log.Info("Found camera: ", cam.Name)
+			}
 		}
-
 	}
 }

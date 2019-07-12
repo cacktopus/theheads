@@ -88,13 +88,20 @@ func main() {
 	broker := NewBroker()
 	go broker.Start()
 
+	var scene Scene
+	err := json.Unmarshal([]byte(sceneJson), &scene)
+	if err != nil {
+		panic(err)
+	}
+	scene.Denormalize()
+
 	redisServers := []string{"127.0.0.1:6379"}
 
 	for _, redis := range redisServers {
 		go runRedis(broker, redis)
 	}
 
-	go ManageFocalPoints(broker)
+	go ManageFocalPoints(scene, broker)
 
 	addr := ":7071"
 
@@ -103,12 +110,6 @@ func main() {
 		gin.LoggerWithWriter(gin.DefaultWriter, "/metrics", "/health"),
 		gin.Recovery(),
 	)
-
-	var sceneJson interface{}
-	err := json.Unmarshal([]byte(scene), &sceneJson)
-	if err != nil {
-		panic(err)
-	}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
