@@ -30,6 +30,12 @@ func (v Vec) Sub(other Vec) Vec {
 	return result
 }
 
+func (v Vec) Scale(a float64) Vec {
+	result := ZeroVec()
+	result.data.ScaleVec(a, v.data)
+	return result
+}
+
 func (v Vec) Abs() float64 {
 	return math.Sqrt(mat.Dot(v.data, v.data))
 }
