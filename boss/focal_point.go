@@ -1,10 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"math"
 	"time"
+)
+
+const (
+	DefaultTTL = 5 * time.Second
 )
 
 type FocalPoint struct {
@@ -15,12 +20,13 @@ type FocalPoint struct {
 	ttl       time.Duration
 }
 
-func NewFocalPoint(pos geom.Vec, radius float64, id string) *FocalPoint {
+func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl time.Duration) *FocalPoint {
 	return &FocalPoint{
 		pos:       pos,
 		radius:    radius,
 		id:        id,
 		updatedAt: time.Now(),
+		ttl:       ttl,
 	}
 }
 
@@ -44,6 +50,12 @@ func (fp *FocalPoint) overlaps(other *FocalPoint) bool {
 
 func (fp *FocalPoint) refresh() {
 	fp.updatedAt = time.Now()
+}
+
+func (fp *FocalPoint) isExpired() bool {
+	t := time.Now()
+	fmt.Println("Is expired", t, fp.expiry())
+	return t.After(fp.expiry())
 }
 
 func sq(a float64) float64 {
