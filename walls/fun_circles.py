@@ -27,7 +27,7 @@ circles_cfg = Config(
 
 def fun_circles(cfg):
     # random.seed(42)
-    name = "fun-circles"
+    name = "crazy-stars"
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
     WIDTH = 146
     NUM_WALLS = 1
