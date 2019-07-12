@@ -23,6 +23,10 @@ type MotionDetected struct {
 	Position   float32 `json:"position"`
 }
 
+func (MotionDetected) Name() string {
+	return "motion-detected"
+}
+
 type HeadPositioned struct {
 	HeadName     string  `json:"headName"`
 	StepPosition float32 `json:"stepPosition"`
@@ -134,7 +138,7 @@ func main() {
 
 			for msg := range msgs {
 				switch msg.(type) {
-				case HeadPositioned:
+				case HeadPositioned, MotionDetected:
 					data, err := json.Marshal(msg)
 					if err != nil {
 						panic(err)
