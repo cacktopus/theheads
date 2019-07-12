@@ -24,22 +24,11 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker) {
 			} else {
 				log.Info("Found camera: ", cam.Name)
 
-				p0 := mat.NewVecDense(3, []float64{0, 0, 0})
-				p1 := mat.NewVecDense(3, []float64{0, 0, 0})
-
 				rotz := geom.Rotz(msg.Position)
 
+				p0 := mat.NewVecDense(3, []float64{0, 0, 0})
+				p1 := mat.NewVecDense(3, nil)
 				p1.MulVec(rotz, mat.NewVecDense(3, []float64{10, 0, 0}))
-
-				ml := MotionLine{
-					P0: [2]float64{p0.AtVec(0), p0.AtVec(1)},
-					P1: [2]float64{p1.AtVec(0), p1.AtVec(1)},
-				}
-
-				log.Info(ml)
-				// TODO: need
-				//   p0 = cam.stand.m * cam.m * p0
-				//   p1 = cam.stand.m * cam.m * p1
 
 				q0 := mat.NewVecDense(3, []float64{10, 0, 0})
 				q1 := mat.NewVecDense(3, []float64{10, 0, 0})
@@ -48,6 +37,11 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker) {
 				q0.MulVec(mul, p0)
 				q1.MulVec(mul, p1)
 
+				ml := MotionLine{
+					P0: [2]float64{q0.AtVec(0), q0.AtVec(1)},
+					P1: [2]float64{q1.AtVec(0), q1.AtVec(1)},
+				}
+				log.Info(ml)
 				// broker.publishCh ...
 			}
 		}
