@@ -17,6 +17,7 @@ func argmax(l *mat.Dense) (int, int, float64) {
 	result.Apply(func(i, j int, v float64) float64 {
 		if v > maxV {
 			maxI, maxJ = i, j
+			maxV = v
 		}
 		return v
 	}, l)
@@ -128,10 +129,34 @@ func (g *Grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps in
 }
 
 func (g *Grid) Start() {
+	time.Sleep(1000 * time.Millisecond)
 	for {
-		g.maybeSpawnFocalPoint()
 		time.Sleep(250 * time.Millisecond)
+		g.maybeSpawnFocalPoint()
+		g.decay()
 	}
+}
+
+func (g *Grid) decay() {
+	g.layersWithPrefix("camera-", func(name string, layer *mat.Dense) {
+		layer.Scale(0.75, layer)
+	})
+}
+
+func (g *Grid) layersWithPrefix(prefix string, cb func(name string, layer *mat.Dense)) {
+	for name, layer := range g.layers {
+		if strings.HasPrefix(name, "camera-") {
+			cb(name, layer)
+		}
+	}
+}
+
+func (g *Grid) cameraLayers() []*mat.Dense {
+	var result []*mat.Dense
+	g.layersWithPrefix("camera-", func(name string, layer *mat.Dense) {
+		result = append(result, layer)
+	})
+	return result
 }
 
 func (g *Grid) newLayer() *mat.Dense {
@@ -139,13 +164,7 @@ func (g *Grid) newLayer() *mat.Dense {
 }
 
 func (g *Grid) combined() *mat.Dense {
-	var cameraLayers []*mat.Dense
-
-	for name, layer := range g.layers {
-		if strings.HasPrefix(name, "camera-") {
-			cameraLayers = append(cameraLayers, layer)
-		}
-	}
+	var cameraLayers = g.cameraLayers()
 
 	if len(cameraLayers) == 0 {
 		return g.newLayer()
@@ -167,6 +186,7 @@ func (g *Grid) combined() *mat.Dense {
 		mask.Add(mask, masking)
 		sum.Add(sum, layer)
 	}
+	fmt.Println("mask sum: ", mat.Sum(mask))
 
 	mask.Apply(func(i, j int, v float64) float64 {
 		if v > 1.0 {
@@ -192,6 +212,7 @@ func (g *Grid) idxToVec(i, j int) geom.Vec {
 func (g *Grid) focus() (geom.Vec, float64) {
 	layer := g.combined()
 	i, j, v := argmax(layer)
+	fmt.Println("argmax", i, j, v)
 	return g.idxToVec(i, j), v
 }
 
@@ -200,5 +221,5 @@ func (g *Grid) maybeSpawnFocalPoint() {
 	if val < 0.10 {
 		return
 	}
-	fmt.Println("Spawning new focal point at ", p)
+	fmt.Println("Spawning new focal point at ", p.AsStr())
 }
