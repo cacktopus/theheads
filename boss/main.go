@@ -55,7 +55,6 @@ func runRedis(broker *Broker, redisServer string) {
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
-			log.Println("message:", v.Channel, string(v.Data))
 			event := HeadEvent{}
 			err := json.Unmarshal(v.Data, &event)
 			if err != nil {
@@ -94,6 +93,8 @@ func main() {
 	for _, redis := range redisServers {
 		go runRedis(broker, redis)
 	}
+
+	go ManageFocalPoints(broker)
 
 	addr := ":7071"
 
@@ -143,10 +144,10 @@ func main() {
 			//conn.WriteMessage(type_, msg)
 			//log.Println("ws", type_, string(msg))
 
-			for msg := range msgs {
-				switch msg.(type) {
+			for m := range msgs {
+				switch msg := m.(type) {
 				// TODO: need to translate MotionDetected to "motion-line"
-				case HeadPositioned, MotionDetected:
+				case HeadPositioned:
 					data, err := json.Marshal(msg)
 					if err != nil {
 						panic(err)
