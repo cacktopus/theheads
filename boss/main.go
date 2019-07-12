@@ -29,6 +29,10 @@ type HeadPositioned struct {
 	Rotation     float32 `json:"rotation"`
 }
 
+func (HeadPositioned) Name() string {
+	return "head-positioned"
+}
+
 func runRedis(broker *Broker, redisServer string) {
 	log.Println("Connecting to redis @ ", redisServer)
 	redisClient, err := redis.Dial("tcp", redisServer)
@@ -128,25 +132,25 @@ func main() {
 			//conn.WriteMessage(type_, msg)
 			//log.Println("ws", type_, string(msg))
 
-			for i := range msgs {
-				m := i.(HeadPositioned)
+			for msg := range msgs {
+				switch msg.(type) {
+				case HeadPositioned:
+					data, err := json.Marshal(msg)
+					if err != nil {
+						panic(err)
+					}
 
-				data, err := json.Marshal(m)
-				if err != nil {
-					panic(err)
+					events := []HeadEvent{{
+						Type: "head-positioned",
+						Data: data,
+					}}
+
+					payload, err := json.Marshal(events)
+					if err != nil {
+						panic(err)
+					}
+					conn.WriteMessage(1, payload)
 				}
-
-				events := []HeadEvent{{
-					Type: "head-positioned",
-					Data: data,
-				}}
-
-				payload, err := json.Marshal(events)
-				if err != nil {
-					panic(err)
-				}
-
-				conn.WriteMessage(1, payload)
 			}
 		}
 	}))
