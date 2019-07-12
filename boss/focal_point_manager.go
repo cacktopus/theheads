@@ -25,8 +25,6 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker, grid *Grid) {
 			if !ok {
 				log.Error("Unknown camera: ", msg.CameraName)
 			} else {
-				log.Info("Found camera: ", cam.Name, cam.Stand.Pos)
-
 				rotz := geom.Rotz(msg.Position)
 
 				p0 := geom.ZeroVec()
@@ -41,7 +39,6 @@ func ManageFocalPoints(theScene scene.Scene, broker *Broker, grid *Grid) {
 					P0: [2]float64{p0.X(), p0.Y()},
 					P1: [2]float64{p1.X(), p1.Y()},
 				}
-				log.Info(ml)
 				broker.Publish(ml)
 
 				grid.Trace(msg.CameraName, p0, p1)

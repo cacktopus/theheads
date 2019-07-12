@@ -1,11 +1,27 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
 	"gonum.org/v1/gonum/mat"
 	"math"
+	"strings"
+	"time"
 )
+
+func argmax(l *mat.Dense) (int, int, float64) {
+	result := mat.DenseCopyOf(l)
+	var maxI, maxJ int
+	maxV := -1E-99
+	result.Apply(func(i, j int, v float64) float64 {
+		if v > maxV {
+			maxI, maxJ = i, j
+		}
+		return v
+	}, l)
+	return maxI, maxJ, maxV
+}
 
 type Grid struct {
 	minX, minY, maxX, maxY float64
@@ -111,29 +127,78 @@ func (g *Grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps in
 	}
 }
 
-/*
- for i in range(steps):
-        #     yidx = int(math.floor(pos_x))  # notice swap
-        #     xidx = int(math.floor(pos_y))  # notice swap
-        #
-        #     g[(xidx, yidx)] += 0.025
-        #
-        #     pos_x += dx
-        #     pos_y += dy
-*/
-
 func (g *Grid) Start() {
-
+	for {
+		g.maybeSpawnFocalPoint()
+		time.Sleep(250 * time.Millisecond)
+	}
 }
 
-func (g *Grid) focus() {
+func (g *Grid) newLayer() *mat.Dense {
+	return mat.NewDense(g.imgsizeY, g.imgsizeX, nil)
+}
 
+func (g *Grid) combined() *mat.Dense {
+	var cameraLayers []*mat.Dense
+
+	for name, layer := range g.layers {
+		if strings.HasPrefix(name, "camera-") {
+			cameraLayers = append(cameraLayers, layer)
+		}
+	}
+
+	if len(cameraLayers) == 0 {
+		return g.newLayer()
+	}
+
+	// TODO: perhaps need some locking here
+	masking := g.getLayer("__masking__")
+	mask := g.getLayer("__mask__")
+	sum := g.getLayer("__sum__")
+	sum.Zero()
+
+	for _, layer := range cameraLayers {
+		masking.Apply(func(i, j int, v float64) float64 {
+			if v > 0.01 {
+				return 1.0
+			}
+			return 0.0
+		}, layer)
+		mask.Add(mask, masking)
+		sum.Add(sum, layer)
+	}
+
+	mask.Apply(func(i, j int, v float64) float64 {
+		if v > 1.0 {
+			return 1.0
+		}
+		return 0
+	}, mask)
+
+	result := g.newLayer()
+	result.MulElem(sum, mask)
+	return result
+}
+
+func (g *Grid) idxToVec(i, j int) geom.Vec {
+	szX, szY := g.getPixelSize()
+
+	x := g.minX + szX*(float64(j)+0.5)
+	y := g.minY + szY*(float64(i)+0.5)
+
+	return geom.NewVec(x, y)
+}
+
+func (g *Grid) focus() (geom.Vec, float64) {
+	layer := g.combined()
+	i, j, v := argmax(layer)
+	return g.idxToVec(i, j), v
 }
 
 func (g *Grid) maybeSpawnFocalPoint() {
-
-}
-
-func (g *Grid) backgroundProcessor() {
-
+	p, val := g.focus()
+	if val < 0.10 {
+		return
+	}
+	fmt.Println("Spawning new focal point at ", p)
 }

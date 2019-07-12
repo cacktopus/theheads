@@ -101,6 +101,7 @@ func main() {
 		400, 400,
 		&theScene,
 	)
+	go grid.Start()
 
 	// TODO: need this due to a bunch of drift in theScene due to denormalization
 	var jsonScene interface{}
