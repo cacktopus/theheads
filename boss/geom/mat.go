@@ -34,3 +34,8 @@ func (m Mat) Translation() Vec {
 	col := m.data.ColView(2)
 	return NewVec(col.AtVec(0), col.AtVec(1))
 }
+func (m Mat) Inv() Mat {
+	result := mat.NewDense(3, 3, nil)
+	result.Inverse(m.data)
+	return Mat{result}
+}

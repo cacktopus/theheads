@@ -134,5 +134,5 @@ func main() {
 		r.Run(addr)
 	}()
 
-	select {}
+	FollowEvade(grid, &theScene)
 }

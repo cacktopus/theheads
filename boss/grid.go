@@ -329,3 +329,24 @@ func (g *Grid) cleanupStale() {
 		delete(g.focalPoints, id)
 	}
 }
+func (g *Grid) ClosestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
+	minDist := maxFloat
+	var minFp *FocalPoint
+
+	for _, fp := range g.focalPoints {
+		d2 := fp.pos.Sub(p).AbsSq()
+		if d2 < 1e-5 {
+			continue
+		}
+		if d2 < minDist {
+			minDist = d2
+			minFp = fp
+		}
+	}
+
+	if minFp != nil {
+		return minFp, math.Sqrt(minDist)
+	}
+
+	return nil, -1
+}
