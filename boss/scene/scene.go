@@ -1,6 +1,11 @@
-package main
+package scene
 
-var sceneJson = `
+import (
+	"github.com/cacktopus/heads/boss/geom"
+	"gonum.org/v1/gonum/mat"
+)
+
+var Json = `
 {
   "stands": [
     {
@@ -91,14 +96,16 @@ type Scene struct {
 }
 type Pos struct {
 	X float64 `json:"x"`
-	Y int     `json:"y"`
+	Y float64 `json:"y"`
 }
 type Camera struct {
 	Description string  `json:"description"`
 	Fov         float64 `json:"fov"`
 	Name        string  `json:"name"`
 	Pos         Pos     `json:"pos"`
-	Rot         int     `json:"rot"`
+	Rot         float64 `json:"rot"`
+	M           *mat.Dense
+	Stand       *Stand
 }
 type Head struct {
 	Name    string `json:"name"`
@@ -112,21 +119,26 @@ type Stand struct {
 	Heads   []Head        `json:"heads"`
 	Name    string        `json:"name"`
 	Pos     Pos           `json:"pos"`
-	Rot     int           `json:"rot"`
+	Rot     float64       `json:"rot"`
+	M       *mat.Dense
 }
 type Translate struct {
 	X int `json:"x"`
 	Y int `json:"y"`
 }
 
-func (s *Scene) Denormalize() {
-	s.Cameras = map[string]Camera{}
-	for _, st := range s.Stands {
+func (sc *Scene) Denormalize() {
+	sc.Cameras = map[string]Camera{}
+	for _, st := range sc.Stands {
+		st.M = geom.ToM(st.Pos.X, st.Pos.Y, st.Rot)
+
 		for _, c := range st.Cameras {
-			if _, ok := s.Cameras[c.Name]; ok {
+			if _, ok := sc.Cameras[c.Name]; ok {
 				panic("Duplicate camera")
 			}
-			s.Cameras[c.Name] = c
+			c.Stand = &st
+			c.M = geom.ToM(c.Pos.X, c.Pos.Y, c.Rot)
+			sc.Cameras[c.Name] = c
 		}
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cacktopus/heads/boss/scene"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
@@ -88,12 +89,12 @@ func main() {
 	broker := NewBroker()
 	go broker.Start()
 
-	var scene Scene
-	err := json.Unmarshal([]byte(sceneJson), &scene)
+	var theScene scene.Scene
+	err := json.Unmarshal([]byte(scene.Json), &theScene)
 	if err != nil {
 		panic(err)
 	}
-	scene.Denormalize()
+	theScene.Denormalize()
 
 	redisServers := []string{"127.0.0.1:6379"}
 
@@ -101,7 +102,7 @@ func main() {
 		go runRedis(broker, redis)
 	}
 
-	go ManageFocalPoints(scene, broker)
+	go ManageFocalPoints(theScene, broker)
 
 	addr := ":7071"
 
@@ -122,7 +123,7 @@ func main() {
 	r.StaticFile("/", "./templates/boss.html")
 
 	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
-		c.JSON(200, sceneJson)
+		c.JSON(200, scene.Json)
 	})
 
 	r.Static("/build", "./boss-ui/build")
