@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
@@ -88,7 +89,9 @@ func main() {
 		panic(err)
 	}
 
-	redisServers := []string{"127.0.0.1:6379"}
+	redisServers := []string{
+		"127.0.0.1:6379",
+	}
 
 	for _, redis := range redisServers {
 		go runRedis(broker, redis)
@@ -103,6 +106,7 @@ func main() {
 		gin.LoggerWithWriter(gin.DefaultWriter, "/metrics", "/health"),
 		gin.Recovery(),
 	)
+	pprof.Register(r)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
