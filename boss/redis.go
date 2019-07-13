@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
@@ -30,6 +29,7 @@ func runRedis(msgBroker *broker.Broker, redisServer string) {
 
 func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 	// https://godoc.org/github.com/garyburd/redigo/redis#example-PubSubConn
+	// TODO: use callback approach to separate concerns
 
 	log.Println("Connecting to redis @ ", redisServer)
 	redisClient, err := redis.Dial("tcp", redisServer)
@@ -78,7 +78,10 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 				}
 
 			case redis.Subscription:
-				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				if v.Count == 0 {
+					done <- nil
+					return
+				}
 			case error:
 				err = v
 				log.WithError(err).Println("redis error")
