@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"github.com/gin-contrib/pprof"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -89,7 +89,9 @@ func main() {
 		panic(err)
 	}
 
-	redisServers := []string{"127.0.0.1:6379"}
+	redisServers := []string{
+		"127.0.0.1:6379",
+	}
 
 	for _, redis := range redisServers {
 		go runRedis(broker, redis)
