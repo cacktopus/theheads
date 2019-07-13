@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
+	"github.com/cacktopus/heads/boss/config"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -89,8 +90,15 @@ func main() {
 		panic(err)
 	}
 
-	redisServers := []string{
-		"127.0.0.1:6379",
+	consulClient := config.NewClient()
+
+	redisServers, err := config.AllServiceURLs(consulClient, "redis", "", "", "")
+	if err != nil {
+		panic(err)
+	}
+
+	if len(redisServers) == 0 {
+		panic("Need at least one redis server, for now")
 	}
 
 	for _, redis := range redisServers {

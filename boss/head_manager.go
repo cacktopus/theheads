@@ -1,8 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/cacktopus/heads/boss/config"
+	consulapi "github.com/hashicorp/consul/api"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -16,7 +17,7 @@ type HeadQueue struct {
 	serviceName  string
 	tagName      string
 	queue        chan string
-	consulClient *http.Client
+	consulClient *consulapi.Client
 	headClient   *http.Client
 }
 
@@ -25,58 +26,28 @@ func NewHeadQueue(serviceName, tagName string) *HeadQueue {
 		serviceName:  serviceName,
 		tagName:      tagName,
 		queue:        make(chan string, 64),
-		consulClient: &http.Client{},
+		consulClient: config.NewClient(),
 		headClient:   &http.Client{},
 	}
 }
 
-type consulServiceMessage struct {
-	Address     string
-	ServicePort int
-}
-
 func (h *HeadQueue) lookupServiceURL(path string) string {
-	queryString := fmt.Sprintf("tag=%s", h.tagName)
-
-	// assert path starts with /
-
-	consulUrl := fmt.Sprintf("%s%s%s?%s",
-		defaultConsulEndpoint,
-		"/v1/catalog/service/",
+	services, err := config.AllServiceURLs(h.consulClient,
 		h.serviceName,
-		queryString,
+		h.tagName,
+		"http://",
+		path,
 	)
 
-	resp, err := h.consulClient.Get(consulUrl)
 	if err != nil {
 		panic(err)
 	}
 
-	defer resp.Body.Close()
-
-	//TODO: resp.status
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
+	if len(services) != 1 {
+		panic("Not enough or too many services for " + h.serviceName + ":" + h.tagName)
 	}
 
-	var results []*consulServiceMessage
-
-	err = json.Unmarshal(body, &results)
-	if err != nil {
-		panic(err)
-	}
-
-	if len(results) == 0 {
-		panic("no services registered")
-	}
-
-	if len(results) > 1 {
-		panic("too many services registered")
-	}
-
-	return fmt.Sprintf("http://%s:%d%s", results[0].Address, results[0].ServicePort, path)
+	return services[0]
 }
 
 func (h *HeadQueue) send(url string) {

@@ -328,6 +328,8 @@ func (g *Grid) cleanupStale() {
 	for _, id := range toRemove {
 		delete(g.focalPoints, id)
 	}
+
+	g.publishFocalPoints()
 }
 func (g *Grid) ClosestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
 	minDist := maxFloat
