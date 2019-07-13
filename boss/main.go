@@ -99,7 +99,7 @@ func main() {
 
 	go ManageFocalPoints(theScene, broker, grid)
 
-	addr := ":7071"
+	addr := ":8081"
 
 	r := gin.New()
 	r.Use(
