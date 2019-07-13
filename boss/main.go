@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"github.com/gin-contrib/pprof"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -103,6 +104,7 @@ func main() {
 		gin.LoggerWithWriter(gin.DefaultWriter, "/metrics", "/health"),
 		gin.Recovery(),
 	)
+	pprof.Register(r)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
