@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 )
 
 const (
@@ -104,6 +105,7 @@ func (h *HeadQueue) sendLoop() {
 
 type HeadManager struct {
 	queues map[string]*HeadQueue
+	lock   sync.Mutex
 }
 
 func NewHeadManager() *HeadManager {
@@ -112,13 +114,24 @@ func NewHeadManager() *HeadManager {
 	}
 }
 
-func (h *HeadManager) send(serviceName, headName, path string) {
+func (h *HeadManager) getQueue(serviceName, headName string) *HeadQueue {
 	key := fmt.Sprintf("%s::%s", serviceName, headName)
+
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
 	queue, ok := h.queues[key]
+
 	if !ok {
 		queue = NewHeadQueue(serviceName, headName)
 		h.queues[key] = queue
 		go queue.sendLoop()
 	}
+
+	return queue
+}
+
+func (h *HeadManager) send(serviceName, headName, path string) {
+	queue := h.getQueue(serviceName, headName)
 	queue.queue <- path
 }
