@@ -30,7 +30,7 @@ func AllServiceURLs(client *api.Client, serviceName, tag, prefix, postfix string
 		result = append(result, fmt.Sprintf(
 			"%s%s:%d%s",
 			prefix,
-			s.ServiceAddress,
+			s.Address,
 			s.ServicePort,
 			postfix,
 		))
