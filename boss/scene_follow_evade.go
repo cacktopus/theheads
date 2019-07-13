@@ -8,8 +8,9 @@ import (
 )
 
 func FollowClosestFocalPoint(
-	head *scene.Head,
 	grid *Grid,
+	headManager *HeadManager,
+	head *scene.Head,
 	evadeDistance float64,
 ) {
 	for {
@@ -29,15 +30,15 @@ func FollowClosestFocalPoint(
 		}
 
 		path := fmt.Sprintf("/rotation/%f", theta)
-		fmt.Println(path)
+		headManager.send("head", head.Name, path)
 	}
 }
 
-func FollowEvade(grid *Grid, scene *scene.Scene) {
+func FollowEvade(grid *Grid, scene *scene.Scene, headManager *HeadManager) {
 	var wg sync.WaitGroup
 	for _, head := range scene.Heads {
 		wg.Add(1)
-		go FollowClosestFocalPoint(head, grid, 1.0)
+		go FollowClosestFocalPoint(grid, headManager, head, -1.0)
 	}
 	wg.Wait()
 }

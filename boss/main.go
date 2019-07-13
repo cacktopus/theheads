@@ -134,5 +134,7 @@ func main() {
 		r.Run(addr)
 	}()
 
-	FollowEvade(grid, &theScene)
+	headManager := NewHeadManager()
+
+	FollowEvade(grid, &theScene, headManager)
 }

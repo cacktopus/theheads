@@ -154,7 +154,7 @@ func (sc *Scene) Denormalize() {
 			}
 			h.Stand = st
 			h.M = geom.ToM(h.Pos.X, h.Pos.Y, h.Rot)
-			h.MInv = h.M.Inv()
+			h.MInv = h.Stand.M.Mul(h.M).Inv() // hmmmm, we use Stand.M for MInv but not for h.M
 			sc.Heads[h.Name] = h
 		}
 	}
@@ -169,5 +169,6 @@ func (h *Head) PointAwayFrom(p geom.Vec) float64 {
 
 func (h *Head) PointTo(p geom.Vec) float64 {
 	to := h.MInv.MulVec(p)
-	return math.Atan2(to.Y(), to.X()) * 180 / math.Pi
+	theta := math.Atan2(to.Y(), to.X()) * 180 / math.Pi
+	return math.Mod(theta+360.0, 360)
 }
