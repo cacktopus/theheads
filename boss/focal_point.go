@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"math"
@@ -54,7 +53,6 @@ func (fp *FocalPoint) refresh() {
 
 func (fp *FocalPoint) isExpired() bool {
 	t := time.Now()
-	fmt.Println("Is expired", t, fp.expiry())
 	return t.After(fp.expiry())
 }
 

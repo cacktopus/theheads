@@ -8,61 +8,12 @@ import (
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 var upgrader = websocket.Upgrader{}
-
-func runRedis(msgBroker *broker.Broker, redisServer string) {
-	log.Println("Connecting to redis @ ", redisServer)
-	redisClient, err := redis.Dial("tcp", redisServer)
-	if err != nil {
-		log.WithError(err).Error("Error connecting to redis")
-		panic(err)
-	}
-	log.Println("Connected to redis @ ", redisServer)
-
-	psc := redis.PubSubConn{Conn: redisClient}
-
-	if err := psc.Subscribe("the-heads-events"); err != nil {
-		panic(err)
-	}
-
-	for {
-		switch v := psc.Receive().(type) {
-		case redis.Message:
-			event := broker.HeadEvent{}
-			err := json.Unmarshal(v.Data, &event)
-			if err != nil {
-				panic(err)
-			}
-			switch event.Type {
-			case "head-positioned":
-				msg := broker.HeadPositioned{}
-				err = json.Unmarshal(event.Data, &msg)
-				if err != nil {
-					panic(err)
-				}
-				msgBroker.Publish(msg)
-			case "motion-detected":
-				msg := broker.MotionDetected{}
-				err = json.Unmarshal(event.Data, &msg)
-				if err != nil {
-					panic(err)
-				}
-				msgBroker.Publish(msg)
-			}
-		case redis.Subscription:
-			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-		case error:
-			panic(v)
-		}
-	}
-}
 
 func main() {
 	broker := broker.NewBroker()
