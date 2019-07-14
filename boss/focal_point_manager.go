@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
-func ManageFocalPoints(theScene scene.Scene, msgBroker *broker.Broker, grid *Grid) {
+func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *Grid) {
 	msgs := msgBroker.Subscribe()
 
 	for i := range msgs {

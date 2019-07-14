@@ -68,29 +68,20 @@ func main() {
 	broker := broker.NewBroker()
 	go broker.Start()
 
-	var theScene scene.Scene
-	err := json.Unmarshal([]byte(scene.Json), &theScene)
+	consulClient := config.NewClient()
+	theScene, err := scene.BuildInstallation(consulClient)
 	if err != nil {
 		panic(err)
 	}
-	theScene.Denormalize()
+	fmt.Println(theScene)
 
 	grid := NewGrid(
 		-10, -10, 10, 10,
 		400, 400,
-		&theScene,
+		theScene,
 		broker,
 	)
 	go grid.Start()
-
-	// TODO: need this due to a bunch of drift in theScene due to denormalization
-	var jsonScene interface{}
-	err = json.Unmarshal([]byte(scene.Json), &jsonScene)
-	if err != nil {
-		panic(err)
-	}
-
-	consulClient := config.NewClient()
 
 	redisServers, err := config.AllServiceURLs(consulClient, "redis", "", "", "")
 	if err != nil {
@@ -126,9 +117,9 @@ func main() {
 
 	r.StaticFile("/", "./templates/boss.html")
 
-	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
-		c.JSON(200, jsonScene)
-	})
+	//r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
+	//	c.JSON(200, jsonScene)
+	//})
 
 	r.Static("/build", "./boss-ui/build")
 	r.Static("/static", "boss-ui/build/static")
@@ -148,5 +139,5 @@ func main() {
 
 	headManager := NewHeadManager()
 
-	FollowEvade(grid, &theScene, headManager)
+	FollowEvade(grid, theScene, headManager)
 }

@@ -38,3 +38,17 @@ func AllServiceURLs(client *api.Client, serviceName, tag, prefix, postfix string
 
 	return
 }
+
+func GetPrefix(client *api.Client, prefix string) (map[string][]byte, error) {
+	resp, _, err := client.KV().List(prefix, &api.QueryOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := map[string][]byte{}
+	for _, kv := range resp {
+		result[kv.Key] = kv.Value
+	}
+
+	return result, nil
+}

@@ -15,4 +15,5 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/ugorji/go v1.1.2-0.20180831062425-e253f1f20942 // indirect
 	gonum.org/v1/gonum v0.0.0-20190710053202-4340aa3071a0
+	gopkg.in/yaml.v2 v2.2.2
 )

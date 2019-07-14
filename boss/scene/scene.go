@@ -1,89 +1,14 @@
 package scene
 
 import (
+	"errors"
+	"fmt"
+	"github.com/cacktopus/heads/boss/config"
 	"github.com/cacktopus/heads/boss/geom"
+	consulApi "github.com/hashicorp/consul/api"
+	"gopkg.in/yaml.v2"
 	"math"
 )
-
-var Json = `
-{
-  "stands": [
-    {
-      "cameras": [
-        {
-          "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-          "fov": 64.33,
-          "name": "camera-42",
-          "pos": {
-            "x": 0.15,
-            "y": 0
-          },
-          "rot": 0
-        }
-      ],
-      "kinects": [],
-      "heads": [
-        {
-          "name": "head-42",
-          "pos": {
-            "x": 0,
-            "y": 0
-          },
-          "rot": 0,
-          "virtual": true
-        }
-      ],
-      "name": "stand-01",
-      "pos": {
-        "x": -1,
-        "y": 0
-      },
-      "rot": -90
-    },
-    {
-      "cameras": [
-        {
-          "description": "Raspberry Pi PiNoir Camera V2 Video Module",
-          "fov": 64.33,
-          "name": "camera-43",
-          "pos": {
-            "x": 0.15,
-            "y": 0
-          },
-          "rot": 0
-        }
-      ],
-      "kinects": [],
-      "heads": [
-        {
-          "name": "head-43",
-          "pos": {
-            "x": 0,
-            "y": 0
-          },
-          "rot": 0,
-          "virtual": true
-        }
-      ],
-      "name": "stand-02",
-      "pos": {
-        "x": 1,
-        "y": 0
-      },
-      "rot": -90
-    }
-  ],
-  "scale": 75,
-  "translate": {
-    "x": 750,
-    "y": 100
-  },
-  "scenes": [
-    "follow_evade"
-  ],
-  "startup_scenes": []
-}
-`
 
 type Scene struct {
 	Stands        []*Stand      `json:"stands"`
@@ -92,72 +17,49 @@ type Scene struct {
 	Scenes        []string      `json:"scenes"`
 	StartupScenes []interface{} `json:"startup_scenes"`
 
-	Cameras map[string]*Camera
-	Heads   map[string]*Head
+	Cameras map[string]*Camera `json:"-"`
+	Heads   map[string]*Head   `json:"-"`
 }
 type Pos struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 }
 type Camera struct {
-	Description string  `json:"description"`
-	Fov         float64 `json:"fov"`
-	Name        string  `json:"name"`
-	Pos         Pos     `json:"pos"`
-	Rot         float64 `json:"rot"`
-	M           geom.Mat
-	Stand       *Stand
+	Description string   `json:"description"`
+	Fov         float64  `json:"fov"`
+	Name        string   `json:"name"`
+	Pos         Pos      `json:"pos"`
+	Rot         float64  `json:"rot"`
+	M           geom.Mat `json:"-"`
+	Stand       *Stand   `json:"-"`
 }
 type Head struct {
-	Name    string  `json:"name"`
-	Pos     Pos     `json:"pos"`
-	Rot     float64 `json:"rot"`
-	Virtual bool    `json:"virtual"`
-	M       geom.Mat
-	MInv    geom.Mat
-	Stand   *Stand
+	Name    string   `json:"name"`
+	Pos     Pos      `json:"pos"`
+	Rot     float64  `json:"rot"`
+	Virtual bool     `json:"virtual"`
+	M       geom.Mat `json:"-"`
+	MInv    geom.Mat `json:"-"`
+	Stand   *Stand   `json:"-"`
 }
 type Stand struct {
-	Cameras []*Camera     `json:"cameras"`
-	Kinects []interface{} `json:"kinects"`
-	Heads   []*Head       `json:"heads"`
-	Name    string        `json:"name"`
-	Pos     Pos           `json:"pos"`
-	Rot     float64       `json:"rot"`
-	M       geom.Mat
+	CameraNames []string `json:"-" yaml:"cameras"`
+	HeadNames   []string `json:"-" yaml:"heads"`
+
+	Name string   `json:"name"`
+	Pos  Pos      `json:"pos"`
+	Rot  float64  `json:"rot"`
+	M    geom.Mat `json:"-"`
+
+	Disabled bool
+	Enabled  bool
+
+	Cameras []*Camera `json:"cameras" yaml:"-"`
+	Heads   []*Head   `json:"heads" yaml:"-"`
 }
 type Translate struct {
 	X int `json:"x"`
 	Y int `json:"y"`
-}
-
-func (sc *Scene) Denormalize() {
-	sc.Cameras = map[string]*Camera{}
-	sc.Heads = map[string]*Head{}
-	for _, st := range sc.Stands {
-		st.M = geom.ToM(st.Pos.X, st.Pos.Y, st.Rot)
-
-		// Cameras
-		for _, c := range st.Cameras {
-			if _, ok := sc.Cameras[c.Name]; ok {
-				panic("Duplicate camera")
-			}
-			c.Stand = st
-			c.M = geom.ToM(c.Pos.X, c.Pos.Y, c.Rot)
-			sc.Cameras[c.Name] = c
-		}
-
-		// Heads
-		for _, h := range st.Heads {
-			if _, ok := sc.Cameras[h.Name]; ok {
-				panic("Duplicate camera")
-			}
-			h.Stand = st
-			h.M = geom.ToM(h.Pos.X, h.Pos.Y, h.Rot)
-			h.MInv = h.Stand.M.Mul(h.M).Inv() // hmmmm, we use Stand.M for MInv but not for h.M
-			sc.Heads[h.Name] = h
-		}
-	}
 }
 
 func (h *Head) GlobalPos() geom.Vec {
@@ -171,4 +73,89 @@ func (h *Head) PointTo(p geom.Vec) float64 {
 	to := h.MInv.MulVec(p)
 	theta := math.Atan2(to.Y(), to.X()) * 180 / math.Pi
 	return math.Mod(theta+360.0, 360)
+}
+
+func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
+	scene := &Scene{
+		Cameras: map[string]*Camera{},
+		Heads:   map[string]*Head{},
+	}
+
+	// Cameras
+	cameraYAML, err := config.GetPrefix(consulClient, "/the-heads/cameras")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, yml := range cameraYAML {
+		camera := &Camera{}
+		err := yaml.Unmarshal(yml, &camera)
+		if err != nil {
+			return nil, err
+		}
+
+		camera.M = geom.ToM(camera.Pos.X, camera.Pos.Y, camera.Rot)
+		scene.Cameras[camera.Name] = camera
+	}
+
+	// Heads
+	headYAML, err := config.GetPrefix(consulClient, "/the-heads/heads")
+	if err != nil {
+		return nil, err
+	}
+	for _, yml := range headYAML {
+		head := &Head{}
+		err := yaml.Unmarshal(yml, &head)
+		if err != nil {
+			return nil, err
+		}
+
+		head.M = geom.ToM(head.Pos.X, head.Pos.Y, head.Rot)
+		scene.Heads[head.Name] = head
+	}
+
+	// Stands
+	standYAML, err := config.GetPrefix(consulClient, "/the-heads/stands")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, yml := range standYAML {
+		stand := &Stand{Enabled: true}
+		err := yaml.Unmarshal(yml, &stand)
+		if err != nil {
+			return nil, err
+		}
+
+		if stand.Disabled || !stand.Enabled {
+			continue
+		}
+
+		stand.M = geom.ToM(stand.Pos.X, stand.Pos.Y, stand.Rot)
+
+		for _, name := range stand.CameraNames {
+			camera, ok := scene.Cameras[name]
+			if !ok {
+				return nil, errors.New(fmt.Sprintf("%s not found", name))
+			}
+			camera.Stand = stand
+			stand.Cameras = append(stand.Cameras, camera)
+		}
+
+		for _, name := range stand.HeadNames {
+			head, ok := scene.Heads[name]
+			if !ok {
+				return nil, errors.New(fmt.Sprintf("%s not found", name))
+			}
+			head.Stand = stand
+			head.MInv = head.Stand.M.Mul(head.M).Inv() // hmmmm, we use Stand.M for MInv but not for head.M
+			stand.Heads = append(stand.Heads, head)
+		}
+
+		scene.Stands = append(scene.Stands, stand)
+	}
+
+	fmt.Println(scene)
+
+	return scene, nil
 }
