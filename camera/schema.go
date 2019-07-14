@@ -1,8 +1,7 @@
 package main
 
 type MessageHeader struct {
-	Type         string `json:"type"`
-	Installation string `json:"installation"`
+	Type string `json:"type"`
 }
 
 type MotionDetectedData struct {
@@ -13,4 +12,13 @@ type MotionDetectedData struct {
 type MotionDetected struct {
 	MessageHeader
 	MotionDetectedData `json:"data"`
+}
+
+type PingData struct {
+	Name string `json:"name"`
+}
+
+type Ping struct {
+	MessageHeader
+	PingData `json:"data"`
 }

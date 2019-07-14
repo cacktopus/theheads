@@ -234,7 +234,6 @@ func (g *Grid) combined() *mat.Dense {
 		mask.Add(mask, masking)
 		sum.Add(sum, layer)
 	}
-	fmt.Println("mask sum: ", mat.Sum(mask))
 
 	mask.Apply(func(i, j int, v float64) float64 {
 		if v > 1.0 {
@@ -260,7 +259,6 @@ func (g *Grid) idxToVec(i, j int) geom.Vec {
 func (g *Grid) focus() (geom.Vec, float64) {
 	layer := g.combined()
 	i, j, v := argmax(layer)
-	fmt.Println("argmax", i, j, v)
 	return g.idxToVec(i, j), v
 }
 

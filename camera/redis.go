@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
@@ -20,9 +21,10 @@ func retry(delay time.Duration, description string, f func() error) {
 }
 
 type RedisPublisher struct {
-	redisServer string
-	queue       chan []byte
-	quit        chan bool
+	redisServer  string
+	instanceName string
+	queue        chan []byte
+	quit         chan bool
 }
 
 func (p *RedisPublisher) Send(msg []byte) error {
@@ -30,7 +32,7 @@ func (p *RedisPublisher) Send(msg []byte) error {
 	case p.queue <- msg:
 		return nil
 	default:
-		return errors.New("Queue full")
+		return errors.New("queue full")
 	}
 }
 
@@ -39,20 +41,45 @@ func (p *RedisPublisher) Stop() {
 }
 
 func (p *RedisPublisher) publishLoop(redisClient redis.Conn) error {
+	t := time.NewTicker(15 * time.Second)
+
+	pingMsg, err := json.Marshal(Ping{
+		MessageHeader{
+			Type: "ping",
+		},
+		PingData{
+			Name: p.instanceName,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	for {
+		var msg []byte
+		var err error
+
 		select {
 		case payload := <-p.queue:
-			// TODO: counter
-			_, err := redisClient.Do("PUBLISH", "the-heads-events", payload)
-			if err != nil {
-				log.WithError(err).Error("Error publishing to redis:", err)
-				p.drainQueue()
-				return err
-			}
+			msg = payload
+		case <-t.C:
+			msg = pingMsg
 		case <-p.quit:
 			redisClient.Close()
 			p.drainQueue()
 			return nil
+		}
+
+		if err != nil {
+			return err
+		}
+
+		// TODO: counter
+		_, err = redisClient.Do("PUBLISH", "the-heads-events", msg)
+		if err != nil {
+			log.WithError(err).Error("Error publishing to redis:", err)
+			p.drainQueue()
+			return err
 		}
 	}
 }
@@ -86,11 +113,12 @@ func (p *RedisPublisher) Run() {
 	)
 }
 
-func NewRedisPublisher(redisServer string) *RedisPublisher {
+func NewRedisPublisher(redisServer string, instanceName string) *RedisPublisher {
 	r := &RedisPublisher{
-		redisServer: redisServer,
-		queue:       make(chan []byte, 1024),
-		quit:        make(chan bool),
+		redisServer:  redisServer,
+		queue:        make(chan []byte, 1024),
+		quit:         make(chan bool),
+		instanceName: instanceName,
 	}
 	return r
 }

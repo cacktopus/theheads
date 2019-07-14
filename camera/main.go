@@ -76,7 +76,7 @@ func main() {
 
 	go serve(port)
 
-	redisPublish := NewRedisPublisher(cfg.RedisServer)
+	redisPublish := NewRedisPublisher(cfg.RedisServer, instance)
 	defer redisPublish.Stop()
 	go redisPublish.Run()
 
