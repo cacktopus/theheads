@@ -54,8 +54,8 @@ type Stand struct {
 	Disabled bool
 	Enabled  bool
 
-	Cameras []*Camera `json:"cameras" yaml:"-"`
-	Heads   []*Head   `json:"heads" yaml:"-"`
+	Cameras map[string]*Camera `json:"cameras" yaml:"-"`
+	Heads   map[string]*Head   `json:"heads" yaml:"-"`
 }
 type Translate struct {
 	X int `json:"x"`
@@ -63,7 +63,11 @@ type Translate struct {
 }
 
 func (h *Head) GlobalPos() geom.Vec {
-	return h.Stand.M.Mul(h.M).Translation()
+	t2 := h.Stand
+	t1 := t2.M
+	t3 := h.M
+	t0 := t1.Mul(t3)
+	return t0.Translation()
 }
 func (h *Head) PointAwayFrom(p geom.Vec) float64 {
 	return math.Mod(h.PointTo(p)+180.0+360.0, 360.0)
@@ -81,6 +85,10 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		Heads:   map[string]*Head{},
 	}
 
+	// heads and cameras don't "exist" until they are added to a stand
+	definedHeads := map[string]*Head{}
+	definedCameras := map[string]*Camera{}
+
 	// Cameras
 	cameraYAML, err := config.GetPrefix(consulClient, "/the-heads/cameras")
 	if err != nil {
@@ -95,7 +103,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		}
 
 		camera.M = geom.ToM(camera.Pos.X, camera.Pos.Y, camera.Rot)
-		scene.Cameras[camera.Name] = camera
+		definedCameras[camera.Name] = camera
 	}
 
 	// Heads
@@ -111,7 +119,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		}
 
 		head.M = geom.ToM(head.Pos.X, head.Pos.Y, head.Rot)
-		scene.Heads[head.Name] = head
+		definedHeads[head.Name] = head
 	}
 
 	// Stands
@@ -121,7 +129,11 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	}
 
 	for _, yml := range standYAML {
-		stand := &Stand{Enabled: true}
+		stand := &Stand{
+			Enabled: true,
+			Cameras: map[string]*Camera{},
+			Heads:   map[string]*Head{},
+		}
 		err := yaml.Unmarshal(yml, &stand)
 		if err != nil {
 			return nil, err
@@ -134,22 +146,24 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		stand.M = geom.ToM(stand.Pos.X, stand.Pos.Y, stand.Rot)
 
 		for _, name := range stand.CameraNames {
-			camera, ok := scene.Cameras[name]
+			camera, ok := definedCameras[name]
 			if !ok {
 				return nil, errors.New(fmt.Sprintf("%s not found", name))
 			}
 			camera.Stand = stand
-			stand.Cameras = append(stand.Cameras, camera)
+			stand.Cameras[camera.Name] = camera
+			scene.Cameras[camera.Name] = camera
 		}
 
 		for _, name := range stand.HeadNames {
-			head, ok := scene.Heads[name]
+			head, ok := definedHeads[name]
 			if !ok {
 				return nil, errors.New(fmt.Sprintf("%s not found", name))
 			}
 			head.Stand = stand
 			head.MInv = head.Stand.M.Mul(head.M).Inv() // hmmmm, we use Stand.M for MInv but not for head.M
-			stand.Heads = append(stand.Heads, head)
+			stand.Heads[head.Name] = head
+			scene.Heads[head.Name] = head
 		}
 
 		scene.Stands = append(scene.Stands, stand)
