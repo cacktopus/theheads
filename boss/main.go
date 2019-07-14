@@ -117,9 +117,9 @@ func main() {
 
 	r.StaticFile("/", "./templates/boss.html")
 
-	//r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
-	//	c.JSON(200, jsonScene)
-	//})
+	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
+		c.JSON(200, theScene)
+	})
 
 	r.Static("/build", "./boss-ui/build")
 	r.Static("/static", "boss-ui/build/static")
