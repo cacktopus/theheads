@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/config"
@@ -24,7 +23,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(theScene)
 
 	grid := NewGrid(
 		-10, -10, 10, 10,
