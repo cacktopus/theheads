@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import json
 import platform
-from asyncio import subprocess
+import time
 from typing import Tuple, Dict, Optional
 
 import aiohttp
@@ -24,6 +24,9 @@ TEMPERATURE = prometheus_client.Gauge(
     "Raspberry PI CPU temperature in degrees",
     ["zone"],
 )
+
+SYSTEM_TIME = prometheus_client.Gauge('system_time_seconds', 'System time in seconds')
+SYSTEM_TIME.set_function(lambda: time.time())
 
 
 async def get(url: str) -> Tuple[int, Dict]:
