@@ -88,5 +88,5 @@ func main() {
 
 	headManager := NewHeadManager()
 
-	FollowEvade(grid, theScene, headManager)
+	InNOut(grid, theScene, headManager)
 }
