@@ -5,7 +5,6 @@ import platform
 from aiohttp import web
 
 import util
-import voice
 from health import health_check
 
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
@@ -13,25 +12,22 @@ play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
 async def play(request):
     name = request.app['cfg']['name']
-    text = request.query['text']
-    print(f"{name} playing: {text}")
+    sound = request.query['sound']
+    print(f"{name} playing: {sound}")
 
-    for sentence in voice.all_parts(voice.Rms(), text):
-        filename = sentence.hash()
+    filename = os.path.join("voices", sound)
 
-        print(sentence.text, filename)
+    if not os.path.isfile(filename):
+        return web.Response(status=404, text=f"missing {filename}")
 
-        if not os.path.isfile(filename):
-            return web.Response(status=404, text=f"missing {filename}: [{sentence.text}]")
+    process = await asyncio.create_subprocess_exec(
+        play_cmd,
+        filename,
+    )
 
-        process = await asyncio.create_subprocess_exec(
-            play_cmd,
-            filename,
-        )
+    await process.wait()
 
-        await process.wait()
-
-    return web.Response(text=f"ok: {text}")
+    return web.Response(text="ok")
 
 
 async def setup(name: str, port: int):
