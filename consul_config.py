@@ -10,8 +10,6 @@ class ConfigError(Exception):
     pass
 
 
-
-
 class ConsulBackend:
     def __init__(self, consul_endpoint: str = DEFAULT_CONSUL_ENDPOINT):
         self._consul_endpoint = consul_endpoint
