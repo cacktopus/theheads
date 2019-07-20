@@ -4,22 +4,21 @@ import platform
 
 from aiohttp import web
 
+import log
 import util
 from health import health_check
 
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
-import log
-from util import run_app
 
 
 async def play(request):
-    name = request.app['cfg']['name']
     sound = request.query['sound']
-    print(f"{name} playing: {sound}")
+    log.info("playing", sound=sound)
 
     filename = os.path.join("voices", sound)
 
     if not os.path.isfile(filename):
+        log.error("missing sound", filename=os.path.abspath(filename))
         return web.Response(status=404, text=f"missing {filename}")
 
     process = await asyncio.create_subprocess_exec(
@@ -51,6 +50,8 @@ async def setup(name: str, port: int):
 
 
 def main():
+    log.setup_logging()
+
     os.chdir(os.path.expanduser("~"))  # TODO: use config
     loop = asyncio.get_event_loop()
 
