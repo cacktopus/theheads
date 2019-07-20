@@ -15,7 +15,7 @@ async def play(request):
     sound = request.query['sound']
     log.info("playing", sound=sound)
 
-    filename = os.path.join("voices", sound)
+    filename = os.path.join("sounds", sound)
 
     if not os.path.isfile(filename):
         log.error("missing sound", path=os.path.abspath(filename))
