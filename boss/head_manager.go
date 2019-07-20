@@ -82,15 +82,19 @@ func (h *HeadQueue) sendLoop() {
 	for item := range h.queue {
 		// TODO: dedup/ratelimit
 		url, err := h.lookupServiceURL(item.path)
-		if err != nil && item.result != nil {
+		if err != nil {
 			log.WithError(err).Error("error looking up service")
-			item.result <- err
+			if item.result != nil {
+				item.result <- err
+			}
 		}
 
 		err = h.send(url)
-		if err != nil && item.result != nil {
+		if err != nil {
 			log.WithError(err).Error("error sending to service")
-			item.result <- err
+			if item.result != nil {
+				item.result <- err
+			}
 		}
 
 		if item.result != nil {
