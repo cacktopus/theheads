@@ -8,6 +8,7 @@ import (
 	consulApi "github.com/hashicorp/consul/api"
 	"gopkg.in/yaml.v2"
 	"math"
+	"math/rand"
 )
 
 type Scene struct {
@@ -42,6 +43,31 @@ type Head struct {
 	MInv    geom.Mat `json:"-"`
 	Stand   *Stand   `json:"-"`
 }
+
+func SelectHeads(
+	heads map[string]*Head,
+	predicate func(i int, h *Head) bool,
+) (result []*Head) {
+	i := 0
+	for _, head := range heads {
+		if predicate(i, head) {
+			result = append(result, head)
+		}
+		i++
+	}
+	return
+}
+
+func RandomHeads(heads map[string]*Head) (result []*Head) {
+	for _, head := range heads {
+		result = append(result, head)
+	}
+	rand.Shuffle(len(result), func(i, j int) {
+		result[i], result[j] = result[j], result[i]
+	})
+	return
+}
+
 type Stand struct {
 	CameraNames []string `json:"-" yaml:"cameras"`
 	HeadNames   []string `json:"-" yaml:"heads"`

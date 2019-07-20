@@ -53,20 +53,20 @@ func FollowEvade(dj *DJ, done chan bool) {
 	logrus.Println("Finishing FollowEvade")
 }
 
-func InNOut(grid *Grid, scene *scene.Scene, headManager *HeadManager, done chan bool) {
+func InNOut(dj *DJ, done chan bool) {
 	center := geom.ZeroVec()
 
-	for _, h := range scene.Heads {
+	for _, h := range dj.scene.Heads {
 		center = center.Add(h.M.Translation())
 	}
 
-	center = center.Scale(1.0 / float64(len(scene.Heads)))
+	center = center.Scale(1.0 / float64(len(dj.scene.Heads)))
 
 	for {
-		for _, head := range scene.Heads {
+		for _, head := range dj.scene.Heads {
 			theta := head.PointAwayFrom(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path, nil)
 		}
 
 		select {
@@ -75,10 +75,10 @@ func InNOut(grid *Grid, scene *scene.Scene, headManager *HeadManager, done chan 
 			return
 		}
 
-		for _, head := range scene.Heads {
+		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path, nil)
 		}
 
 		select {
@@ -89,24 +89,18 @@ func InNOut(grid *Grid, scene *scene.Scene, headManager *HeadManager, done chan 
 	}
 }
 
-func RunScenes(grid *Grid, scene *scene.Scene, headManager *HeadManager, texts []*Text) {
-	dj := &DJ{
-		grid:        grid,
-		scene:       scene,
-		headManager: headManager,
-		texts:       texts,
-	}
-
+func (dj *DJ) RunScenes() {
 	var done chan bool
 	for {
-		done = make(chan bool)
-		go InNOut(grid, scene, headManager, done)
-		time.Sleep(20 * time.Second)
-		close(done)
-
-		done = make(chan bool)
-		go FollowEvade(dj, done)
-		time.Sleep(30 * time.Second)
-		close(done)
+		//done = make(chan bool)
+		//go InNOut(dj, done)
+		//time.Sleep(20 * time.Second)
+		//close(done)
+		//
+		//done = make(chan bool)
+		//go FollowEvade(dj, done)
+		//time.Sleep(30 * time.Second)
+		//close(done)
+		Conversation(dj, done)
 	}
 }

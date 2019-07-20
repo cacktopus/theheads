@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/cacktopus/heads/boss/config"
 	"github.com/hashicorp/consul/api"
+	"math/rand"
 )
 
 type Text struct {
@@ -34,4 +35,8 @@ func LoadTexts(consulClient *api.Client) []*Text {
 	}
 
 	return result
+}
+
+func randomText(texts []*Text) *Text {
+	return texts[rand.Intn(len(texts))]
 }

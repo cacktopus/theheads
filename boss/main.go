@@ -90,5 +90,12 @@ func main() {
 
 	texts := LoadTexts(consulClient)
 
-	RunScenes(grid, theScene, headManager, texts)
+	dj := &DJ{
+		grid:        grid,
+		scene:       theScene,
+		headManager: headManager,
+		texts:       texts,
+	}
+
+	dj.RunScenes()
 }
