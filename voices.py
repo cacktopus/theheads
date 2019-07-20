@@ -8,6 +8,8 @@ import util
 from health import health_check
 
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
+import log
+from util import run_app
 
 
 async def play(request):
@@ -43,7 +45,7 @@ async def setup(name: str, port: int):
         web.get('/health', health_check),
     ])
 
-    print(f"Running {name} on port {port}")
+    log.info("Running", service="voices", port=port)
 
     return app
 

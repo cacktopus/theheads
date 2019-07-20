@@ -3,12 +3,14 @@ import ctypes
 import itertools
 import math
 import mmap
+import platform
 import time
 from functools import reduce
 from typing import Tuple, List, Optional
 
 import numpy as np
 
+import util
 from installation import Installation
 from transformations import Vec
 
@@ -124,7 +126,10 @@ class Grid:
         self.tracelib = ctypes.cdll.LoadLibrary("./trace.so")
 
         if spawner:
-            asyncio.create_task(self.background_processor())
+            util.create_task(self.background_processor())
+
+        if platform.system() == "Darwin":
+            util.create_task(self.publish_loop())
 
     @property
     def focal_points(self) -> List[_FocalPoint]:
@@ -195,6 +200,8 @@ class Grid:
             to = midpoint - fp.pos
             fp.pos += to.scale(0.2)
             fp.refresh()
+
+        return bool(results)
 
     def trace_grid(self, camera_name: str, p0: Vec, p1: Vec):
         step_size = min(self.get_pixel_size()) / 4.0

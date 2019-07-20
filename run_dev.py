@@ -37,11 +37,11 @@ async def run():
         # TODO: use service ports from consul
         await fake_voices.run(name, 3030 + i)
 
-    app2 = await boss.setup(port=8081)
+    # app2 = await boss.setup(port=8081)
     app3 = await home.setup(port=8000)
 
     await asyncio.wait(heads + [
-        util.run_app(app2),
+        # util.run_app(app2),
         util.run_app(app3),
     ])
 

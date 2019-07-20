@@ -8,6 +8,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+import log
 from health import health_check
 from installation import build_installation
 from metrics import handle_metrics
@@ -94,7 +95,7 @@ def frontend_handler(*path_prefix):
 
         mode = {".png": "rb"}.get(ext, "r")
 
-        print(path)
+        log.info("handling", path=path)
         with open(path, mode) as fp:
             content = fp.read()
 
@@ -117,7 +118,7 @@ def frontend_handler(*path_prefix):
 
 async def text_upload_handler(request: Request):
     body = await request.read()
-    print(body)
+    log.info("text_upload_handler", body=body)
     return web.Response(text="ok")
 
 

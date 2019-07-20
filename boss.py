@@ -7,6 +7,7 @@ import prometheus_client
 from aiohttp import web
 
 import boss_routes
+import log
 import text_manager
 import util
 import ws
@@ -35,32 +36,35 @@ TASKS.set_function(lambda: len(asyncio.Task.all_tasks()))
 
 
 async def run_redis(redis_hostport, broadcast):
-    print("Connecting to redis:", redis_hostport)
+    log.info("Connecting to redis:", redis=redis_hostport)
     host, port = redis_hostport.split(":")
     connection = await asyncio_redis.Connection.create(host=host, port=int(port))
-    print("Connected to redis", redis_hostport)
+    log.info("Connected to redis", redis=redis_hostport)
     subscriber = await connection.start_subscribe()
     await subscriber.subscribe([THE_HEADS_EVENTS])
 
     while True:
-        reply = await subscriber.next_published()
-        msg = json.loads(reply.value)
+        try:
+            reply = await subscriber.next_published()
+            msg = json.loads(reply.value)
 
-        data = msg['data']
-        src = data.get('cameraName') or data.get('headName') or data['name']
+            data = msg['data']
+            src = data.get('cameraName') or data.get('headName') or data['name']
 
-        REDIS_MESSAGE_RECEIVED.labels(
-            reply.channel,
-            msg['type'],
-            src,
-        ).inc()
+            REDIS_MESSAGE_RECEIVED.labels(
+                reply.channel,
+                msg['type'],
+                src,
+            ).inc()
 
-        if msg['type'] == "motion-detected":
-            broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
+            if msg['type'] == "motion-detected":
+                broadcast("motion-detected", camera_name=data["cameraName"], position=data["position"])
 
-        if msg['type'] in ("head-positioned", "active", "kinect"):
-            # print(datetime.datetime.now(), host, msg['type'])
-            broadcast(msg['type'], msg=msg)
+            if msg['type'] in ("head-positioned", "active", "kinect"):
+                broadcast(msg['type'], msg=msg)
+
+        except Exception as e:
+            log.critical("Exception processing redis message", exception=e)
 
 
 async def get_config(
@@ -88,6 +92,11 @@ async def get_config(
     )
 
     return result
+
+
+async def throw():
+    await asyncio.sleep(1)
+    raise Exception("Haha")
 
 
 async def setup(
@@ -137,17 +146,17 @@ async def setup(
         head_manager=hm,
         broadcast=observer.notify_observers,
     )
-    asyncio.create_task(tm)
+    util.create_task(tm)
 
     for redis in cfg['redis_servers']:
         asyncio.ensure_future(run_redis(redis, broadcast=observer.notify_observers))
-
-    asyncio.create_task(app['grid'].publish_loop())
 
     return app
 
 
 def main():
+    log.info("startup")
+
     args = get_args()
 
     loop = asyncio.get_event_loop()

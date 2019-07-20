@@ -21,7 +21,6 @@ def get(key: bytes):
     assert resp.status_code == 200
 
     msg = json.loads(resp.text)
-    # print(json.dumps(msg, indent="  "))
 
     kvs = msg.get('kvs', [])
 

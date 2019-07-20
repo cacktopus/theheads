@@ -3,6 +3,8 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
+import log
+import util
 from grid import Grid
 from installation import Installation
 from transformations import Vec, Mat
@@ -47,7 +49,7 @@ class FocalPointManager:
     def __init__(self, broadcast: Callable, inst: Installation, grid: Grid):
         self.broadcast = broadcast
         self._focal_points: Dict[str, FocalPoint] = {}
-        asyncio.create_task(self._focal_point_garbage_collector())
+        util.create_task(self._focal_point_garbage_collector())
         self.inst = inst
         self.grid = grid
 
@@ -66,7 +68,11 @@ class FocalPointManager:
 
     def motion_detected(self, camera_name: str, position: Vec):
         # perhaps not the best place for this function to live
-        cam = self.inst.cameras[camera_name]
+        cam = self.inst.cameras.get(camera_name)
+        if cam is None:
+            log.error("Unknown camera", camera=camera_name)
+            return
+
         p0 = Vec(0, 0)
         p1 = Mat.rotz(position) * Vec(10, 0)
 
