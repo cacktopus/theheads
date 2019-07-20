@@ -25,8 +25,8 @@ func LoadTexts(consulClient *api.Client) []*Text {
 		panic(err)
 	}
 
-	text := Text{}
 	for _, t := range texts {
+		text := Text{}
 		err := json.Unmarshal(t, &text)
 		if err != nil {
 			panic(err)
@@ -38,5 +38,6 @@ func LoadTexts(consulClient *api.Client) []*Text {
 }
 
 func randomText(texts []*Text) *Text {
-	return texts[rand.Intn(len(texts))]
+	i := rand.Intn(len(texts))
+	return texts[i]
 }

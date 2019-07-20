@@ -9,12 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
 var upgrader = websocket.Upgrader{}
 
 func main() {
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	broker := broker.NewBroker()
 	go broker.Start()
 
