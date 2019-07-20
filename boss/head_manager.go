@@ -50,7 +50,7 @@ func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
 		return "", err
 	}
 
-	if len(services) != 0 {
+	if len(services) != 1 {
 		return "", errors.New(fmt.Sprintf("%d services found for %s:%s",
 			len(services), h.serviceName, h.tagName))
 	}
