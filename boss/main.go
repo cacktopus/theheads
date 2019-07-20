@@ -88,5 +88,7 @@ func main() {
 
 	headManager := NewHeadManager()
 
-	RunScenes(grid, theScene, headManager)
+	texts := LoadTexts(consulClient)
+
+	RunScenes(grid, theScene, headManager, texts)
 }

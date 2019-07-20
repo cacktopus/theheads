@@ -10,10 +10,9 @@ import (
 )
 
 func FollowClosestFocalPoint(
-	grid *Grid,
-	headManager *HeadManager,
-	head *scene.Head,
+	dj *DJ,
 	done chan bool,
+	head *scene.Head,
 	wg *sync.WaitGroup,
 	evadeDistance float64,
 ) {
@@ -22,7 +21,7 @@ func FollowClosestFocalPoint(
 		case <-time.After(40 * time.Millisecond):
 			p := head.GlobalPos()
 
-			selected, distance := grid.ClosestFocalPointTo(p)
+			selected, distance := dj.grid.ClosestFocalPointTo(p)
 			if selected == nil {
 				continue
 			}
@@ -35,7 +34,7 @@ func FollowClosestFocalPoint(
 			}
 
 			path := fmt.Sprintf("/rotation/%f", theta)
-			headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path, nil)
 		case <-done:
 			logrus.WithField("head", head.Name).Println("Finishing FollowClosestFocalPoint")
 			wg.Done()
@@ -44,11 +43,11 @@ func FollowClosestFocalPoint(
 	}
 }
 
-func FollowEvade(grid *Grid, scene *scene.Scene, headManager *HeadManager, done chan bool) {
+func FollowEvade(dj *DJ, done chan bool) {
 	var wg sync.WaitGroup
-	for _, head := range scene.Heads {
+	for _, head := range dj.scene.Heads {
 		wg.Add(1)
-		go FollowClosestFocalPoint(grid, headManager, head, done, &wg, -1.0)
+		go FollowClosestFocalPoint(dj, done, head, &wg, -1.0)
 	}
 	wg.Wait()
 	logrus.Println("Finishing FollowEvade")
@@ -90,7 +89,14 @@ func InNOut(grid *Grid, scene *scene.Scene, headManager *HeadManager, done chan 
 	}
 }
 
-func RunScenes(grid *Grid, scene *scene.Scene, headManager *HeadManager) {
+func RunScenes(grid *Grid, scene *scene.Scene, headManager *HeadManager, texts []*Text) {
+	dj := &DJ{
+		grid:        grid,
+		scene:       scene,
+		headManager: headManager,
+		texts:       texts,
+	}
+
 	var done chan bool
 	for {
 		done = make(chan bool)
@@ -99,7 +105,7 @@ func RunScenes(grid *Grid, scene *scene.Scene, headManager *HeadManager) {
 		close(done)
 
 		done = make(chan bool)
-		go FollowEvade(grid, scene, headManager, done)
+		go FollowEvade(dj, done)
 		time.Sleep(30 * time.Second)
 		close(done)
 	}
