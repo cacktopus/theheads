@@ -4,7 +4,7 @@ import (
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
-	"github.com/prometheus/common/log"
+	log "github.com/sirupsen/logrus"
 )
 
 func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *Grid) {

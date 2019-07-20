@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/config"
 	consulapi "github.com/hashicorp/consul/api"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -13,10 +15,15 @@ const (
 	defaultConsulEndpoint = "http://127.0.0.1:8500"
 )
 
+type SendItem struct {
+	path   string
+	result chan error
+}
+
 type HeadQueue struct {
 	serviceName  string
 	tagName      string
-	queue        chan string
+	queue        chan SendItem
 	consulClient *consulapi.Client
 	headClient   *http.Client
 }
@@ -25,13 +32,13 @@ func NewHeadQueue(serviceName, tagName string) *HeadQueue {
 	return &HeadQueue{
 		serviceName:  serviceName,
 		tagName:      tagName,
-		queue:        make(chan string, 64),
+		queue:        make(chan SendItem, 64),
 		consulClient: config.NewClient(),
 		headClient:   &http.Client{},
 	}
 }
 
-func (h *HeadQueue) lookupServiceURL(path string) string {
+func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
 	services, err := config.AllServiceURLs(h.consulClient,
 		h.serviceName,
 		h.tagName,
@@ -40,37 +47,55 @@ func (h *HeadQueue) lookupServiceURL(path string) string {
 	)
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	if len(services) != 1 {
-		panic("Not enough or too many services for " + h.serviceName + ":" + h.tagName)
+	if len(services) != 0 {
+		return "", errors.New(fmt.Sprintf("%d services found for %s:%s",
+			len(services), h.serviceName, h.tagName))
 	}
 
-	return services[0]
+	return services[0], nil
 }
 
-func (h *HeadQueue) send(url string) {
+func (h *HeadQueue) send(url string) error {
 	resp, err := h.headClient.Get(url)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer resp.Body.Close()
-	defer resp.Body.Close()
 
-	//TODO: resp.status
+	if resp.StatusCode != 200 {
+		return errors.New("received non-200 status code")
+	}
+
 	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func (h *HeadQueue) sendLoop() {
-	for path := range h.queue {
+	for item := range h.queue {
 		// TODO: dedup/ratelimit
-		url := h.lookupServiceURL(path)
-		h.send(url)
+		url, err := h.lookupServiceURL(item.path)
+		if err != nil && item.result != nil {
+			log.WithError(err).Error("error looking up service")
+			item.result <- err
+		}
+
+		err = h.send(url)
+		if err != nil && item.result != nil {
+			log.WithError(err).Error("error sending to service")
+			item.result <- err
+		}
+
+		if item.result != nil {
+			item.result <- nil
+		}
 	}
 }
 
@@ -102,7 +127,8 @@ func (h *HeadManager) getQueue(serviceName, headName string) *HeadQueue {
 	return queue
 }
 
-func (h *HeadManager) send(serviceName, headName, path string) {
+// result is optional
+func (h *HeadManager) send(serviceName, headName, path string, result chan error) {
 	queue := h.getQueue(serviceName, headName)
-	queue.queue <- path
+	queue.queue <- SendItem{path, result}
 }

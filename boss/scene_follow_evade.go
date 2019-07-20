@@ -30,7 +30,7 @@ func FollowClosestFocalPoint(
 		}
 
 		path := fmt.Sprintf("/rotation/%f", theta)
-		headManager.send("head", head.Name, path)
+		headManager.send("head", head.Name, path, nil)
 	}
 }
 
