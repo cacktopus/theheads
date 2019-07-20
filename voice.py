@@ -48,7 +48,7 @@ class Sentence:
     def hash(self):
         key = f"{self._voice.name}::{self.text}".encode('ascii')
         digest = hashlib.md5(key).hexdigest()
-        directory = os.path.join("sounds", self._voice.name, digest[:2])
+        directory = os.path.join(self._voice.name, digest[:2])
         filename = digest[2:] + ".wav"
         return os.path.join(directory, filename)
 
