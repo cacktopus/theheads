@@ -71,7 +71,7 @@ func main() {
 	})
 
 	r.Static("/build", "./boss-ui/build")
-	r.Static("/static", "boss-ui/build/static")
+	r.Static("/static", "./boss-ui/build/static")
 
 	r.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
