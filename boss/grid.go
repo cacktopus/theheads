@@ -5,6 +5,7 @@ import (
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
@@ -285,7 +286,7 @@ func (g *Grid) maybeSpawnFocalPoint() {
 
 	// create new focal point
 	newFp.id = assignID()
-	fmt.Println("Spawning new focal point at ", p.AsStr())
+	logrus.WithField("pos", p.AsStr()).Println("Spawning new focal point")
 
 	g.focalPoints[newFp.id] = newFp
 	g.publishFocalPoints()

@@ -98,11 +98,11 @@ loop:
 	for err == nil {
 		select {
 		case <-ticker.C:
-			log.Println("ping", redisServer)
+			log.Debugln("ping", redisServer)
 			if err = psc.Ping(""); err != nil {
 				break loop
 			}
-			log.Println("pong", redisServer)
+			log.Debugln("pong", redisServer)
 		case err := <-done:
 			return err
 		}

@@ -88,5 +88,5 @@ func main() {
 
 	headManager := NewHeadManager()
 
-	InNOut(grid, theScene, headManager)
+	RunScenes(grid, theScene, headManager)
 }
