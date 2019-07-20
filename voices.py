@@ -18,7 +18,7 @@ async def play(request):
     filename = os.path.join("voices", sound)
 
     if not os.path.isfile(filename):
-        log.error("missing sound", filename=os.path.abspath(filename))
+        log.error("missing sound", path=os.path.abspath(filename))
         return web.Response(status=404, text=f"missing {filename}")
 
     process = await asyncio.create_subprocess_exec(
