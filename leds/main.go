@@ -37,8 +37,18 @@ var (
 
 var (
 	positions []Vec2
-	spiConn   spi.Conn
 )
+
+type Transactor interface {
+	Tx(w, r []byte) error
+}
+
+type NoStrip struct {
+}
+
+func (*NoStrip) Tx(w, r []byte) error {
+	return nil
+}
 
 func setup() *Strip {
 	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
@@ -61,38 +71,46 @@ func setup() *Strip {
 		}
 	}
 
-	strip := NewStrip(numLeds, 5.0*74.0/150.0)
-	positions = make([]Vec2, numLeds)
-
 	// Make sure periph is initialized.
 	if _, err := host.Init(); err != nil {
 		log.Fatal(err)
 	}
 
-	// Use spireg SPI port registry to find the first available SPI bus.
-	p, err := spireg.Open("")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// defer p.Close() # TODO
+	_, ok = os.LookupEnv("NO_LEDS")
+	var conn Transactor
+	if ok {
+		conn = &NoStrip{}
+	} else {
+		// Use spireg SPI port registry to find the first available SPI bus.
+		p, err := spireg.Open("")
+		if err != nil {
+			log.Fatal(err)
+		}
+		// defer p.Close() # TODO
 
-	// Convert the spi.Port into a spi.Conn so it can be used for communication.
-	spiConn, err = p.Connect(3809524*physic.Hertz, spi.Mode3, 8)
-	if err != nil {
-		log.Fatal(err)
+		// Convert the spi.Port into a spi.Conn so it can be used for communication.
+		spiConn, err := p.Connect(3809524*physic.Hertz, spi.Mode3, 8)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Calculate real-world approximate position of LEDS
+		for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
+			N := (numLeds - startLed) - 1
+			theta := (2 * math.Pi) * (float64(n) / float64(N+1))
+			u := Vec2{math.Cos(theta), math.Sin(theta)}
+			u = u.Scale(ledRingRadius * 3.333)
+			positions[i] = u
+		}
+
+		conn = spiConn
 	}
 
-	// Calculate real-world approximate position of LEDS
-	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
-		N := (numLeds - startLed) - 1
-		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
-		u := Vec2{math.Cos(theta), math.Sin(theta)}
-		u = u.Scale(ledRingRadius * 3.333)
-		positions[i] = u
-	}
+	strip := NewStrip(numLeds, 5.0*74.0/150.0, conn)
+	positions = make([]Vec2, numLeds)
 
 	// reset
-	strip.send(spiConn)
+	strip.send()
 
 	return strip
 }
@@ -178,7 +196,7 @@ loop:
 			// TODO: constrain maximum value for dt?
 			cb(strip, t, dt)
 			t0 = now
-			strip.send(spiConn)
+			strip.send()
 		case <-done:
 			break loop
 		}
@@ -191,7 +209,7 @@ loop:
 		led.b = 0
 	})
 
-	strip.send(spiConn)
+	strip.send()
 }
 
 func main() {

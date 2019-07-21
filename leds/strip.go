@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"periph.io/x/periph/conn/spi"
 )
 
 func adaptForSpi(data []byte) []byte {
@@ -22,15 +21,17 @@ type Led struct {
 }
 
 type Strip struct {
-	leds     []Led
-	length   float64
-	startLed int
+	leds       []Led
+	length     float64
+	startLed   int
+	transactor Transactor
 }
 
-func NewStrip(numLeds int, length float64) *Strip {
+func NewStrip(numLeds int, length float64, transactor Transactor) *Strip {
 	return &Strip{
-		leds:   make([]Led, numLeds),
-		length: length,
+		leds:       make([]Led, numLeds),
+		length:     length,
+		transactor: transactor,
 	}
 }
 
@@ -59,7 +60,7 @@ func (s *Strip) tx(x float64) int {
 	return int(float64(len(s.leds)) * (s.length - x) / s.length)
 }
 
-func (s *Strip) send(conn spi.Conn) {
+func (s *Strip) send() {
 	write := make([]byte, len(s.leds)*3)
 
 	for i := 0; i < len(s.leds); i++ {
@@ -70,7 +71,7 @@ func (s *Strip) send(conn spi.Conn) {
 
 	adapted := adaptForSpi(write)
 	read := make([]byte, len(adapted))
-	if err := conn.Tx(adapted, read); err != nil {
+	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
 }
