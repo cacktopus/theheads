@@ -181,7 +181,7 @@ func rainbow(strip *Strip, t, dt float64) {
 func runLeds(strip *Strip, ch <-chan callback, done <-chan bool) {
 	startTime := time.Now()
 	t0 := startTime
-	var cb callback = Bounce().Tick
+	var cb callback = rainbow
 
 loop:
 	for {
@@ -214,6 +214,13 @@ loop:
 	strip.send()
 }
 
+var animations = map[string]callback{
+	"rainbow": rainbow,
+	"decay":   decay,
+	"lowred":  lowred,
+	"bounce":  Bounce().Tick,
+}
+
 func main() {
 	strip := setup()
 
@@ -234,19 +241,13 @@ func main() {
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.GET("/rainbow", func(c *gin.Context) {
-		ch <- rainbow
-		c.JSON(200, gin.H{"result": "ok"})
-	})
-
-	r.GET("/decay", func(c *gin.Context) {
-		ch <- decay
-		c.JSON(200, gin.H{"result": "ok"})
-	})
-
-	r.GET("/lowred", func(c *gin.Context) {
-		ch <- lowred
-		c.JSON(200, gin.H{"result": "ok"})
+	r.GET("/run/:name", func(c *gin.Context) {
+		name := c.Param("name")
+		fn, ok := animations[name]
+		if ok {
+			ch <- fn
+			c.JSON(200, gin.H{"result": "ok"})
+		}
 	})
 
 	go func() {
