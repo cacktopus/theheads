@@ -42,8 +42,8 @@ func (s *Strip) fill(x0, x1 int, color Led) {
 		x0, x1 = x1, x0
 	}
 
-	if x0 < 0 {
-		x0 = 0
+	if x0 < startLed {
+		x0 = startLed
 	}
 
 	if x1 > lastIndex {
@@ -57,7 +57,8 @@ func (s *Strip) fill(x0, x1 int, color Led) {
 
 func (s *Strip) tx(x float64) int {
 	// TODO: very strip specific (needs config, etc)
-	return int(float64(len(s.leds)) * (x) / s.length)
+	numLeds := float64(len(s.leds) - startLed)
+	return int(numLeds*(x)/s.length) + startLed
 }
 
 func (s *Strip) send() {
@@ -77,6 +78,12 @@ func (s *Strip) send() {
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
+	for i := 0; i < startLed; i++ {
+		s.leds[i].r = 0
+		s.leds[i].g = 0
+		s.leds[i].b = 0
+	}
+
 	for i := startLed; i < len(s.leds); i++ {
 		cb(i, &s.leds[i])
 	}

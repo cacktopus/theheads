@@ -181,7 +181,14 @@ func rainbow(strip *Strip, t, dt float64) {
 func runLeds(strip *Strip, ch <-chan callback, done <-chan bool) {
 	startTime := time.Now()
 	t0 := startTime
-	var cb callback = rainbow
+
+	var animation = "rainbow"
+
+	if a, ok := os.LookupEnv("ANIMATION"); ok {
+		animation = a
+	}
+
+	cb := animations[animation]
 
 loop:
 	for {
