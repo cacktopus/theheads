@@ -15,7 +15,7 @@ type Ball struct {
 	R float64
 	M float64
 
-	Color led
+	Color Led
 }
 
 func (b *Ball) Collide(b1 *Ball) {
@@ -101,27 +101,36 @@ type Simulation struct {
 	G      float64
 }
 
-func (sim *Simulation) Tick(t, dt float64) {
+func (sim *Simulation) Tick(strip *Strip, t, dt float64) {
 	da := sim.G * dt
 
-	for {
-		// ball/plane collisions
-		for _, b := range sim.Balls {
-			b.V += da
-			b.X += b.V * dt
+	// ball/plane collisions
+	for _, b := range sim.Balls {
+		b.V += da
+		b.X += b.V * dt
 
-			energy := b.KE() + b.PE(sim.G)
-			doBounce := energy < 50.0
+		energy := b.KE() + b.PE(sim.G)
+		doBounce := energy < 50.0
 
-			for _, pl := range sim.Planes {
-				pl.CollideBall(b, doBounce)
-			}
+		for _, pl := range sim.Planes {
+			pl.CollideBall(b, doBounce)
 		}
+	}
 
-		// ball/ball collisions
-		collideAll(sim.Balls)
+	// ball/ball collisions
+	collideAll(sim.Balls)
 
-		t += dt
+	// draw
+	strip.Each(func(i int, led *Led) {
+		led.r = 0
+		led.g = 0
+		led.b = 0
+	})
+
+	for _, b := range sim.Balls {
+		x0 := strip.tx(b.X - b.R)
+		x1 := strip.tx(b.X + b.R)
+		strip.fill(x0, x1, b.Color)
 	}
 }
 
@@ -131,28 +140,28 @@ func Bounce() *Simulation {
 			X:     4,
 			M:     2.5,
 			R:     1 / 6,
-			Color: led{0, 0, 0.20},
+			Color: Led{0, 0, 0.20},
 		},
 
 		{
 			X:     3,
 			M:     3,
 			R:     1 / 6,
-			Color: led{0, 0.20, 0},
+			Color: Led{0, 0.20, 0},
 		},
 
 		{
 			X:     2,
 			M:     4,
 			R:     1 / 6,
-			Color: led{0.14, 0.14, 0},
+			Color: Led{0.14, 0.14, 0},
 		},
 
 		{
 			X:     1,
 			M:     8,
 			R:     1 / 6,
-			Color: led{0.20, 0, 0},
+			Color: Led{0.20, 0, 0},
 		},
 	}
 

@@ -31,18 +31,19 @@ const (
 )
 
 var (
-	numLeds  = 74
+	_numLeds = 74
 	startLed = 10
 )
 
 var (
-	leds      []led
 	positions []Vec2
 	spiConn   spi.Conn
 )
 
-func init() {
+func setup() *Strip {
 	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
+	var numLeds int
+
 	if ok {
 		var err error
 		numLeds, err = strconv.Atoi(strNumLeds)
@@ -60,7 +61,7 @@ func init() {
 		}
 	}
 
-	leds = make([]led, numLeds)
+	strip := NewStrip(numLeds, 5.0*74.0/150.0)
 	positions = make([]Vec2, numLeds)
 
 	// Make sure periph is initialized.
@@ -91,35 +92,9 @@ func init() {
 	}
 
 	// reset
-	send(spiConn, leds)
-}
+	strip.send(spiConn)
 
-func adaptForSpi(data []byte) []byte {
-	var result []byte = nil
-
-	for _, b := range data {
-		for _, ibit := range ibits {
-			val := ((b>>(2*ibit+1))&1)*0x60 + ((b>>(2*ibit+0))&1)*0x06 + 0x88
-			result = append(result, val)
-		}
-	}
-	return result
-}
-
-func send(conn spi.Conn, leds []led) {
-	write := make([]byte, numLeds*3)
-
-	for i := 0; i < numLeds; i++ {
-		write[i*3+0] = byte(255.0 * clamp(0, leds[i].g, maxBrightness))
-		write[i*3+1] = byte(255.0 * clamp(0, leds[i].r, maxBrightness))
-		write[i*3+2] = byte(255.0 * clamp(0, leds[i].b, maxBrightness))
-	}
-
-	adapted := adaptForSpi(write)
-	read := make([]byte, len(adapted))
-	if err := conn.Tx(adapted, read); err != nil {
-		log.Fatal(err)
-	}
+	return strip
 }
 
 func clamp(min, x, max float64) float64 {
@@ -132,64 +107,60 @@ func clamp(min, x, max float64) float64 {
 	return x
 }
 
-type led struct {
-	r, g, b float64
+type callback func(strip *Strip, t, dt float64)
+
+func lowred(strip *Strip, t, dt float64) {
+	strip.Each(func(_ int, led *Led) {
+		led.r = 0.10
+		led.g = 0
+		led.b = 0
+	})
 }
 
-type callback func(t, dt float64)
-
-func lowred(t, dt float64) {
-	for i := startLed; i < numLeds; i++ {
-		leds[i].r = 0.10
-		leds[i].g = 0
-		leds[i].b = 0
-	}
-}
-
-func decay(t, dt float64) {
+func decay(strip *Strip, t, dt float64) {
 	decayConstant := 0.99
 
 	if t < 30 {
-		for i := startLed; i < numLeds; i++ {
-			leds[i].r *= decayConstant
-			leds[i].g *= decayConstant
-			leds[i].b *= decayConstant
-		}
+		strip.Each(func(_ int, led *Led) {
+			led.r *= decayConstant
+			led.g *= decayConstant
+			led.b *= decayConstant
+		})
 	} else {
-		for i := startLed; i < numLeds; i++ {
-			leds[i].r = 0.10
-			leds[i].g = 0
-			leds[i].b = 0
-		}
+		strip.Each(func(_ int, led *Led) {
+			led.r = 0.10
+			led.g = 0
+			led.b = 0
+		})
 	}
 }
 
-func rainbow(t, dt float64) {
+func rainbow(strip *Strip, t, dt float64) {
 	timeScale := 0.3
 
-	for i := startLed; i < numLeds; i++ {
+	strip.Each(func(i int, led *Led) {
 		pos := positions[i]
-		leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+		led.r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
 			pos.x+000,
 			pos.y+000,
 			t*timeScale,
 		))
 
-		leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+		led.g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
 			pos.x+100,
 			pos.y+100,
 			t*timeScale,
 		))
 
-		leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+		led.b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
 			pos.x+200,
 			pos.y+200,
 			t*timeScale,
 		))
-	}
+	})
 }
 
-func runLeds(ch <-chan callback, done <-chan bool) {
+func runLeds(strip *Strip, ch <-chan callback, done <-chan bool) {
 	startTime := time.Now()
 	t0 := startTime
 	var cb callback = Bounce().Tick
@@ -205,24 +176,27 @@ loop:
 			t := now.Sub(startTime).Seconds()
 			dt := now.Sub(t0).Seconds()
 			// TODO: constrain maximum value for dt?
-			cb(t, dt)
+			cb(strip, t, dt)
 			t0 = now
-			send(spiConn, leds)
+			strip.send(spiConn)
 		case <-done:
 			break loop
 		}
 	}
 
 	// cleanup: set to low red
-	for i := startLed; i < numLeds; i++ {
-		leds[i].r = 0.10
-		leds[i].g = 0
-		leds[i].b = 0
-	}
-	send(spiConn, leds)
+	strip.Each(func(_ int, led *Led) {
+		led.r = 0.10
+		led.g = 0
+		led.b = 0
+	})
+
+	strip.send(spiConn)
 }
 
 func main() {
+	strip := setup()
+
 	addr := ":8082"
 	ch := make(chan callback)
 
@@ -268,5 +242,5 @@ func main() {
 		done <- true
 	}()
 
-	runLeds(ch, done)
+	runLeds(strip, ch, done)
 }
