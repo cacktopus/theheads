@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"time"
 )
 
 const (
@@ -39,9 +38,9 @@ type Plane struct {
 func (pl *Plane) CollideBall(b *Ball, doBounce bool) {
 	r := b.R * pl.N
 	p := b.X - r
-	d := (p - b.X) * pl.N;
+	d := (p - b.X) * pl.N
 	if d < 0 {
-		b.X += 2 * math.Abs(d) * pl.N;
+		b.X += 2 * math.Abs(d) * pl.N
 		b.V *= -CR
 
 		if doBounce {
@@ -97,22 +96,19 @@ func collideAll(balls []*Ball) {
 }
 
 type Simulation struct {
-	Dt     float64
 	Balls  []*Ball
 	Planes []*Plane
 	G      float64
 }
 
-func (sim *Simulation) Run() {
-	t := 0.0
-
-	da := sim.G * sim.Dt
+func (sim *Simulation) Tick(t, dt float64) {
+	da := sim.G * dt
 
 	for {
 		// ball/plane collisions
 		for _, b := range sim.Balls {
 			b.V += da
-			b.X += b.V * sim.Dt
+			b.X += b.V * dt
 
 			energy := b.KE() + b.PE(sim.G)
 			doBounce := energy < 50.0
@@ -125,11 +121,11 @@ func (sim *Simulation) Run() {
 		// ball/ball collisions
 		collideAll(sim.Balls)
 
-		t += sim.Dt
+		t += dt
 	}
 }
 
-func Bounce(tick time.Duration) {
+func Bounce() *Simulation {
 	balls := []*Ball{
 		{
 			X:     4,
@@ -168,12 +164,9 @@ func Bounce(tick time.Duration) {
 		},
 	}
 
-	sim := Simulation{
-		Dt:     1 / 175,
+	return &Simulation{
 		Balls:  balls,
 		Planes: planes,
 		G:      G,
 	}
-
-	sim.Run()
 }

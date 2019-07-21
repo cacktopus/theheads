@@ -26,6 +26,8 @@ const (
 	inch  = 0.0254 * meter
 
 	ledRingRadius = (15.0/2 - 1) * inch
+
+	timeDelta = time.Millisecond * 30
 )
 
 var (
@@ -134,9 +136,9 @@ type led struct {
 	r, g, b float64
 }
 
-type callback func(time.Duration)
+type callback func(t, dt float64)
 
-func lowred(t time.Duration) {
+func lowred(t, dt float64) {
 	for i := startLed; i < numLeds; i++ {
 		leds[i].r = 0.10
 		leds[i].g = 0
@@ -144,10 +146,10 @@ func lowred(t time.Duration) {
 	}
 }
 
-func decay(t time.Duration) {
+func decay(t, dt float64) {
 	decayConstant := 0.99
 
-	if t < time.Second*30 {
+	if t < 30 {
 		for i := startLed; i < numLeds; i++ {
 			leds[i].r *= decayConstant
 			leds[i].g *= decayConstant
@@ -162,44 +164,49 @@ func decay(t time.Duration) {
 	}
 }
 
-func rainbow(tick time.Duration) {
-	timeScale := 3E-10
+func rainbow(t, dt float64) {
+	timeScale := 0.3
 
 	for i := startLed; i < numLeds; i++ {
 		pos := positions[i]
 		leds[i].r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-			float64(pos.x+000),
-			float64(pos.y+000),
-			float64(tick)*timeScale,
+			pos.x+000,
+			pos.y+000,
+			t*timeScale,
 		))
 
 		leds[i].g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-			float64(pos.x+100),
-			float64(pos.y+100),
-			float64(tick)*timeScale,
+			pos.x+100,
+			pos.y+100,
+			t*timeScale,
 		))
 
 		leds[i].b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
-			float64(pos.x+200),
-			float64(pos.y+200),
-			float64(tick)*timeScale,
+			pos.x+200,
+			pos.y+200,
+			t*timeScale,
 		))
 	}
 }
 
 func runLeds(ch <-chan callback, done <-chan bool) {
-	t0 := time.Now()
-	var cb callback = Bounce
+	startTime := time.Now()
+	t0 := startTime
+	var cb callback = Bounce().Tick
 
 loop:
 	for {
 		select {
 		case new_cb := <-ch:
-			t0 = time.Now()
+			startTime = time.Now()
 			cb = new_cb
-		case <-time.After(time.Millisecond * 30):
-			t := time.Now().Sub(t0)
-			cb(t)
+		case <-time.After(timeDelta):
+			now := time.Now()
+			t := now.Sub(startTime).Seconds()
+			dt := now.Sub(t0).Seconds()
+			// TODO: constrain maximum value for dt?
+			cb(t, dt)
+			t0 = now
 			send(spiConn, leds)
 		case <-done:
 			break loop
