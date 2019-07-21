@@ -189,7 +189,7 @@ func rainbow(tick time.Duration) {
 
 func runLeds(ch <-chan callback, done <-chan bool) {
 	t0 := time.Now()
-	var cb callback = rainbow
+	var cb callback = Bounce
 
 loop:
 	for {
