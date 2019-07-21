@@ -27,16 +27,16 @@ const (
 
 	ledRingRadius = (15.0/2 - 1) * inch
 
-	timeDelta = time.Millisecond * 30
+	timeDelta = time.Millisecond * 3
 )
 
-var (
-	_numLeds = 74
-	startLed = 10
+const (
+	defaultNumLeds = 74
 )
 
 var (
 	positions []Vec2
+	startLed  = 10
 )
 
 type Transactor interface {
@@ -52,7 +52,7 @@ func (*NoStrip) Tx(w, r []byte) error {
 
 func setup() *Strip {
 	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
-	var numLeds int
+	numLeds := defaultNumLeds
 
 	if ok {
 		var err error
@@ -94,20 +94,20 @@ func setup() *Strip {
 			log.Fatal(err)
 		}
 
-		// Calculate real-world approximate position of LEDS
-		for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
-			N := (numLeds - startLed) - 1
-			theta := (2 * math.Pi) * (float64(n) / float64(N+1))
-			u := Vec2{math.Cos(theta), math.Sin(theta)}
-			u = u.Scale(ledRingRadius * 3.333)
-			positions[i] = u
-		}
-
 		conn = spiConn
 	}
 
 	strip := NewStrip(numLeds, 5.0*74.0/150.0, conn)
+
+	// Calculate real-world approximate position of LEDS
 	positions = make([]Vec2, numLeds)
+	for i, n := startLed, 0; i < numLeds; i, n = i+1, n+1 {
+		N := (numLeds - startLed) - 1
+		theta := (2 * math.Pi) * (float64(n) / float64(N+1))
+		u := Vec2{math.Cos(theta), math.Sin(theta)}
+		u = u.Scale(ledRingRadius * 3.333)
+		positions[i] = u
+	}
 
 	// reset
 	strip.send()
@@ -192,8 +192,10 @@ loop:
 		case <-time.After(timeDelta):
 			now := time.Now()
 			t := now.Sub(startTime).Seconds()
+
 			dt := now.Sub(t0).Seconds()
-			// TODO: constrain maximum value for dt?
+			dt = timeDelta.Seconds() // TODO: remove
+
 			cb(strip, t, dt)
 			t0 = now
 			strip.send()

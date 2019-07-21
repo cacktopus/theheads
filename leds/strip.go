@@ -57,7 +57,7 @@ func (s *Strip) fill(x0, x1 int, color Led) {
 
 func (s *Strip) tx(x float64) int {
 	// TODO: very strip specific (needs config, etc)
-	return int(float64(len(s.leds)) * (s.length - x) / s.length)
+	return int(float64(len(s.leds)) * (x) / s.length)
 }
 
 func (s *Strip) send() {

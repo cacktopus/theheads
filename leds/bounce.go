@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	CR = 0.95
-	G  = -9.81
+	CR            = 0.95
+	G             = 9.81
+	defaultRadius = 1.0 / 6.0
 )
 
 type Ball struct {
@@ -38,7 +39,7 @@ type Plane struct {
 func (pl *Plane) CollideBall(b *Ball, doBounce bool) {
 	r := b.R * pl.N
 	p := b.X - r
-	d := (p - b.X) * pl.N
+	d := (p - pl.X) * pl.N
 	if d < 0 {
 		b.X += 2 * math.Abs(d) * pl.N
 		b.V *= -CR
@@ -63,7 +64,7 @@ func collide(b0, b1 *Ball) {
 	// b1 is higher or equal to b0
 
 	dx := b1.X - b0.X
-	r2 := b1.R - b0.R
+	r2 := b1.R + b0.R
 
 	if dx > r2 {
 		return
@@ -84,7 +85,7 @@ func collide(b0, b1 *Ball) {
 	j := num / dem
 
 	b0.V += j / b0.M
-	b1.V += j / b1.M
+	b1.V -= j / b1.M
 }
 
 func collideAll(balls []*Ball) {
@@ -102,7 +103,7 @@ type Simulation struct {
 }
 
 func (sim *Simulation) Tick(strip *Strip, t, dt float64) {
-	da := sim.G * dt
+	da := -sim.G * dt
 
 	// ball/plane collisions
 	for _, b := range sim.Balls {
@@ -139,28 +140,28 @@ func Bounce() *Simulation {
 		{
 			X:     4,
 			M:     2.5,
-			R:     1 / 6,
+			R:     defaultRadius,
 			Color: Led{0, 0, 0.20},
 		},
 
 		{
 			X:     3,
 			M:     3,
-			R:     1 / 6,
+			R:     defaultRadius,
 			Color: Led{0, 0.20, 0},
 		},
 
 		{
 			X:     2,
 			M:     4,
-			R:     1 / 6,
+			R:     defaultRadius,
 			Color: Led{0.14, 0.14, 0},
 		},
 
 		{
 			X:     1,
 			M:     8,
-			R:     1 / 6,
+			R:     defaultRadius,
 			Color: Led{0.20, 0, 0},
 		},
 	}
