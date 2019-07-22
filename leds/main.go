@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	maxBrightness     = 0.33
 	timeDelta         = time.Millisecond * 3
 	defaultNumLeds    = 74
 	defaultStartIndex = 10
@@ -29,11 +28,11 @@ func setup() *Strip {
 		}
 	}
 
-	strStartLed, ok := os.LookupEnv("START_LED")
+	strStartIndex, ok := os.LookupEnv("START_INDEX")
 	startIndex := defaultStartIndex
 	if ok {
 		var err error
-		startIndex, err = strconv.Atoi(strStartLed)
+		startIndex, err = strconv.Atoi(strStartIndex)
 		if err != nil {
 			panic(err)
 		}

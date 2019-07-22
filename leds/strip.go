@@ -4,6 +4,10 @@ import (
 	"log"
 )
 
+const (
+	maxBrightness = 0.33
+)
+
 func adaptForSpi(data []byte) []byte {
 	var result []byte = nil
 
