@@ -23,13 +23,14 @@ type Led struct {
 type Strip struct {
 	leds       []Led
 	length     float64
-	startLed   int
+	startIndex int
 	transactor Transactor
 }
 
-func NewStrip(numLeds int, length float64, transactor Transactor) *Strip {
+func NewStrip(numLeds, startLed int, length float64, transactor Transactor) *Strip {
 	return &Strip{
 		leds:       make([]Led, numLeds),
+		startIndex: startLed,
 		length:     length,
 		transactor: transactor,
 	}
@@ -42,8 +43,8 @@ func (s *Strip) fill(x0, x1 int, color Led) {
 		x0, x1 = x1, x0
 	}
 
-	if x0 < startLed {
-		x0 = startLed
+	if x0 < s.startIndex {
+		x0 = s.startIndex
 	}
 
 	if x1 > lastIndex {
@@ -57,8 +58,8 @@ func (s *Strip) fill(x0, x1 int, color Led) {
 
 func (s *Strip) tx(x float64) int {
 	// TODO: very strip specific (needs config, etc)
-	numLeds := float64(len(s.leds) - startLed)
-	return int(numLeds*(x)/s.length) + startLed
+	numLeds := float64(len(s.leds) - s.startIndex)
+	return int(numLeds*(x)/s.length) + s.startIndex
 }
 
 func (s *Strip) send() {
@@ -78,13 +79,19 @@ func (s *Strip) send() {
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
-	for i := 0; i < startLed; i++ {
-		s.leds[i].r = 0
-		s.leds[i].g = 0
-		s.leds[i].b = 0
+	for pos := 0; pos < s.startIndex; pos++ {
+		s.leds[pos].r = 0
+		s.leds[pos].g = 0
+		s.leds[pos].b = 0
 	}
 
-	for i := startLed; i < len(s.leds); i++ {
-		cb(i, &s.leds[i])
+	i := 0
+	for pos := s.startIndex; pos < len(s.leds); pos++ {
+		cb(i, &s.leds[pos])
+		i++
 	}
+}
+
+func (s *Strip) NumActiveLeds() int {
+	return len(s.leds) - s.startIndex
 }
