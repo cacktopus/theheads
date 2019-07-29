@@ -13,7 +13,7 @@ import util
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
-from health import health_check
+from health import health_check, CORS_ALL
 from metrics import handle_metrics
 from util import run_app
 
@@ -164,7 +164,7 @@ def adjust_position(request, speed, target):
     if speed is not None:
         stepper.set_speed(speed)
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 def position(request):
@@ -188,7 +188,7 @@ async def zero(request):
     stepper.set_current_position_as_zero()
 
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 async def find_zero(request):
@@ -196,7 +196,7 @@ async def find_zero(request):
     stepper.find_zero()
 
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 async def get_config(config_endpoint: str, instance: str, port: int):

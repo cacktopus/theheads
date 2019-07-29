@@ -14,6 +14,7 @@ import health
 import log
 import read_temperature
 import util
+from boss_routes import static_text_handler
 from journald_tail import run_journalctl
 from metrics import handle_metrics
 from voltage_monitor import monitor_voltage
@@ -98,6 +99,29 @@ async def handle(request):
     result = template.render(services=services, hostname=hostname, home_port=port_str)
 
     return web.Response(text=result, content_type="text/html")
+
+
+async def host_handler(request):
+    jinja_env = request.app['jinja_env']
+    template = jinja_env.get_template('host.html')
+
+    port = int(request.app['cfg']['port'])
+    port_str = "" if port == 80 else ":{}".format(port)
+
+    consul_host = request.app['consul_host']
+    services = await(get_services(consul_host))
+
+    frontend = [s for s in services if "frontend" in s['tags']]
+    backend = [s for s in services if "frontend" not in s['tags']]
+
+    services = frontend + backend
+
+    hostname = platform.node()
+    result = template.render(services=services, hostname=hostname, home_port=port_str)
+
+    return web.Response(text=result, content_type="text/html", headers={
+        "Access-Control-Allow-Origin": "*",  # TODO
+    })
 
 
 async def sudo(*cmd):
@@ -189,6 +213,8 @@ async def setup(
 
     app.add_routes([
         web.get('/', handle),
+        web.get('/a', host_handler),
+        web.get('/static/{name}.js', static_text_handler("js")),
         web.get('/health', health.health_check),
         web.get('/metrics', handle_metrics),
         web.get('/stop', stop),

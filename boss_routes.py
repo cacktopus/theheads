@@ -45,7 +45,9 @@ def static_text_handler(extension):
         filename = request.match_info.get('name') + "." + extension
         with open(filename) as fp:
             text = fp.read()
-        return web.Response(text=text, content_type=content_type)
+        return web.Response(text=text, content_type=content_type, headers={
+            "Access-Control-Allow-Origin": "*",  # TODO
+        })
 
     return handler
 
