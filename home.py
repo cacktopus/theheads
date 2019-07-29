@@ -157,9 +157,6 @@ async def restart_host(request):
     return await sudo("--non-interactive", "shutdown", "-r", "now")
 
 
-# async def shutdown_host(request):
-#     return await sudo("--non-interactive", "shutdown", "-h", "now")
-
 async def shutdown_host(request):
     pw = request.query['pw']
     if pw == '1199':

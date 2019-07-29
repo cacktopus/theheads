@@ -23,37 +23,28 @@
 </head>
 
 <body>
-    <h1>Host</h1>
-    <button onclick="a();">Find Zero</button>
+    <h1>{{hostname}}</h1>
+    Head
+    <br/>
+    <button onclick="find_zero();">Find Zero</button>
 
-    <!--
-    <ul>
-        {% for service in services %}
-        <h2>{{service.name}}</h2>
-        {% for node in service.nodes %}
-        <li>
-            <span class="{{ service.status[node.Node] }}">
-                {% if 'frontend' in service.tags %}
-                <a href="http://{{ node.Node }}.node.consul:{{ node.ServicePort}}">
-                    {{ node.Node }}</a>
-                {% else %}
-                {{ node.Node }}
-                {% endif %}
-            </span>
-            <span class="smaller">
-                {{ node.ServicePort }} {{node.ServiceTags | join(", ")}} (
-                {%- if 'frontend' in service.tags -%}
-                <a href="http://{{ node.Address }}:{{ node.ServicePort }}">ip</a>,
-                {% endif -%}
-                <a href="http://{{ node.Address }}{{ home_port }}/start?service={{ node.ServiceName }}">start</a>,
-                <a href="http://{{ node.Address }}{{ home_port }}/restart?service={{ node.ServiceName }}">restart</a>,
-                <a href="http://{{ node.Address }}{{ home_port }}/stop?service={{ node.ServiceName }}">stop</a>)
-            </span>
-        </li>
-        {% endfor %}
-        {% endfor %}
-    </ul>
-    -->
+    <br/>
+    <br/>
+
+    Leds
+    <br/>
+    <button onclick="rainbow();">Rainbow</button>
+    <button onclick="lowred();">Lowred</button>
+    <button onclick="bounce();">Bounce</button>
+    <button onclick="off();">Off</button>
+
+    <br/>
+    <br/>
+
+    Host
+    <br/>
+    <button onclick="restartHost();">Restart</button>
+    <button onclick="shutdownHost();">Shutdown</button>
 
     <hr />
 
