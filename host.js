@@ -7,6 +7,6 @@ function a() {
     req.addEventListener("load", function() {
         console.log("got", this.responseText);
     });
-    req.open("GET", "http://" + host + ":18080/find_zero");
+    req.open("GET", "http://" + host + ":8080/find_zero");
     req.send();
 }
