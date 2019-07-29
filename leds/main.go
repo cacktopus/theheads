@@ -111,6 +111,7 @@ func main() {
 	)
 
 	r.GET("/health", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
 		c.JSON(200, gin.H{
 			"result": "ok",
 		})
@@ -123,6 +124,7 @@ func main() {
 		fn, ok := animations[name]
 		if ok {
 			ch <- fn
+			c.Header("Access-Control-Allow-Origin", "*")
 			c.JSON(200, gin.H{"result": "ok"})
 		}
 	})
