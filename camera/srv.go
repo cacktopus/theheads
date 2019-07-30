@@ -69,10 +69,6 @@ func broadcaster() {
 	}
 }
 
-const (
-	port = 5000
-)
-
 func init() {
 	mypid := os.Getpid()
 
@@ -98,18 +94,7 @@ func init() {
 	}
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		panic(err)
-	}
-	err = tmpl.Execute(w, struct{ WSPort string }{fmt.Sprintf("%d", port)})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func serve() {
+func serve(port int) {
 	go broadcaster()
 
 	http.HandleFunc("/jsmpeg.min.js", func(w http.ResponseWriter, r *http.Request) {
@@ -127,12 +112,22 @@ func serve() {
 
 	http.Handle("/metrics", promhttp.Handler())
 
-	http.HandleFunc("/", home)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("index.html")
+		if err != nil {
+			panic(err)
+		}
+		err = tmpl.Execute(w, struct{ WSPort string }{fmt.Sprintf("%d", port)})
+		if err != nil {
+			panic(err)
+		}
+	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK\n"))
 	})
 
+	fmt.Println("Listening on port", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)

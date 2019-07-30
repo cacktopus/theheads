@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
-	"os"
 	"time"
 )
 
@@ -23,8 +23,10 @@ const (
 
 	scale = 64.33 / 2
 
-	minArea   = width * height / 200
+	minArea   = width * height / 400
 	numFrames = 10
+
+	defaultPort = 5000
 )
 
 type frameGrabber func(dst *gocv.Mat) bool
@@ -56,27 +58,47 @@ func fromRaspi(frames chan []byte) frameGrabber {
 }
 
 func main() {
-	instance := os.Args[1]
+	var filename string
+	var port int
+	var instance string
+	flag.StringVar(&instance, "instance", "", "instance name to run as")
+	flag.StringVar(&filename, "filename", "", "stream recording from raw file")
+	flag.IntVar(&port, "port", defaultPort, "port to listen on")
+	flag.Parse()
+
+	fmt.Println("filename: ", filename)
+
+	if instance == "" {
+		log.Fatalf("instance not specified")
+	}
 
 	cfg := getConfig(instance)
 
-	go serve()
+	go serve(port)
 
-	redisPublish := NewRedisPublisher(cfg.RedisServer)
+	redisPublish := NewRedisPublisher(cfg.RedisServer, instance)
 	defer redisPublish.Stop()
 	go redisPublish.Run()
 
 	var grabber frameGrabber
 
-	frames, err := runRaspiVid()
-	if err == nil {
-		fmt.Println("Using raspiVid: ", err)
+	if filename != "" {
+		fmt.Println("Streaming from file: ", filename)
+		frames, err := runFileStreamer(filename)
+		if err != nil {
+			panic(err)
+		}
 		grabber = fromRaspi(frames)
 	} else {
-		fmt.Println("Falling back to gocv: ", err)
-		grabber = fromWebCam()
+		frames, err := runRaspiVid()
+		if err == nil {
+			fmt.Println("Using raspiVid")
+			grabber = fromRaspi(frames)
+		} else {
+			fmt.Println("Falling back to gocv: ", err)
+			grabber = fromWebCam()
+		}
 	}
-
 	// TODO: camera warmup
 
 	avg := gocv.NewMat()
@@ -165,8 +187,8 @@ func main() {
 				pos := maxRect.Min.X + maxRect.Dx()/2
 				half := width / 2
 				t := float64(pos-half) / float64(half)
-				pos2 := int(scale * t)
-				fmt.Println("pos", pos, "t", t, "pos2", pos2)
+				pos2 := -int(scale * t)
+				// fmt.Println("pos", pos, "t", t, "pos2", pos2)
 
 				msg := MotionDetected{
 					MessageHeader{

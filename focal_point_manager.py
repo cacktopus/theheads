@@ -3,7 +3,9 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Callable
 
-from grid import the_grid
+import log
+import util
+from grid import Grid
 from installation import Installation
 from transformations import Vec, Mat
 
@@ -44,11 +46,12 @@ class FocalPoint:
 
 
 class FocalPointManager:
-    def __init__(self, broadcast: Callable, inst: Installation):
+    def __init__(self, broadcast: Callable, inst: Installation, grid: Grid):
         self.broadcast = broadcast
         self._focal_points: Dict[str, FocalPoint] = {}
-        asyncio.create_task(self._focal_point_garbage_collector())
+        util.create_task(self._focal_point_garbage_collector())
         self.inst = inst
+        self.grid = grid
 
     def notify(self, subject, **kw):
         if subject == "focal-point-location":
@@ -65,36 +68,44 @@ class FocalPointManager:
 
     def motion_detected(self, camera_name: str, position: Vec):
         # perhaps not the best place for this function to live
-        cam = self.inst.cameras[camera_name]
+        cam = self.inst.cameras.get(camera_name)
+        if cam is None:
+            log.error("Unknown camera", camera=camera_name)
+            return
+
         p0 = Vec(0, 0)
-        p1 = Mat.rotz(position) * Vec(5, 0)
+        p1 = Mat.rotz(position) * Vec(10, 0)
 
         p0 = cam.stand.m * cam.m * p0
         p1 = cam.stand.m * cam.m * p1
 
-        step_size = min(the_grid.get_pixel_size()) / 4.0
+        self.broadcast("motion-line", p0=[p0.x, p0.y], p1=[p1.x, p1.y])
 
-        to = p1 - p0
-        length = to.abs()
-        direction = to.scale(1.0 / length)
+        self.grid.trace(camera_name, p0, p1)
 
-        dx = to.x / length * step_size
-        dy = to.y / length * step_size
+        # sync focal points
+        grid_fps = {fp.id: fp for fp in self.grid.focal_points}
+        grid_ids = set(grid_fps.keys())
+        my_ids = set(self._focal_points.keys())
 
-        initial = p0 + direction.scale(0.5)
-        pos_x, pos_y = initial.x, initial.y
+        new = grid_ids - my_ids
+        removed = my_ids - grid_ids
+        existing = grid_ids & my_ids
 
-        steps = int(length / step_size)
-        for i in range(steps):
-            prev_xy = the_grid.get(cam, pos_x, pos_y)
-            if prev_xy is None:
-                break
-            the_grid.set(cam, pos_x, pos_y, prev_xy + 0.025)
-            pos_x += dx
-            pos_y += dy
+        for name in new:
+            fp = grid_fps[name]
+            self._add_focal_point(fp.id, fp.pos)
 
-        focal_pos = Vec(*the_grid.idx_to_xy(the_grid.focus()))
-        self._add_focal_point("g0", focal_pos)
+        for name in removed:
+            self._remove_focal_point(name)
+
+        for name in existing:
+            grid_fp = grid_fps[name]
+            mine = self._focal_points[name]
+            mine.pos = grid_fp.pos
+            mine.ttl = 5.0
+
+        self._publish_focal_points()
 
     def handle_kinect_motion(self, msg: Dict):
         data = msg['data']

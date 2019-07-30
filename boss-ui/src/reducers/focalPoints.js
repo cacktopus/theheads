@@ -63,11 +63,14 @@ const processWebsocketData = (state, payloadDataChunk) => {
 
             newState = state;
             if (typeof window !== 'undefined') {
-                window.c__st82 = state;
+                window.c__st824 = {
+                    state,
+                    data,
+                    type
+                }
             }
             // Remove all focal points that aren't 'ui'
-            // newState = newState.filter(fp => fp.get('type') === 'ui');
-
+            newState = newState.filter(fp => fp.get('type') === 'ui');
             // Remove all focal points that are kinect
             // newState = newState.filter(fp => !fp.get('name') || fp.get('name').indexOf("k") !== 0);
 
@@ -97,9 +100,10 @@ const processWebsocketData = (state, payloadDataChunk) => {
                     });
 
                     return newState;
-                } else {
-                    console.log("focal points, no payload", data);
                 }
+                //  else {
+                //     //console.log("focal points, no payload", data);
+                // }
             }
             return newState;
             break;

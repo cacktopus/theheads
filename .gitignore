@@ -6,3 +6,7 @@ dump.rdb
 .idea/
 *.wav
 *.mp3
+*.raw
+gridbuf
+camera/camera
+trace.so

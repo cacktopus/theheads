@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import json
 import platform
-from asyncio import subprocess
+import time
 from typing import Tuple, Dict, Optional
 
 import aiohttp
@@ -11,8 +11,10 @@ from aiohttp import web
 from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 import health
+import log
 import read_temperature
 import util
+from boss_routes import static_text_handler
 from journald_tail import run_journalctl
 from metrics import handle_metrics
 from voltage_monitor import monitor_voltage
@@ -25,9 +27,12 @@ TEMPERATURE = prometheus_client.Gauge(
     ["zone"],
 )
 
+SYSTEM_TIME = prometheus_client.Gauge('system_time_seconds', 'System time in seconds')
+SYSTEM_TIME.set_function(lambda: time.time())
+
 
 async def get(url: str) -> Tuple[int, Dict]:
-    print(url)
+    log.debug("got", url=url)
     async with aiohttp.ClientSession() as session:
         async with session.get(url=url) as response:
             resp = await response.text()
@@ -62,7 +67,7 @@ async def get_services(consul_host: str):
     for name, tags in resp.items():
         checks = await get_health_checks_for_service(consul_host, name)
         status = {c['Node']: c['Status'] for c in checks}
-        print(status)
+        log.debug("status", status=status)
 
         nodes = await get_nodes_for_service(consul_host, name)
         result.append(dict(
@@ -94,6 +99,29 @@ async def handle(request):
     result = template.render(services=services, hostname=hostname, home_port=port_str)
 
     return web.Response(text=result, content_type="text/html")
+
+
+async def host_handler(request):
+    jinja_env = request.app['jinja_env']
+    template = jinja_env.get_template('host.html')
+
+    port = int(request.app['cfg']['port'])
+    port_str = "" if port == 80 else ":{}".format(port)
+
+    consul_host = request.app['consul_host']
+    services = await(get_services(consul_host))
+
+    frontend = [s for s in services if "frontend" in s['tags']]
+    backend = [s for s in services if "frontend" not in s['tags']]
+
+    services = frontend + backend
+
+    hostname = platform.node()
+    result = template.render(services=services, hostname=hostname, home_port=port_str)
+
+    return web.Response(text=result, content_type="text/html", headers={
+        "Access-Control-Allow-Origin": "*",  # TODO
+    })
 
 
 async def sudo(*cmd):
@@ -128,9 +156,6 @@ async def restart(request):
 async def restart_host(request):
     return await sudo("--non-interactive", "shutdown", "-r", "now")
 
-
-# async def shutdown_host(request):
-#     return await sudo("--non-interactive", "shutdown", "-h", "now")
 
 async def shutdown_host(request):
     pw = request.query['pw']
@@ -185,6 +210,8 @@ async def setup(
 
     app.add_routes([
         web.get('/', handle),
+        web.get('/a', host_handler),
+        web.get('/static/{name}.js', static_text_handler("js")),
         web.get('/health', health.health_check),
         web.get('/metrics', handle_metrics),
         web.get('/stop', stop),

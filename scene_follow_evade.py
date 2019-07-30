@@ -1,5 +1,6 @@
 import asyncio
 
+import util
 from installation import Head
 
 
@@ -23,14 +24,15 @@ async def follow_closest_focal_point(
             path = f"/rotation/{theta:f}"
             orchestrator.head_manager.send("head", head.name, path)
 
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.04)
 
 
 async def follow_evade(orchestrator: "Orchestrator"):
     tasks = []
     for head in orchestrator.inst.heads.values():
-        task = asyncio.create_task(
-            follow_closest_focal_point(head, orchestrator, 1.0)
+        task = util.create_task(
+            follow_closest_focal_point(head, orchestrator, -1.0),
+            allow_cancel=True,
         )
         tasks.append(task)
     await asyncio.gather(*tasks)

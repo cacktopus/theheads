@@ -17,6 +17,40 @@
 Note that you may get an error `Failed building wheel for spidev`. 
 This is ok.
 
+### Some building 
+gcc -O3 -shared trace.c -o trace.so
+brew install go
+# brew upgrade go (if necessary)
+brew install opencv (3.4.3)
+brew install pkg-config
+cd camera; go build .
+
+Misc notes:
+gcc -O3 -shared trace.c -o trace.so
+ 7604  python run_dev.py
+ 7605  cd camera
+ 7606  ls
+ 7607  brew upgrade go
+ 7608  brew install go
+ 7609  go build .
+ 7610  brew install opencv
+ 7611  brew install pkg-config
+ 7612  go build .
+ 7613  brew install opencv@3.4.3
+ 7614  brew install opencv@3.4.4
+ 7615  brew install opencv@3.4.6
+ 7616  brew install opencv@3.4
+ 7617  brew install opencv@
+ 7618  brew install opencv@3
+ 7619  go build .
+ 7620  export PKG_CONFIG_PATH=/usr/local/Cellar/opencv/3.4.3/lib
+ 7621  go build .
+ 7622  cd /usr/local/Cellar/opencv/
+ 7623  ls
+ 7624  brew link opencv@3
+ 7625  brew link opencv@3 --force
+ 7626  brew link opencv@3 --force --overwrite
+
     
 ### Build the UI
 
@@ -42,6 +76,8 @@ In another window:
     ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1
     or in dev
     ./consul agent -server -ui -data-dir consul-data -bootstrap=1 --bind 127.0.0.1 -dev
+    or 
+    ./consul agent -server -ui --bind 127.0.0.1 -dev
     
 You can browse the ui at http://localhost:8500.
 

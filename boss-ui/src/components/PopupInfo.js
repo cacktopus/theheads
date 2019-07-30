@@ -96,7 +96,16 @@ export default class Popup extends React.Component {
     render() {
         // let pos = this.getCurrentPos();
 
-        const consulInstallationUrl = `${document.location.hostname}:8500/ui/dc1/kv/the-heads/`;
+        let rootVal = "http://consul-fe.service.consul";
+        // if (typeof window !== 'undefined') {
+        //     rootVal = typeof location !== "undefined" && location.host === "127.0.0.1:8081" ? document.location.hostname : "http://consul-fe.service.consul";
+        // } else {
+        if (typeof window !== 'undefined' && document && document.location && document.location.hostname) { 
+            rootVal = document.location.hostname === "127.0.0.1" ? document.location.hostname : "http://consul-fe.service.consul";
+        }
+        // }
+         
+        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
         // installation 
 
         if (typeof window !== 'undefined') {

@@ -1,30 +1,37 @@
-# fake voices server
 import asyncio
+import os
+import platform
 
 from aiohttp import web
 
-from util import run_app
+import log
+import util
+from health import health_check
+
+play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
 
 async def play(request):
-    name = request.app['cfg']['name']
-    text = request.query['text']
-    sync = request.query['isSync']
-    print(f"{name} playing: {text}")
-    if sync:
-        await asyncio.sleep(0.05 * len(text))
+    sound = request.query['sound']
+    log.info("playing", sound=sound)
+
+    filename = os.path.join("sounds", sound)
+
+    if not os.path.isfile(filename):
+        log.error("missing sound", path=os.path.abspath(filename))
+        return web.Response(status=404, text=f"missing {filename}")
+
+    process = await asyncio.create_subprocess_exec(
+        play_cmd,
+        filename,
+    )
+
+    await process.wait()
+
     return web.Response(text="ok")
 
 
-async def process(request):
-    name = request.app['cfg']['name']
-    text = request.query['text']
-    print(f"{name} processing: {text}")
-    await asyncio.sleep(0.01)
-    return web.Response(text="ok")
-
-
-async def run(name: str, port: int):
+async def setup(name: str, port: int):
     app = web.Application()
 
     app['cfg'] = {
@@ -34,9 +41,28 @@ async def run(name: str, port: int):
 
     app.add_routes([
         web.get("/play", play),
-        web.get("/process", process),
+        web.get('/health', health_check),
     ])
 
-    print(f"Running {name} on port {port}")
+    log.info("Running", service="voices", port=port)
 
-    await run_app(app)
+    return app
+
+
+def main():
+    log.setup_logging()
+
+    os.chdir(os.path.expanduser("~"))  # TODO: use config
+    loop = asyncio.get_event_loop()
+
+    app = loop.run_until_complete(setup(
+        name="voices",
+        port=3031,
+    ))
+
+    loop.run_until_complete(util.run_app(app))
+    loop.run_forever()
+
+
+if __name__ == '__main__':
+    main()

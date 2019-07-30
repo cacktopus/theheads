@@ -58,5 +58,10 @@
 		"key": "the-heads/stands/stand-03.yaml",
 		"flags": 0,
 		"value": "Y2FtZXJhczogW10Ka2luZWN0czogW2tpbmVjdC0wMl0KaGVhZHM6IFtoZWFkLTAzXQpuYW1lOiBzdGFuZC0wMwpwb3M6IHt4OiAwLCB5OiAtMi41fQpyb3Q6IDA="
+	},
+	{
+		"key": "the-heads/scene.yaml",
+		"flags": 0,
+		"value": "c3RhcnR1cF9zY2VuZXM6IFtdCgpzY2VuZXM6Ci0gZm9sbG93X2V2YWRl"
 	}
 ]

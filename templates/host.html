@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Home</title>
+    <style>
+        .smaller {
+            font-size: smaller;
+        }
+
+        .critical {
+            text-decoration: line-through;
+        }
+    </style>
+    <script>
+        function shutdown() {
+            var pw = prompt("Confirm shutdown:");
+            location.replace("/shutdown-host?pw="+pw);
+        }
+    </script>
+
+    <script src="static/host.js"></script>
+</head>
+
+<body>
+    <h1>{{hostname}}</h1>
+    Head
+    <br/>
+    <button onclick="find_zero();">Find Zero</button>
+
+    <br/>
+    <br/>
+
+    Leds
+    <br/>
+    <button onclick="rainbow();">Rainbow</button>
+    <button onclick="lowred();">Lowred</button>
+    <button onclick="bounce();">Bounce</button>
+    <button onclick="off();">Off</button>
+
+    <br/>
+    <br/>
+
+    Host
+    <br/>
+    <button onclick="restartHost();">Restart</button>
+    <button onclick="shutdownHost();">Shutdown</button>
+
+    <hr />
+
+    <div class="smaller">(running on {{hostname}} -
+        <!-- <a href="http://{{ hostname }}{{ home_port }}/restart-host"> fullreboot</a> &nbsp; -->
+        <a href="/restart-host">reboot</a>)
+    </div>
+    <div class="smaller">(running on {{hostname}} -
+        <a href="#shutdown" onclick="shutdown()">shutdown</a>)
+    </div>
+</body>
+
+</html>

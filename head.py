@@ -7,11 +7,14 @@ import asyncio_redis
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 from aiohttp import web
 
+import log
 import motors
+import util
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
-from health import health_check
+from health import health_check, CORS_ALL
+from metrics import handle_metrics
 from util import run_app
 
 STEPPERS_PORT = 8080
@@ -41,6 +44,10 @@ class Stepper:
         self._controller = controller
         self._next_controller = next_controller
         self._gpio = gpio
+
+        # step to engage motor
+        self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
+        self._motor.oneStep(MotorHAT.BACKWARD, MotorHAT.DOUBLE)
 
     @property
     def pos(self) -> int:
@@ -93,8 +100,8 @@ class Stepper:
             try:
                 await self.redis.publish(THE_HEADS_EVENTS, json.dumps(msg))
             except asyncio_redis.NotConnectedError:
-                # TODO: emit stats/log
-                print("Not connected")
+                # TODO: stats
+                log.error("Not connected")
 
     def publishing_data(self):
         return {
@@ -114,8 +121,8 @@ class Stepper:
                 "data": self.publishing_data(),
             }))
         except asyncio_redis.NotConnectedError:
-            # TODO: emit stats/log
-            print("Not connected")
+            # TODO: emit stats
+            log.error("Not connected")
 
     async def publish_active_loop(self):
         await self.publish("startup")
@@ -157,7 +164,7 @@ def adjust_position(request, speed, target):
     if speed is not None:
         stepper.set_speed(speed)
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 def position(request):
@@ -181,7 +188,7 @@ async def zero(request):
     stepper.set_current_position_as_zero()
 
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 async def find_zero(request):
@@ -189,7 +196,7 @@ async def find_zero(request):
     stepper.find_zero()
 
     result = json.dumps({"result": "ok"})
-    return web.Response(text=result + "\n", content_type="application/json")
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
 async def get_config(config_endpoint: str, instance: str, port: int):
@@ -225,9 +232,9 @@ async def setup(
     redis_host, redis_port_str = cfg['redis_server'].split(":")
     redis_port = int(redis_port_str)
 
-    print("connecting to redis: {}:{}".format(redis_host, redis_port))
+    log.info("connecting to redis", host=redis_host, port=redis_port)
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
-    print("connected to redis: {}:{}".format(redis_host, redis_port))
+    log.info("connected to redis", host=redis_host, port=redis_port)
 
     if cfg['head'].get('virtual', False):
         motor = motors.FakeStepper()
@@ -244,8 +251,8 @@ async def setup(
         Seeker(),
         gpio,
     )
-    asyncio.create_task(stepper.redis_publisher())
-    asyncio.create_task(stepper.seek())
+    util.create_task(stepper.redis_publisher())
+    util.create_task(stepper.seek())
 
     app = web.Application()
     app['cfg'] = cfg
@@ -255,13 +262,14 @@ async def setup(
     app.add_routes([
         web.get("/", home),
         web.get('/health', health_check),
+        web.get('/metrics', handle_metrics),
         web.get("/position/{target}", position),
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
         web.get("/find_zero", find_zero),
     ])
 
-    asyncio.create_task(stepper.publish_active_loop())
+    util.create_task(stepper.publish_active_loop())
 
     return app
 
