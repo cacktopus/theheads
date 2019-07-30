@@ -26,6 +26,27 @@ circles_cfg = Config(
 
 
 def fun_circles(cfg):
+    wall = Wall("fun-circles", cfg)
+
+    points = poisson_disc_samples(width=cfg.width*3, height=cfg.height*3, r=cfg.r * 0.80)
+
+    radii = {}
+    for i in range(len(points)):
+        radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
+
+    for i, point in enumerate(points):
+        r = radii[i] * 0.95
+        center = Vec(*point)
+        points = circle_points(center, r, 20)
+
+        poly = Polygon.Polygon([p.point2 for p in points]) & wall.window
+        wall.result = wall.result + poly
+
+    wall.result = wall.wall - wall.result
+    wall.make_stl()
+
+
+def crazy_stars(cfg):
     # random.seed(42)
     name = "crazy-stars"
     debug_svg = svgwrite.Drawing(f'{name}.svg', profile='tiny')
