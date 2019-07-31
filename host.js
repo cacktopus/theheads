@@ -33,5 +33,5 @@ function restartHost() {
 }
 
 function shutdownHost() {
-    call(80, "/shutdown-host")
+    call(80, "/shutdown-host?pw=1199")
 }
