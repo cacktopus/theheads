@@ -1,5 +1,8 @@
+import json
 import math
 import random
+import subprocess
+import time
 from typing import List
 
 import Polygon
@@ -11,7 +14,6 @@ from config import Config
 from geom import circle_points, distance, star_points
 from transformations import Vec
 from walls import Wall
-from geom import square_points
 
 circles_cfg = Config(
     r=6.5,
@@ -25,10 +27,29 @@ circles_cfg = Config(
 )
 
 
+def mitchell(cfg, seed: int):
+    wall = Wall(f"mitchell-{seed}", cfg)
+
+    output = subprocess.check_output(["mitchell/mitchell", str(seed)])
+
+    circles = json.loads(output)
+
+    for circle in circles:
+        center = Vec(circle['x'], circle['y'])
+        r = circle['r']
+        points = circle_points(center, r, 20)
+
+        poly = Polygon.Polygon([p.point2 for p in points]) & wall.window
+        wall.result = wall.result + poly
+
+    wall.result = wall.wall - wall.result
+    wall.make_stl()
+
+
 def fun_circles(cfg):
     wall = Wall("fun-circles", cfg)
 
-    points = poisson_disc_samples(width=cfg.width*3, height=cfg.height*3, r=cfg.r * 0.80)
+    points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.80)
 
     radii = {}
     for i in range(len(points)):
@@ -130,7 +151,9 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
 
 
 def main():
-    fun_circles(circles_cfg)
+    # fun_circles(circles_cfg)
+    for i in range(8):
+        mitchell(circles_cfg, i)
 
 
 if __name__ == '__main__':

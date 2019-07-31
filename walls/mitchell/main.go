@@ -19,12 +19,13 @@ const (
 	yPad   = 8.0
 	width  = 146.0
 	height = 79.0
+	yOffset = 100.0
 
 	numCircles    = 2500
 	numCandidates = 1000
 
 	maxR        = 5.5
-	minDistance = 0.25
+	minDistance = 1.0
 )
 
 type circle struct {
@@ -37,19 +38,19 @@ func addCircle(circles []*circle) ([]*circle, bool) {
 	bestCandidate := &circle{R: -1e99}
 
 	for i := 0; i < numCandidates; i++ {
-		x := rn2(0-25, 146+25)
-		y := rn2(0-25, 79+25)
+		x := rn2(0-25, 146+25+yOffset)
+		y := rn2(0-25, 79+25+yOffset)
 
 		candidate := &circle{X: x, Y: y, R: 1e99}
 
 		for _, c := range circles {
 			d := math.Sqrt(math.Pow(candidate.X-c.X, 2) + math.Pow(candidate.Y-c.Y, 2))
-			to := d - c.R
+			to := d - c.R - minDistance
 			if to < candidate.R {
 				candidate.R = to
 			}
 
-			if candidate.R < minDistance {
+			if candidate.R < 0 {
 				break
 			}
 		}
@@ -59,11 +60,11 @@ func addCircle(circles []*circle) ([]*circle, bool) {
 		}
 	}
 
-	if bestCandidate.R < minDistance {
+	if bestCandidate.R < 0 {
 		return circles, false
 	}
 
-	bestCandidate.R = math.Min(bestCandidate.R, maxR)
+	bestCandidate.R = math.Min(bestCandidate.R, maxR - minDistance)
 	circles = append(circles, bestCandidate)
 
 	return circles, true
@@ -81,7 +82,7 @@ func main() {
 	canvas := svg.New(&svgBuf)
 	canvas.Start(width, height)
 
-	canvas.Rect(xPad, yPad, width-2*xPad, height-2*yPad, "fill:black;stroke:black")
+	canvas.Rect(xPad, yPad+yOffset, width-2*xPad, height-2*yPad, "fill:black;stroke:black")
 
 	var circles []*circle
 	var ok bool
@@ -96,7 +97,7 @@ func main() {
 	count := 0
 	var result []*circle
 	for _, c := range circles {
-		r := c.R - 1.0
+		r := c.R
 		if r < 0.5 {
 			continue
 		}
