@@ -46,8 +46,9 @@ def mitchell(cfg, seed: int):
     wall.make_stl()
 
 
-def fun_circles(cfg):
-    wall = Wall("fun-circles", cfg)
+def fun_circles(cfg, seed: int):
+    random.seed(seed)
+    wall = Wall(f"fun-circles-{seed}", cfg)
 
     points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.80)
 
@@ -153,7 +154,7 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
 def main():
     # fun_circles(circles_cfg)
     for i in range(8):
-        mitchell(circles_cfg, i)
+        fun_circles(circles_cfg, i)
 
 
 if __name__ == '__main__':
