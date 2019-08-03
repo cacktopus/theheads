@@ -71,12 +71,12 @@ export default class Popup extends React.Component {
                 categoryName: "Host",
                 endpoints: [
                     {
-                        label: "Bounce",
+                        label: "Restart",
                         port: 80,
                         route: "/restart-host"
                     },
                     {
-                        label: "Off",
+                        label: "Shutdown-host",
                         port: 80,
                         route: "/shutdown-host?pw=1199"
                     }
@@ -225,9 +225,35 @@ export default class Popup extends React.Component {
         }
 
         const standName = this.props.stand.get("name");
-        const headName = this.props.stand.getIn(["heads", 0, "name"]);
-        const cameraName = this.props.stand.getIn(["cameras", 0, "name"]);
+
+        // // const heads = this.props.stand.getIn(["heads"]);
+        // // const headRefName = heads ? heads.keySeq().first() : "";
+        // const headName = "asd";//this.props.stand.getIn(["heads", 0, headRefName]);
+
+        // // const cameras = this.props.stand.getIn(["cameras"]);
+        // // const cameraRefName = cameras ? cameras.keySeq().first() : "";
+        // // // const cameraName = this.props.stand.getIn(["cameras"]).keySeq().first();
+        // const cameraName = "ds"; //this.props.stand.getIn(["cameras", 0, cameraRefName]);
+
+        // // // const kinectName = this.props.stand.getIn(["kinects", 0, "name"]);
+        // // const kinects = this.props.stand.getIn(["kinects"]);
+        // // const kinectRefName = kinects ? kinects : kinects.keySeq().first();
+        // const kinectName = "dfa"; //this.props.stand.getIn(["kinects", 0, kinectRefName]);
+
+        const heads = this.props.stand.getIn(["heads"]);
+        const headRefName = heads && heads.keySeq ? heads.keySeq().first() : "";
+        const headName = this.props.stand.getIn(["heads", 0, headRefName]);
+
+        const cameras = this.props.stand.getIn(["cameras"]);
+        // const cameraRefName = cameras && cameras.keySeq ? cameras.keySeq().first() : "";
+        const cameraName = this.props.stand.getIn(["cameras"]).keySeq().first();
+        // const cameraName = this.props.stand.getIn(["cameras", 0, cameraRefName]);
+
+        const kinects = this.props.stand.getIn(["kinects"]);
         const kinectName = this.props.stand.getIn(["kinects", 0, "name"]);
+        // const kinectRefName = kinects && kinects.keySeq ? kinects : kinects.keySeq().first();
+        // const kinectName = this.props.stand.getIn(["kinects", 0, kinectRefName]);
+        // const kinectName = this.props.stand.getIn(["kinects", 0, kinectRefName]);
 
         function getLink(type, name) {
             if (name) {
