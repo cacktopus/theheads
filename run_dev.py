@@ -23,6 +23,12 @@ async def run_camera(instance: str, filename: str, port: int):
     # return await process.wait()
 
 
+async def run_boss():
+    await asyncio.create_subprocess_exec(
+        "./boss/boss",
+    )
+
+
 async def run():
     consul_backend = ConsulBackend(DEFAULT_CONSUL_ENDPOINT)
     names = await head_names(consul_backend)
@@ -37,11 +43,11 @@ async def run():
         # TODO: use service ports from consul
         await fake_voices.run(name, 3030 + i)
 
-    # app2 = await boss.setup(port=8081)
+    app2 = await run_boss()
     app3 = await home.setup(port=8000)
 
     await asyncio.wait(heads + [
-        # util.run_app(app2),
+        util.run_app(app2),
         util.run_app(app3),
     ])
 
