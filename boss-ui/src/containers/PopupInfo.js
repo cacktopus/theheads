@@ -16,12 +16,27 @@ const mapStateToProps = (state, ownProps) => {
     //     }
     // }
 
+    const standIndex = ownProps.standIndex;
+
+    const stand = state.stands.get(standIndex);
+    let headName;
+    let headNames;
+
+    let standHeads = state.stands.getIn([standIndex, "heads"]);
+
+    if (standHeads && standHeads.size > 0) {
+        headNames = Object.keys(standHeads.toJS());
+        if (headNames && headNames.length > 0) {
+            headName = standHeads.getIn([headNames[0], "name"]);
+        }
+    }
 
     return ({
         // stands: state.stands, //ownProps.filter === state.visibilityFilter
-        stand: state.stands.get(ownProps.standIndex),
-        popupInfo: state.stands.getIn([ownProps.standIndex,"popupInfo"]),
-        menu: state.menu
+        stand, //: state.stands.get(ownProps.standIndex),
+        popupInfo: state.stands.getIn([standIndex,"popupInfo"]),
+        menu: state.menu,
+        headName
     });
 }
 

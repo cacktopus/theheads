@@ -266,8 +266,8 @@ body {
 
 .PopupInfo {
   position: absolute;
-  width: 110px;
-  height: 140px;
+  min-width: 160px;
+  /* height: 190px; */
   top: 0;
   left: 0;
   background: white;

@@ -9,4 +9,5 @@ dump.rdb
 *.raw
 gridbuf
 camera/camera
+boss/boss
 trace.so

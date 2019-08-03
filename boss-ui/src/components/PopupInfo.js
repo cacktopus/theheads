@@ -1,14 +1,17 @@
-import React from 'react';
+import React from "react";
 //import Cameras from '../containers/Cameras'
-// import Draggable from 'react-draggable'; 
+// import Draggable from 'react-draggable';
 // // -> Needed? import { DraggableCore } from 'react-draggable';
-// import Draggable, {DraggableCore} from 'react-draggable'; 
+// import Draggable, {DraggableCore} from 'react-draggable';
 // import Stand from '../containers/Stand';
-import { rotateVector } from '../helpers';
+import { rotateVector } from "../helpers";
 // import cn from "classnames";
+import axios from "axios";
 
-import {decodeRot, encodePosScale, decodePosScale} from '../helpers';
+import { decodeRot, encodePosScale, decodePosScale } from "../helpers";
 // import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
+
+window.c_a = axios;
 
 export default class Popup extends React.Component {
     constructor(props) {
@@ -25,9 +28,111 @@ export default class Popup extends React.Component {
         this.handleMoveStop = this.handleMoveStop.bind(this);
 
         this.closePopupInfo = this.closePopupInfo.bind(this);
+        this.makeRequest = this.makeRequest.bind(this);
+        this.getEndpoints = this.getEndpoints.bind(this);
+
+        this.popupEndpoints = [
+            {
+                categoryName: "Head",
+                endpoints: [
+                    {
+                        label: "Find Zero",
+                        port: 8080,
+                        route: "/find_zero"
+                    }
+                ]
+            },
+            {
+                categoryName: "Leds",
+                endpoints: [
+                    {
+                        label: "Rainbow",
+                        port: 8082,
+                        route: "/run/rainbow"
+                    },
+                    {
+                        label: "Lowred",
+                        port: 8082,
+                        route: "/run/lowred"
+                    },
+                    {
+                        label: "Bounce",
+                        port: 8082,
+                        route: "/run/bounce"
+                    },
+                    {
+                        label: "Off",
+                        port: 8082,
+                        route: "/run/off"
+                    }
+                ]
+            },
+            {
+                categoryName: "Host",
+                endpoints: [
+                    {
+                        label: "Bounce",
+                        port: 80,
+                        route: "/restart-host"
+                    },
+                    {
+                        label: "Off",
+                        port: 80,
+                        route: "/shutdown-host?pw=1199"
+                    }
+                ]
+            }
+        ];
         // this.handleRotateStart = this.handleRotateStart.bind(this);
         // this.handleRotateDrag = this.handleRotateDrag.bind(this);
         // this.handleRotateStop = this.handleRotateStop.bind(this);
+    }
+
+    makeRequest(url) {
+        window.c_ww = this;
+        
+        axios
+            .get(url)
+            .then(data => {
+                console.log(`Done ${url} `, JSON.stringify(data));
+            })
+            .catch(err => {
+                console.log(`Err with request: ${err}`);
+                alert(`Err with request: ${err}`);
+            });
+    }
+
+    getEndpoints() {
+        const getRequestButton = ({ label, port, route }) => {
+            console.log({ label, port, route });
+            const getUrl = `http://${this.props.headName}.head.service.consul:${port}${route}`;
+
+            return (
+                <button
+                    style={{ marginRight: 15 }}
+                    onClick={this.makeRequest.bind(this, getUrl)}
+                >
+                    {label}
+                </button>
+            );
+        };
+
+        return this.popupEndpoints.map(({ categoryName, endpoints }) => {
+            // const { categoryName, endpoints } = endpointCategory;
+
+            return (
+                <>
+                    <p>
+                        {categoryName}
+                        <br />
+                        {endpoints.map(({ label, port, route }) => {
+                            // const {label, port, route} = endpoint
+                            return getRequestButton({ label, port, route });
+                        })}
+                    </p>
+                </>
+            );
+        });
     }
 
     closePopupInfo() {
@@ -51,8 +156,8 @@ export default class Popup extends React.Component {
         const pos = { x, y }; //: x - origin.x, y: y - origin.y };
         // const pos = { x, y }; //: x - origin.x, y: y - origin.y };
         const rot = decodeRot(this.props.stand.get("rot"));
-        
-        const newPos = encodePosScale(this.props.menu, rotateVector(pos, rot));//, origin);
+
+        const newPos = encodePosScale(this.props.menu, rotateVector(pos, rot)); //, origin);
 
         this.props.popupInfoMove(newPos);
     }
@@ -61,7 +166,6 @@ export default class Popup extends React.Component {
         // this.props.cameraMove(pos);
         // console.log("h stop", e, a);
     }
-
 
     // // Rotate
     // handleRotateStart(e, a) {
@@ -100,28 +204,44 @@ export default class Popup extends React.Component {
         // if (typeof window !== 'undefined') {
         //     rootVal = typeof location !== "undefined" && location.host === "127.0.0.1:8081" ? document.location.hostname : "http://consul-fe.service.consul";
         // } else {
-        if (typeof window !== 'undefined' && document && document.location && document.location.hostname) { 
-            rootVal = document.location.hostname === "127.0.0.1" ? document.location.hostname : "http://consul-fe.service.consul";
+        if (
+            typeof window !== "undefined" &&
+            document &&
+            document.location &&
+            document.location.hostname
+        ) {
+            rootVal =
+                document.location.hostname === "127.0.0.1"
+                    ? document.location.hostname
+                    : "http://consul-fe.service.consul";
         }
         // }
-         
-        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
-        // installation 
 
-        if (typeof window !== 'undefined') {
+        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
+        // installation
+
+        if (typeof window !== "undefined") {
             window.c__t23 = this;
         }
 
         const standName = this.props.stand.get("name");
-        const headName = this.props.stand.getIn(["heads",0,"name"]);
-        const cameraName = this.props.stand.getIn(["cameras",0,"name"]);
-        const kinectName = this.props.stand.getIn(["kinects",0,"name"]);
+        const headName = this.props.stand.getIn(["heads", 0, "name"]);
+        const cameraName = this.props.stand.getIn(["cameras", 0, "name"]);
+        const kinectName = this.props.stand.getIn(["kinects", 0, "name"]);
 
         function getLink(type, name) {
             if (name) {
-                return <a style={{display: "block"}} target="_blank" href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}>{name}</a>;
+                return (
+                    <a
+                        style={{ display: "block" }}
+                        target="_blank"
+                        href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}
+                    >
+                        {name}
+                    </a>
+                );
             } else {
-                return undefined
+                return undefined;
             }
         }
 
@@ -130,6 +250,8 @@ export default class Popup extends React.Component {
         let cameraLink = getLink("cameras", cameraName);
         let kinectLink = getLink("kinects", kinectName);
 
+        let endpoints = this.getEndpoints();
+
         return (
             <div className="PopupInfo">
                 Links:
@@ -137,8 +259,11 @@ export default class Popup extends React.Component {
                 {headLink}
                 {cameraLink}
                 {kinectLink}
-                
-            <div className="PopupInfo-closeButton" onClick={this.closePopupInfo}>
+                {endpoints}
+                <div
+                    className="PopupInfo-closeButton"
+                    onClick={this.closePopupInfo}
+                >
                     X
                 </div>
             </div>
@@ -196,8 +321,8 @@ export default class Popup extends React.Component {
         //         >
         //             <div className="Camera-container" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
         //                 <div className="Camera-rotateContainer" style={{ transform: `rotate(${rot}deg)` }}>
-        //                     { 
-        //                         areRotatesHidden ? null : 
+        //                     {
+        //                         areRotatesHidden ? null :
         //                             <div className="Camera-rotate noselect">
         //                                 {/* offset is used for the drag's reference */}
         //                                 <DraggableCore
