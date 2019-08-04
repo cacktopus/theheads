@@ -605,6 +605,11 @@ export default class Menu extends React.Component {
                     <button onClick={this.props.menuHideAllRotates}>Hide All</button>
                     {/* <button>Toggle visuals</button> */}
                 </div>
+                <div style={{ display: "inline-block", background: "#EEFFFF", padding: "5px" }}>
+                    Show Distances:&nbsp;
+                    <button onClick={this.props.menuShowAllDistances}>Show All</button>
+                    <button onClick={this.props.menuHideAllDistances}>Hide All</button>
+                </div>
                 <div style={{ display: "inline-block", background: "#FFEEFF", padding: "5px" }}>
                     Force Show On Select:&nbsp;
                     Stand<input name="Stand" type="checkbox" checked={isForceShowStandRotatesOnSelect} onChange={this.props.menuToggleForceShowStandRotatesOnSelect} />&nbsp;

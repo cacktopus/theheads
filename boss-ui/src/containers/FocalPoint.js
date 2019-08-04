@@ -1,5 +1,6 @@
 import { connect } from 'react-redux'
-import { websocketSend, focalPointRemoveByIndex, focalPointMoveByIndex, focalPointRotateByIndex, menuSelectFocalPoint } from '../actions'
+import { websocketSend, focalPointRemoveByIndex, focalPointMoveByIndex, menuSelectFocalPoint } from '../actions'
+// import { websocketSend, focalPointRemoveByIndex, focalPointMoveByIndex, focalPointRotateByIndex, menuSelectFocalPoint } from '../actions'
 import FocalPoint from '../components/FocalPoint'
 
 const mapStateToProps = (state, ownProps) =>

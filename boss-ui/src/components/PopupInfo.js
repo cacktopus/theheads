@@ -258,6 +258,7 @@ export default class Popup extends React.Component {
                     <a
                         style={{ display: "block" }}
                         target="_blank"
+                        rel="noopener noreferrer"
                         href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}
                     >
                         {name}

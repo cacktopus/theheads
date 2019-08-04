@@ -5,9 +5,10 @@ import Draggable from 'react-draggable';
 // import Draggable, { DraggableCore } from 'react-draggable';
 // import FocalPoint from '../containers/FocalPoint';
 import cn from "classnames";
-import PopupInfo from '../containers/PopupInfo';
+// import PopupInfo from '../containers/PopupInfo';
 
-import { decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
+import { encodePos, decodePos, noTouchMove } from '../helpers';
+// import { decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
 // import { encodeRot, decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
 
 export default class Menu extends React.Component {
@@ -144,9 +145,9 @@ export default class Menu extends React.Component {
         pos.x = isNaN(pos.x) || pos.x === "" ? 0 : pos.x;
         pos.y = isNaN(pos.y) || pos.y === "" ? 0 : pos.y;
 
-        let rot = focalPoint.get("rot");
-        rot = isNaN(rot) ? 0 : rot;
-        rot = decodeRot(rot); // flip it so rotation is opposite direction.
+        // let rot = focalPoint.get("rot");
+        // rot = isNaN(rot) ? 0 : rot;
+        // rot = decodeRot(rot); // flip it so rotation is opposite direction.
 
         const FocalPointIndex = this.props.menu.get("FocalPointIndex");
         const isSelected = FocalPointIndex === this.props.index;
@@ -173,9 +174,9 @@ export default class Menu extends React.Component {
         }
         */
 
-        const FocalPointRotatesHidden = this.props.menu.get("FocalPointRotatesHidden");
-        const FocalPointRotatesOnSelect = this.props.menu.get("FocalPointRotatesOnSelect");
-        // const FocalPointRotator = !FocalPointRotatesHidden || (isSelected && FocalPointRotatesOnSelect);
+        // const FocalPointRotatesHidden = this.props.menu.get("FocalPointRotatesHidden");
+        // const FocalPointRotatesOnSelect = this.props.menu.get("FocalPointRotatesOnSelect");
+        // // const FocalPointRotator = !FocalPointRotatesHidden || (isSelected && FocalPointRotatesOnSelect);
 
         const focalPointName = focalPoint.get("name") || `FP${this.props.index}`;
         // if (focalPoint.get("name")) {

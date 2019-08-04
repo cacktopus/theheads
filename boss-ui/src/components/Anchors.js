@@ -1,10 +1,12 @@
+// NOTE: THIS HASN:T BEEN REALLY FIXED FROM FOCAL POINTS
+
 import React from 'react';
-import FocalPoint from '../containers/FocalPoint';
+import Anchor from '../containers/Anchor';
 // import cn from "classnames";
 // // import { isKeyed } from 'immutable';
 // import { encodePos } from '../helpers';
 
-export default class Menu extends React.Component {
+export default class Anchors extends React.Component {
     constructor(props) {
         super(props);
 
@@ -15,24 +17,8 @@ export default class Menu extends React.Component {
 
         this.initKinect = this.initKinect.bind(this);
         this.kinectEventBodyFrame = this.kinectEventBodyFrame.bind(this);
-        this.kinectMoveFocalPoint = this.kinectMoveFocalPoint.bind(this);
+        this.kinectMoveAnchor = this.kinectMoveAnchor.bind(this);
         this.convertToXYForScene = this.convertToXYForScene.bind(this);
-    }
-
-    // Note we're taking in the post calculated cameraX, cameraY
-    kinectMoveFocalPoint({focalPointIndex, x, y}) {
-        // console.log("h dr", e, a);
-        // const { x, y } = a;
-        const pos = { x, y }
-
-        // const pos = encodePos(this.props.menu, { x, y });
-
-        // const pos = encrypt1({ x, y });
-        // const pos = { x, y };
-        // Convert the values 
-
-        this.props.focalPointMoveByIndex(focalPointIndex, pos);
-        // this.setState({ pos });
     }
 
     kinectEventBodyFrame(bodyFrame) {
@@ -78,7 +64,7 @@ export default class Menu extends React.Component {
                     if (parseInt(jointType) === JOINT_NUM.HEAD) {
                         // ctx.fillStyle = colorsForHead[index];
                         headPosDiv.innerHTML = `x: ${joint.cameraX}<br/>y: ${joint.cameraY}<br/>z: ${joint.cameraZ}`;
-                        this.kinectMoveFocalPoint({focalPointIndex:index, x, y})
+                        this.kinectMoveAnchor({anchorIndex:index, x, y})
                     } else {
                         // ctx.fillStyle = colors[index];
                     }
@@ -124,13 +110,13 @@ export default class Menu extends React.Component {
     }
 
     render() {
-        const focalPoints = this.props.focalPoints.map((focalPoint, i) => {
-            return <FocalPoint key={i} name={`fp${i}`} index={i} focalPoint={focalPoint} />
+        const anchors = this.props.anchors.map((anchor, i) => {
+            return <Anchor key={i} name={`fp${i}`} index={i} anchor={anchor} />
         });
 
         return (
-            <div className="FocalPoints">
-                {focalPoints}
+            <div className="Anchors">
+                {anchors}
             </div>
         );
     }
