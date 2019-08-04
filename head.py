@@ -75,7 +75,11 @@ class Stepper:
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = SlowRotate()
 
-    async def seek(self):
+    def seek(self):
+        self._next_controller = Seeker()  # TODO: derive from current controllers
+        self._controller = Seeker()
+
+    async def run(self):
         while True:
             await asyncio.sleep(1.0 / self._speed)
 
@@ -186,6 +190,14 @@ async def slow_rotate(request):
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
+async def seek(request):
+    stepper = request.app['stepper']
+    stepper.seek()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
+
+
 async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
@@ -239,7 +251,7 @@ async def setup(
         gpio,
     )
     util.create_task(stepper.redis_publisher())
-    util.create_task(stepper.seek())
+    util.create_task(stepper.run())
 
     app = web.Application()
     app['cfg'] = cfg
@@ -255,6 +267,7 @@ async def setup(
         web.get("/zero", zero),
         web.get("/find_zero", find_zero),
         web.get("/slow_rotate", slow_rotate),
+        web.get("/seek", seek),
     ])
 
     util.create_task(stepper.publish_active_loop())
