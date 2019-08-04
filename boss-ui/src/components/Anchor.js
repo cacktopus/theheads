@@ -105,9 +105,6 @@ export default class Anchor extends React.Component {
             transform: `scale(${anchorContainerScale})`
         };
 
-        console.log('test', pos);
-        window.c_anc = { t8: this, pos };
-
         const anchorStyle = {
             position: "absoulte",
             top: 0,
