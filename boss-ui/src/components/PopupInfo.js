@@ -102,7 +102,6 @@ export default class Popup extends React.Component {
 
     getEndpoints() {
         const getRequestButton = ({ label, port, route }) => {
-            console.log({ label, port, route });
             const getUrl = `http://${this.props.headName}.head.service.consul:${port}${route}`;
 
             return (
