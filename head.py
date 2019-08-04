@@ -87,7 +87,7 @@ class Stepper:
             if direction in (1, -1):
                 self._pos += direction
                 self._pos %= NUM_STEPS
-                self._motor.oneStep(directions[direction], MotorHAT.DOUBLE)
+                self._motor.oneStep(directions[direction], self._controller.step_type)
                 self.queue.put_nowait(self._pos)
 
             if self._controller.is_done():
