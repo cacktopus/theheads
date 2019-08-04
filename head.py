@@ -13,6 +13,7 @@ import util
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
+from head_controllers import Seeker, Idle, SlowRotate
 from health import health_check, CORS_ALL
 from metrics import handle_metrics
 from util import run_app
@@ -69,6 +70,10 @@ class Stepper:
     def find_zero(self):
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = zero_detector.ZeroDetector(self._gpio)
+
+    def slow_rotate(self):
+        self._next_controller = Seeker()  # TODO: derive from current controllers
+        self._controller = SlowRotate()
 
     async def seek(self):
         while True:
@@ -131,32 +136,6 @@ class Stepper:
             await self.publish("active")
 
 
-class Seeker:
-    def act(self, pos: int, target: int) -> Optional[int]:
-        options = [
-            ((target - pos) % NUM_STEPS, 1),
-            ((pos - target) % NUM_STEPS, -1),
-        ]
-
-        steps, direction = min(options)
-
-        if steps > 0:
-            return direction
-
-        return None
-
-    def is_done(self) -> bool:
-        return False
-
-
-class Idle:
-    def act(self, *args) -> Optional[int]:
-        return None
-
-    def is_done(self):
-        return False
-
-
 def adjust_position(request, speed, target):
     speed = float(speed) if speed else None
     stepper = request.app['stepper']
@@ -199,7 +178,15 @@ async def find_zero(request):
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
-async def get_config(config_endpoint: str, instance: str, port: int):
+async def slow_rotate(request):
+    stepper = request.app['stepper']
+    stepper.slow_rotate()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
+
+
+def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
     cfg = await Config(consul_backend).setup(instance)
@@ -267,6 +254,7 @@ async def setup(
         web.get("/rotation/{theta}", rotation),
         web.get("/zero", zero),
         web.get("/find_zero", find_zero),
+        web.get("/slow_rotate", slow_rotate),
     ])
 
     util.create_task(stepper.publish_active_loop())

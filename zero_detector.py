@@ -4,6 +4,7 @@ from typing import Optional
 
 import log
 import motors
+from head_controllers import Controller
 
 GPIO_PIN = 21
 STEPS = 200
@@ -48,7 +49,7 @@ class ZeroNotFoundError(Exception):
     pass
 
 
-class ZeroDetector:
+class ZeroDetector(Controller):
     def __init__(self, gpio: GPIO):
         self.remaining_steps = 1000
         # self._motor = motor
