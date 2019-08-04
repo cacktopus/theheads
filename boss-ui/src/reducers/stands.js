@@ -151,7 +151,8 @@ function rotateHeadByHeadName({ state, headName, rotation }) {
 
 const processWebsocketData = (state, payloadDataChunk) => {
     let { type, data } = payloadDataChunk;
-    let headName, heads, standIndex, headIndex, rotation;
+    let headName, rotation;
+    // let headName, heads, standIndex, headIndex, rotation;
     // let newState = state;
     // let headName, position, heads, standIndex, cameraIndex, headIndex, rotation;
 

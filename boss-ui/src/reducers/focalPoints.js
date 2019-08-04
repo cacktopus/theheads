@@ -156,7 +156,7 @@ const processWebsocketData = (state, payloadDataChunk) => {
 const focalPoints = (state = fromJS([]), action) => {
     window.c_sn_str = { state, action };
     let newState = state;
-    let tempFocalPointIndex;
+    // let tempFocalPointIndex;
 
     switch (action.type) {
         // Websocket message

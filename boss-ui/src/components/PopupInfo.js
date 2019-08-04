@@ -11,8 +11,6 @@ import axios from "axios";
 import { decodeRot, encodePosScale, decodePosScale } from "../helpers";
 // import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
 
-window.c_a = axios;
-
 export default class Popup extends React.Component {
     constructor(props) {
         super(props);
@@ -244,12 +242,12 @@ export default class Popup extends React.Component {
         const headRefName = heads && heads.keySeq ? heads.keySeq().first() : "";
         const headName = this.props.stand.getIn(["heads", 0, headRefName]);
 
-        const cameras = this.props.stand.getIn(["cameras"]);
+        // const cameras = this.props.stand.getIn(["cameras"]);
         // const cameraRefName = cameras && cameras.keySeq ? cameras.keySeq().first() : "";
         const cameraName = this.props.stand.getIn(["cameras"]).keySeq().first();
         // const cameraName = this.props.stand.getIn(["cameras", 0, cameraRefName]);
 
-        const kinects = this.props.stand.getIn(["kinects"]);
+        // const kinects = this.props.stand.getIn(["kinects"]);
         const kinectName = this.props.stand.getIn(["kinects", 0, "name"]);
         // const kinectRefName = kinects && kinects.keySeq ? kinects : kinects.keySeq().first();
         // const kinectName = this.props.stand.getIn(["kinects", 0, kinectRefName]);

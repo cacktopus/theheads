@@ -106,7 +106,7 @@ export default class Menu extends React.Component {
     // NOTE this is throttled
     recalcGrid() {
         // Menu Specified translate and scale
-        const translateX = parseFloat(this.props.menu.getIn(["translate", "x"]));
+        // const translateX = parseFloat(this.props.menu.getIn(["translate", "x"]));
         const translateY = parseFloat(this.props.menu.getIn(["translate", "y"]));
         const scale = parseFloat(this.props.menu.get("scale"));
 

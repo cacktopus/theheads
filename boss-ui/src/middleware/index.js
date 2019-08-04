@@ -47,7 +47,7 @@ const temp = [{
         }
     }
 }];
-const payloadDataChunkData_HARDCODED = temp[0].data;
+// const payloadDataChunkData_HARDCODED = temp[0].data;
 
 // This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
 let timeoutSetActive = {};
@@ -136,7 +136,7 @@ export const customWebsocketMiddleware = store => next => action => {
                                 if (body.joints && body.joints.length > 0) {
                                     // This is where we decide which of the joints to use as the 
 
-                                    var joint_pos = {};
+                                    // var joint_pos = {};
                                     body.joints.filter(joint => joint.jointType === JOINT_NUM.HEAD).forEach(joint => {
                                         joint_pos = {
                                             x: joint.cameraX,

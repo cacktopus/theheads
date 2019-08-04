@@ -1,12 +1,14 @@
 import React from 'react';
 //import Heads from '../containers/Heads'
 // import Draggable from 'react-draggable'; 
-import Draggable, { DraggableCore } from 'react-draggable';
+import Draggable from 'react-draggable';
+// import Draggable, { DraggableCore } from 'react-draggable';
 // import FocalPoint from '../containers/FocalPoint';
 import cn from "classnames";
 import PopupInfo from '../containers/PopupInfo';
 
-import { encodeRot, decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
+import { decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
+// import { encodeRot, decodeRot, encodePos, decodePos, noTouchMove } from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
@@ -149,8 +151,8 @@ export default class Menu extends React.Component {
         const FocalPointIndex = this.props.menu.get("FocalPointIndex");
         const isSelected = FocalPointIndex === this.props.index;
 
-        const heads = focalPoint.get("heads");
-        const cameras = focalPoint.get("cameras");
+        // const heads = focalPoint.get("heads");
+        // const cameras = focalPoint.get("cameras");
 
         // const focalPointStyle = {transform:`translate(${focalPoint.pos.x}px, ${focalPoint.pos.y}px)`}
         // console.log('ren');
@@ -159,6 +161,7 @@ export default class Menu extends React.Component {
         //     pos = focalPoint.get("pos");
         // } catch(e) {}
 
+        /*
         let popupInfo;
 
         if (this.props.popupInfo) {
@@ -168,10 +171,11 @@ export default class Menu extends React.Component {
                 </div>
             );
         }
+        */
 
         const FocalPointRotatesHidden = this.props.menu.get("FocalPointRotatesHidden");
         const FocalPointRotatesOnSelect = this.props.menu.get("FocalPointRotatesOnSelect");
-        const FocalPointRotator = !FocalPointRotatesHidden || (isSelected && FocalPointRotatesOnSelect);
+        // const FocalPointRotator = !FocalPointRotatesHidden || (isSelected && FocalPointRotatesOnSelect);
 
         const focalPointName = focalPoint.get("name") || `FP${this.props.index}`;
         // if (focalPoint.get("name")) {
