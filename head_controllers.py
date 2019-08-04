@@ -1,6 +1,6 @@
 from typing import Optional
 
-from head import NUM_STEPS
+from head_util import NUM_STEPS
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 
 

@@ -14,12 +14,12 @@ import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
 from head_controllers import Seeker, Idle, SlowRotate
+from head_util import NUM_STEPS
 from health import health_check, CORS_ALL
 from metrics import handle_metrics
 from util import run_app
 
 STEPPERS_PORT = 8080
-NUM_STEPS = 200
 DEFAULT_SPEED = 50
 directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
 _DEFAULT_REDIS = "127.0.0.1:6379"
@@ -186,7 +186,7 @@ async def slow_rotate(request):
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
-def get_config(config_endpoint: str, instance: str, port: int):
+async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
     cfg = await Config(consul_backend).setup(instance)
