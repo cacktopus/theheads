@@ -33,5 +33,15 @@
 		"key": "the-heads/stands/stand-02.yaml",
 		"flags": 0,
 		"value": "Y2FtZXJhczogW2NhbWVyYS00M10Ka2luZWN0czogW10KaGVhZHM6IFtoZWFkLTQzXQpuYW1lOiBzdGFuZC0wMgpwb3M6IHt4OiAxLCB5OiAwfQpyb3Q6IC05MA=="
+	},
+	{
+		"key": "the-heads/anchors/archor1.yaml",
+		"flags": 0,
+		"value": "bmFtZTogYW5jaG9yLTEKcG9zOiB7eDogLTEsIHk6IDB9"
+	},
+	{
+		"key": "the-heads/anchors/anchor2.yaml",
+		"flags": 0,
+		"value": "bmFtZTogYW5jaG9yLTIKcG9zOiB7eDogLTIsIHk6IDB9"
 	}
 ]
