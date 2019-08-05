@@ -376,6 +376,26 @@ body {
 
 }
 
+/* ANCHOR DISTANCES */
+.AnchorDistances {
+  position: relative;
+}
+
+.AnchorDistance {
+  position: absolute;
+  height: 0;
+  border: 1px solid #ff6c6c;
+  transform-origin: 0;
+  text-align: center;
+}
+
+.AnchorDistance-text {
+  
+}
+
+.AnchorDistance-text--flipped {
+  transform: rotate(180deg);
+}
 
 /* HEADS */
 .Head {
