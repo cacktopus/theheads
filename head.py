@@ -54,7 +54,7 @@ class Stepper:
         self._controller = controller
         self._next_controller = next_controller
         self._gpio = gpio
-        self._previous_steps = deque(maxlen=5)
+        self._previous_steps = deque(maxlen=20)
 
         # step to engage motor
         self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
