@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+from collections import deque
 from typing import Optional
 
 import asyncio_redis
@@ -13,7 +14,7 @@ import util
 import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
-from head_controllers import Seeker, Idle, SlowRotate
+from head_controllers import Seeker, Idle, SlowRotate, Step
 from head_util import NUM_STEPS
 from health import health_check, CORS_ALL
 from metrics import handle_metrics
@@ -21,8 +22,16 @@ from util import run_app
 
 STEPPERS_PORT = 8080
 DEFAULT_SPEED = 50
-directions = {1: MotorHAT.FORWARD, -1: MotorHAT.BACKWARD}
+directions = {Step.forward: MotorHAT.FORWARD, Step.backward: MotorHAT.BACKWARD}
 _DEFAULT_REDIS = "127.0.0.1:6379"
+
+
+def opposite_direction(direction: Step) -> Step:
+    return {
+        Step.forward: Step.backward,
+        Step.backward: Step.forward,
+        Step.no_step: Step.no_step,
+    }[direction]
 
 
 class Stepper:
@@ -45,6 +54,7 @@ class Stepper:
         self._controller = controller
         self._next_controller = next_controller
         self._gpio = gpio
+        self._previous_steps = deque(maxlen=5)
 
         # step to engage motor
         self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
@@ -84,16 +94,24 @@ class Stepper:
             await asyncio.sleep(1.0 / self._speed)
 
             direction = self._controller.act(self._pos, self._target)
-            if direction in (1, -1):
-                self._pos += direction
-                self._pos %= NUM_STEPS
-                self._motor.oneStep(directions[direction], self._controller.step_type)
-                self.queue.put_nowait(self._pos)
 
             if self._controller.is_done():
                 self._controller.finish(self)
                 self._controller = self._next_controller or Idle()
-                await self.publish("active")
+                continue
+
+            # make sure head doesn't change directions too quickly
+            oppsoite = opposite_direction(direction)
+            if oppsoite in self._previous_steps and oppsoite in (Step.forward, Step.backward):
+                direction = Step.no_step
+
+            self._previous_steps.append(direction)
+
+            if direction in (Step.forward, Step.backward):
+                self._pos += direction
+                self._pos %= NUM_STEPS
+                self._motor.oneStep(directions[direction], self._controller.step_type)
+                self.queue.put_nowait(self._pos)
 
     async def redis_publisher(self):
         while True:

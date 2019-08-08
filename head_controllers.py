@@ -1,7 +1,13 @@
-from typing import Optional
+from enum import IntEnum
 
 from head_util import NUM_STEPS
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
+
+
+class Step(IntEnum):
+    forward = 1
+    backward = -1
+    no_step = 0
 
 
 class Controller:
@@ -17,10 +23,10 @@ class Controller:
 
 
 class Seeker(Controller):
-    def act(self, pos: int, target: int) -> Optional[int]:
+    def act(self, pos: int, target: int) -> Step:
         options = [
-            ((target - pos) % NUM_STEPS, 1),
-            ((pos - target) % NUM_STEPS, -1),
+            ((target - pos) % NUM_STEPS, Step.forward),
+            ((pos - target) % NUM_STEPS, Step.backward),
         ]
 
         steps, direction = min(options)
@@ -28,23 +34,23 @@ class Seeker(Controller):
         if steps > 0:
             return direction
 
-        return None
+        return Step.no_step
 
     def is_done(self) -> bool:
         return False
 
 
 class Idle(Controller):
-    def act(self, *args) -> Optional[int]:
-        return None
+    def act(self, *args) -> Step:
+        return Step.no_step
 
     def is_done(self):
         return False
 
 
 class SlowRotate(Controller):
-    def act(self, *args) -> Optional[int]:
-        return 1
+    def act(self, *args) -> Step:
+        return Step.forward
 
     def is_done(self) -> bool:
         return False

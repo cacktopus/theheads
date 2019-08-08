@@ -1,17 +1,12 @@
 import os
 from collections import deque
-from typing import Optional
 
 import log
 import motors
-from head_controllers import Controller
+from head_controllers import Controller, Step
 
 GPIO_PIN = 21
 STEPS = 200
-
-FORWARD = 1
-BACKWARD = -1
-NO_STEP = 0
 
 
 class FakeGPIO:
@@ -57,14 +52,15 @@ class ZeroDetector(Controller):
         self.gen = self.find_zero()
         self._done = False
 
-    def act(self, *args) -> Optional[int]:
+    def act(self, *args) -> Step:
         try:
             step = next(self.gen, None)
         except ZeroNotFoundError:
             self._done = True
-            return None
+            return Step.no_step
         if step is None:
             self._done = True
+            return Step.no_step
         return step
 
     def is_done(self) -> bool:
@@ -84,15 +80,15 @@ class ZeroDetector(Controller):
             yield from self.step(direction)
 
     def find_zero(self):
-        yield from self.step_until(FORWARD, 1, 50)
-        yield from self.step_until(BACKWARD, 1, 25)
+        yield from self.step_until(Step.forward, 1, 50)
+        yield from self.step_until(Step.backward, 1, 25)
         steps_to_zero = yield from self.scan()
 
         for i in range(steps_to_zero):
-            yield from self.step(FORWARD)
+            yield from self.step(Step.forward)
 
         for _ in range(50):
-            yield NO_STEP
+            yield Step.no_step
 
     def scan(self):
         log.info("scan")
@@ -101,7 +97,7 @@ class ZeroDetector(Controller):
             v = self.read_value()
             if v == 0:
                 values.append(i)
-            yield from self.step(FORWARD)
+            yield from self.step(Step.forward)
 
         if len(values) == 0:
             return 0
