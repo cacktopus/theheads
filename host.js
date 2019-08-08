@@ -12,6 +12,10 @@ function find_zero() {
     call(8080, "/find_zero")
 }
 
+function goto_zero() {
+    call(8080, "/rotation/0")
+}
+
 function rainbow() {
     call(8082, "/run/rainbow")
 }
