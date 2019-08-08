@@ -15,7 +15,7 @@ import zero_detector
 from config import THE_HEADS_EVENTS, Config
 from consul_config import ConsulBackend
 from head_controllers import Seeker, Idle, SlowRotate, Step
-from head_util import NUM_STEPS
+from head_util import NUM_STEPS, DIRECTION_CHANGE_PAUSES
 from health import health_check, CORS_ALL
 from metrics import handle_metrics
 from util import run_app
@@ -54,7 +54,7 @@ class Stepper:
         self._controller = controller
         self._next_controller = next_controller
         self._gpio = gpio
-        self._previous_steps = deque(maxlen=20)
+        self._previous_steps = deque(maxlen=DIRECTION_CHANGE_PAUSES)
 
         # step to engage motor
         self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)

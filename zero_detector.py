@@ -4,6 +4,7 @@ from collections import deque
 import log
 import motors
 from head_controllers import Controller, Step
+from head_util import DIRECTION_CHANGE_PAUSES
 
 GPIO_PIN = 21
 STEPS = 200
@@ -81,7 +82,9 @@ class ZeroDetector(Controller):
 
     def find_zero(self):
         yield from self.step_until(Step.forward, 1, 50)
+        yield from self.step_until(Step.no_step, 1, DIRECTION_CHANGE_PAUSES)
         yield from self.step_until(Step.backward, 1, 25)
+        yield from self.step_until(Step.no_step, 1, DIRECTION_CHANGE_PAUSES)
         steps_to_zero = yield from self.scan()
 
         for i in range(steps_to_zero):
