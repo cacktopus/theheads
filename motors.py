@@ -4,7 +4,7 @@ import platform
 from Adafruit_MotorHAT import Adafruit_MotorHAT as MotorHAT
 
 
-def _setup():
+def _setup(motor_num: int = 1):
     mh = MotorHAT()
 
     # recommended for auto-disabling motors on shutdown!
@@ -16,13 +16,16 @@ def _setup():
 
     atexit.register(turn_off_motors)
 
-    stepper = mh.getStepper(200, 1)
+    stepper = mh.getStepper(200, motor_num)
     # stepper.setSpeed(30)
 
     return stepper
 
 
 class FakeStepper:
+    def __init__(self, motor_num: int = 1):
+        pass
+
     def oneStep(self, *args):
         pass
 

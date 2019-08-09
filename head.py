@@ -43,6 +43,7 @@ class Stepper:
             controller,
             next_controller,
             gpio,
+            publish: bool,
     ):
         self._pos = 0
         self._target = 0
@@ -55,6 +56,7 @@ class Stepper:
         self._next_controller = next_controller
         self._gpio = gpio
         self._previous_steps = deque(maxlen=DIRECTION_CHANGE_PAUSES)
+        self._publish = publish
 
         # step to engage motor
         self._motor.oneStep(MotorHAT.FORWARD, MotorHAT.DOUBLE)
@@ -142,6 +144,9 @@ class Stepper:
         }
 
     async def publish(self, msg_type):
+        if not self._publish:
+            return
+
         try:
             await self.redis.publish(THE_HEADS_EVENTS, json.dumps({
                 "type": msg_type,
@@ -158,9 +163,15 @@ class Stepper:
             await self.publish("active")
 
 
+def get_stepper(request) -> Stepper:
+    sid = int(request.query.get("id", 1))
+    stepper = request.app['steppers'][sid]
+    return stepper
+
+
 def adjust_position(request, speed, target):
     speed = float(speed) if speed else None
-    stepper = request.app['stepper']
+    stepper = get_stepper(request)
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
@@ -185,7 +196,7 @@ def rotation(request):
 
 
 async def zero(request):
-    stepper = request.app['stepper']
+    stepper = get_stepper(request)
     stepper.set_current_position_as_zero()
 
     result = json.dumps({"result": "ok"})
@@ -193,7 +204,7 @@ async def zero(request):
 
 
 async def find_zero(request):
-    stepper = request.app['stepper']
+    stepper = get_stepper(request)
     stepper.find_zero()
 
     result = json.dumps({"result": "ok"})
@@ -201,7 +212,7 @@ async def find_zero(request):
 
 
 async def slow_rotate(request):
-    stepper = request.app['stepper']
+    stepper = get_stepper(request)
     stepper.slow_rotate()
 
     result = json.dumps({"result": "ok"})
@@ -209,7 +220,7 @@ async def slow_rotate(request):
 
 
 async def seek(request):
-    stepper = request.app['stepper']
+    stepper = get_stepper(request)
     stepper.seek()
 
     result = json.dumps({"result": "ok"})
@@ -253,27 +264,38 @@ async def setup(
     redis_connection = await asyncio_redis.Connection.create(host=redis_host, port=redis_port)
     log.info("connected to redis", host=redis_host, port=redis_port)
 
-    if cfg['head'].get('virtual', False):
-        motor = motors.FakeStepper()
-        gpio = zero_detector.FakeGPIO()
-    else:
-        motor = motors.setup()
-        gpio = zero_detector.GPIO()
+    motor_data = [
+        {"id": 1, "publish": True},
+        {"id": 2, "publish": False},
+    ]
 
-    stepper = Stepper(
-        cfg,
-        redis_connection,
-        motor,
-        Seeker(),
-        Seeker(),
-        gpio,
-    )
-    util.create_task(stepper.redis_publisher())
-    util.create_task(stepper.run())
+    steppers = {}
+
+    for m in motor_data:
+        if cfg['head'].get('virtual', False):
+            motor = motors.FakeStepper(m['id'])
+            gpio = zero_detector.FakeGPIO()
+        else:
+            motor = motors.setup(m['id'])
+            gpio = zero_detector.GPIO()
+
+        stepper = Stepper(
+            cfg,
+            redis_connection,
+            motor,
+            Seeker(),
+            Seeker(),
+            gpio,
+            publish=m['publish'],
+        )
+        util.create_task(stepper.redis_publisher())
+        util.create_task(stepper.run())
+
+        steppers[m['id']] = stepper
 
     app = web.Application()
     app['cfg'] = cfg
-    app['stepper'] = stepper
+    app['steppers'] = steppers
     app['redis'] = redis_connection
 
     app.add_routes([
@@ -295,7 +317,8 @@ async def setup(
 
 async def home(request):
     cfg = request.app['cfg']
-    stepper = request.app['stepper']
+    sid = int(request.query.get("id", "1"))
+    stepper = request.app['steppers'][sid]
 
     lines = [
         'This is head "{}"'.format(cfg['head']['name']),
