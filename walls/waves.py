@@ -4,28 +4,56 @@ import numpy as np
 import random
 
 import svgwrite
+from svgwrite import Drawing
 
 from walls import Wall, outer
 
 
-def make(wall: Wall):
-    rng = np.arange(2, 146-2, 0.25)
+def f(x: float, y: float) -> float:
+    fxy = (
+            0
+            + 25 / 1 * noise.snoise2(x / 100 * 1, y / 100.0 * 1)
+            + 25 / 4 * noise.snoise2(x / 100 * 2, y / 100.0 * 2)
+    )
+    return fxy
 
-    points = []
+
+def make(wall: Wall, svg: Drawing):
+    rngx = np.arange(2, 146 - 2, 0.25)
+    rngy = np.arange(90, 90 + 79 + 20, 0.25)
 
     waves = Polygon.Polygon()
 
-    for y in np.arange(50, 50 + 81, 5):
-        for x in rng:
-            fxy = 50 * noise.snoise2(x / 100, y / 100.0)
-            points.append((x, y + fxy + 1))
+    w2 = 0.6
+    X = 1000
 
-        for x in reversed(rng):
-            fxy = 50 * noise.snoise2(x / 100, y / 100.0)
-            points.append((x, y + fxy - 1))
+    for y in np.arange(80, 100 + 120, 5.5):
+        points = []
+        for x in rngx:
+            fxy = f(x + X, y)
+            points.append((x, y + fxy + w2))
+
+        for x in reversed(rngx):
+            fxy = f(x + X, y)
+            points.append((x, y + fxy - w2))
 
         p = Polygon.Polygon(points)
-        waves += p
+        waves += wall.window & p
+
+    # for x in np.arange(1.8, 146 - 2, 6.0):
+    #     points = []
+    #     for y in rngy:
+    #         fxy = f(x + 50, y)
+    #         points.append((x + fxy - w2, y))
+    #
+    #     for y in reversed(rngy):
+    #         fxy = f(x + 50, y)
+    #         points.append((x + fxy + w2, y))
+    #
+    #     p = Polygon.Polygon(points)
+    #     waves += wall.window & p
+
+    svg.save()
 
     print(1)
     waves &= wall.window
@@ -43,7 +71,7 @@ def main():
     debug_svg = svgwrite.Drawing(f'{base}-debug.svg', profile='tiny')
     for i in range(1):
         wall = Wall(f"{base}-{i}", outer, x_offset=i * (146 + 10))
-        make(wall)
+        make(wall, prod_svg)
         wall.to_svg(prod_svg)
         wall.make_stl()
 
