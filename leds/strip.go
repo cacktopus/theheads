@@ -92,7 +92,9 @@ func (s *Strip) send() int {
 		log.Fatal(err)
 	}
 	frameRendered.Inc()
-	time.Sleep(20 * time.Millisecond)
+
+	// This is a silly guard against having our buffers GC'ed out from under us
+	time.Sleep(5 * time.Millisecond)
 	sum := 0
 	for _, v := range write {
 		sum += int(v)

@@ -58,7 +58,7 @@ func runLeds(strip *Strip, animations map[string]callback, ch <-chan callback, d
 
 	cb := animations[animation]
 
-	ticker := time.NewTicker(30 * time.Millisecond)
+	ticker := time.NewTicker(40 * time.Millisecond)
 
 loop:
 	for {
