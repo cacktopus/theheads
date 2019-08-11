@@ -67,7 +67,7 @@ func (s *Strip) tx(x float64) int {
 	return int(numLeds*(x)/s.length) + s.startIndex
 }
 
-func (s *Strip) send() {
+func (s *Strip) send() int {
 	write := make([]byte, len(s.leds)*3)
 
 	for i := 0; i < len(s.leds); i++ {
@@ -82,6 +82,7 @@ func (s *Strip) send() {
 		log.Fatal(err)
 	}
 	time.Sleep(5 * time.Millisecond)
+	return len(write) + len(read)
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
