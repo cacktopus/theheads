@@ -68,10 +68,10 @@ loop:
 			cb = new_cb
 		case <-ticker.C:
 			now := time.Now()
-			//t := now.Sub(startTime).Seconds()
-			//dt := now.Sub(t0).Seconds()
+			t := now.Sub(startTime).Seconds()
+			dt := now.Sub(t0).Seconds()
 
-			cb(strip, 0, 0)
+			cb(strip, t, dt)
 			t0 = now
 			strip.send()
 		case <-done:
