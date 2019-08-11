@@ -81,8 +81,13 @@ func (s *Strip) send() int {
 	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
-	time.Sleep(5 * time.Millisecond)
-	return len(write) + len(read)
+	time.Sleep(30 * time.Millisecond)
+	sum := 0
+	for _, v := range write {
+		sum += int(v)
+	}
+
+	return sum
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
