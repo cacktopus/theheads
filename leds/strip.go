@@ -1,12 +1,20 @@
 package main
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log"
 	"time"
 )
 
 const (
 	maxBrightness = 0.33
+)
+
+var (
+	frameRendered = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "heads_leds_frame_rendered",
+	})
 )
 
 func adaptForSpi(data []byte) []byte {
@@ -83,6 +91,7 @@ func (s *Strip) send() int {
 	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
+	frameRendered.Inc()
 	time.Sleep(20 * time.Millisecond)
 	sum := 0
 	for _, v := range write {
