@@ -54,10 +54,10 @@ class SlowRotate(Controller):
 
     def next_step(self):
         while True:
-            for i in range(1000):
+            for i in range(20000):
                 yield Step.forward
 
-            for i in range(1000):
+            for i in range(20000):
                 yield Step.backward
 
     def act(self, *args) -> Step:
