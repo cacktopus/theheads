@@ -83,7 +83,7 @@ func (s *Strip) send() int {
 	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
-	time.Sleep(30 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	sum := 0
 	for _, v := range write {
 		sum += int(v)

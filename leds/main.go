@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	timeDelta         = time.Millisecond * 3
 	defaultNumLeds    = 74
 	defaultStartIndex = 10
 )
@@ -59,18 +58,18 @@ func runLeds(strip *Strip, animations map[string]callback, ch <-chan callback, d
 
 	cb := animations[animation]
 
+	ticker := time.NewTicker(30 * time.Millisecond)
+
 loop:
 	for {
 		select {
 		case new_cb := <-ch:
 			startTime = time.Now()
 			cb = new_cb
-		case <-time.After(timeDelta):
+		case <-ticker.C:
 			now := time.Now()
 			t := now.Sub(startTime).Seconds()
-
 			dt := now.Sub(t0).Seconds()
-			dt = timeDelta.Seconds() // TODO: remove
 
 			cb(strip, t, dt)
 			t0 = now
