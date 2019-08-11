@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 )
 
 const (
@@ -80,6 +81,7 @@ func (s *Strip) send() {
 	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
+	time.Sleep(5 * time.Millisecond)
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
