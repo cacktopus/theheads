@@ -76,7 +76,7 @@ func (s *Strip) send() int {
 		write[i*3+2] = byte(255.0 * clamp(0, s.leds[i].b, maxBrightness))
 	}
 
-	write = append(make([]byte, 200), write...)
+	write = append(write, make([]byte, 200)...)
 
 	adapted := adaptForSpi(write)
 	read := make([]byte, len(adapted))
