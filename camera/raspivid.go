@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os/exec"
+	"strings"
 )
 
 func runRaspiVid() (chan []byte, error) {
@@ -14,8 +16,7 @@ func runRaspiVid() (chan []byte, error) {
 		return nil, err
 	}
 
-	cmd := exec.Command(
-		raspivid,
+	args := []string{
 		"-n",
 		"--contrast", "100",
 		"-fps", fmt.Sprintf("%d", rate),
@@ -27,6 +28,14 @@ func runRaspiVid() (chan []byte, error) {
 		// "-hf",
 		"-vf",
 		"-o", "/dev/null",
+	}
+
+	logrus.WithField("cmd", raspivid+" "+strings.Join(args, " ")).
+		Info("Running raspivid")
+
+	cmd := exec.Command(
+		raspivid,
+		args...,
 	)
 
 	stdout, err := cmd.StdoutPipe()
