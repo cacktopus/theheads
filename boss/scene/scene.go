@@ -21,6 +21,7 @@ type Scene struct {
 	Cameras map[string]*Camera `json:"-"`
 	Heads   map[string]*Head   `json:"-"`
 }
+
 type Pos struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
