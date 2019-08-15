@@ -111,6 +111,8 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		Heads:   map[string]*Head{},
 	}
 
+	config.MustGetYAML(consulClient, "/the-heads/scene.yaml", scene)
+
 	// heads and cameras don't "exist" until they are added to a stand
 	definedHeads := map[string]*Head{}
 	definedCameras := map[string]*Camera{}

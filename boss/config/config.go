@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
@@ -37,6 +38,18 @@ func AllServiceURLs(client *api.Client, serviceName, tag, prefix, postfix string
 	}
 
 	return
+}
+
+func MustGetYAML(client *api.Client, path string, result interface{}) {
+	resp, _, err := client.KV().Get(path, &api.QueryOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	err = yaml.Unmarshal(resp.Value, result)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func GetPrefix(client *api.Client, prefix string) (map[string][]byte, error) {
