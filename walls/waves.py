@@ -24,7 +24,6 @@ def f(x: float, y: float) -> float:
 
 def make(wall: Wall, svg: Drawing):
     rngx = np.arange(2, 146 - 2, 0.25)
-    rngy = np.arange(90, 90 + 79 + 20, 0.25)
 
     waves = Polygon.Polygon()
 
@@ -43,26 +42,10 @@ def make(wall: Wall, svg: Drawing):
         p = Polygon.Polygon(points)
         waves += wall.window & p
 
-    # for x in np.arange(1.8, 146 - 2, 6.0):
-    #     points = []
-    #     for y in rngy:
-    #         fxy = f(x + 50, y)
-    #         points.append((x + fxy - w2, y))
-    #
-    #     for y in reversed(rngy):
-    #         fxy = f(x + 50, y)
-    #         points.append((x + fxy + w2, y))
-    #
-    #     p = Polygon.Polygon(points)
-    #     waves += wall.window & p
-
     svg.save()
 
-    print(1)
     waves &= wall.window
-    print(2)
     wall.result = wall.wall - wall.window + waves
-    print(3)
 
 
 def main():
