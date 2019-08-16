@@ -11,7 +11,7 @@ from walls import Wall, outer
 
 def f(x: float, y: float) -> float:
 
-    scale = 20
+    scale = 15
 
     fxy = (
             0
@@ -32,12 +32,12 @@ def make(wall: Wall, svg: Drawing):
     for y in np.arange(80, 100 + 120, 5.0):
         points = []
         for x in rngx:
-            fxy = f(x, y/1.66)
-            points.append((x, y + fxy + w2))
+            fxy = f(x + wall.x0, y/1.66)
+            points.append((x + wall.x0, y + fxy + w2))
 
         for x in reversed(rngx):
-            fxy = f(x, y/1.66)
-            points.append((x, y + fxy - w2))
+            fxy = f(x + wall.x0, y/1.66)
+            points.append((x + wall.x0, y + fxy - w2))
 
         p = Polygon.Polygon(points)
         waves += wall.window & p
@@ -55,7 +55,7 @@ def main():
 
     prod_svg = svgwrite.Drawing(f'{base}.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'{base}-debug.svg', profile='tiny')
-    for i in range(1):
+    for i in range(8):
         wall = Wall(f"{base}-{i}", outer, x_offset=i * (146 + 10))
         make(wall, prod_svg)
         wall.to_svg(prod_svg)
