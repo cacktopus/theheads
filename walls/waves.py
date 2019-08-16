@@ -10,10 +10,14 @@ from walls import Wall, outer
 
 
 def f(x: float, y: float) -> float:
+
+    scale = 20
+
     fxy = (
             0
-            + 25 / 1 * noise.snoise2(x / 100 * 1, y / 100.0 * 1)
-            + 25 / 4 * noise.snoise2(x / 100 * 2, y / 100.0 * 2)
+            + scale / 1 * noise.snoise2(x / 100 * 1 + 0, y / 100.0 * 1 + 0)
+            + scale / 4 * noise.snoise2(x / 100 * 2 + 100, y / 100.0 * 2 + 100)
+            # + scale / 16 * noise.snoise2(x / 100 * 4, y / 100.0 * 4)
     )
     return fxy
 
@@ -24,17 +28,16 @@ def make(wall: Wall, svg: Drawing):
 
     waves = Polygon.Polygon()
 
-    w2 = 0.6
-    X = 1000
+    w2 = 0.85
 
-    for y in np.arange(80, 100 + 120, 5.5):
+    for y in np.arange(80, 100 + 120, 5.0):
         points = []
         for x in rngx:
-            fxy = f(x + X, y)
+            fxy = f(x, y/1.66)
             points.append((x, y + fxy + w2))
 
         for x in reversed(rngx):
-            fxy = f(x + X, y)
+            fxy = f(x, y/1.66)
             points.append((x, y + fxy - w2))
 
         p = Polygon.Polygon(points)
