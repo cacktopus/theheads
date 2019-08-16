@@ -91,6 +91,11 @@ class Stepper:
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = Seeker()
 
+    def off(self):
+        self._motor.run(MotorHAT.RELEASE)
+        self._next_controller = Idle()
+        self._controller = Idle()
+
     async def run(self):
         while True:
             await asyncio.sleep(1.0 / self._speed)
@@ -222,6 +227,14 @@ async def slow_rotate(request):
 async def seek(request):
     stepper = get_stepper(request)
     stepper.seek()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
+
+
+async def off(request):
+    stepper = get_stepper(request)
+    stepper.off()
 
     result = json.dumps({"result": "ok"})
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
