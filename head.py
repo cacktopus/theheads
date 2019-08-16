@@ -92,7 +92,11 @@ class Stepper:
         self._controller = Seeker()
 
     def off(self):
-        self._motor.run(MotorHAT.RELEASE)
+        self._motor.MC.setPin(self._motor.AIN2, 0)
+        self._motor.MC.setPin(self._motor.BIN1, 0)
+        self._motor.MC.setPin(self._motor.AIN1, 0)
+        self._motor.MC.setPin(self._motor.BIN2, 0)
+
         self._next_controller = Idle()
         self._controller = Idle()
 
