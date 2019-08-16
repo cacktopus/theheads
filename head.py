@@ -325,6 +325,7 @@ async def setup(
         web.get("/find_zero", find_zero),
         web.get("/slow_rotate", slow_rotate),
         web.get("/seek", seek),
+        web.get("/off", off),
     ])
 
     util.create_task(stepper.publish_active_loop())
