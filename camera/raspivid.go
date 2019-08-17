@@ -52,6 +52,8 @@ func raspiStill() error {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func runRaspiVid() (chan []byte, error) {
