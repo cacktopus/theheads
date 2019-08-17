@@ -44,7 +44,14 @@ func raspiStill() error {
 	)
 
 	err = cmd.Start()
-	return err
+	if err != nil {
+		return err
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
 }
 
 func runRaspiVid() (chan []byte, error) {
