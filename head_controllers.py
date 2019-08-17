@@ -49,8 +49,20 @@ class Idle(Controller):
 
 
 class SlowRotate(Controller):
+    def __init__(self):
+        self.gen = self.next_step()
+
+    def next_step(self):
+        while True:
+            for i in range(20000):
+                yield Step.forward
+
+            for i in range(20000):
+                yield Step.backward
+
     def act(self, *args) -> Step:
-        return Step.forward
+        step = next(self.gen, None)
+        return step
 
     def is_done(self) -> bool:
         return False

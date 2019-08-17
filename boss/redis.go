@@ -75,6 +75,15 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 						return
 					}
 					msgBroker.Publish(msg)
+
+				case "active":
+					msg := broker.Active{}
+					err = json.Unmarshal(event.Data, &msg)
+					if err != nil {
+						done <- err
+						return
+					}
+					msgBroker.Publish(msg)
 				}
 
 			case redis.Subscription:

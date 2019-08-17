@@ -91,6 +91,15 @@ class Stepper:
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = Seeker()
 
+    def off(self):
+        self._motor.MC.setPin(self._motor.AIN2, 0)
+        self._motor.MC.setPin(self._motor.BIN1, 0)
+        self._motor.MC.setPin(self._motor.AIN1, 0)
+        self._motor.MC.setPin(self._motor.BIN2, 0)
+
+        self._next_controller = Idle()
+        self._controller = Idle()
+
     async def run(self):
         while True:
             await asyncio.sleep(1.0 / self._speed)
@@ -227,6 +236,14 @@ async def seek(request):
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
+async def off(request):
+    stepper = get_stepper(request)
+    stepper.off()
+
+    result = json.dumps({"result": "ok"})
+    return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
+
+
 async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
@@ -293,6 +310,8 @@ async def setup(
 
         steppers[m['id']] = stepper
 
+        util.create_task(stepper.publish_active_loop())
+
     app = web.Application()
     app['cfg'] = cfg
     app['steppers'] = steppers
@@ -308,9 +327,8 @@ async def setup(
         web.get("/find_zero", find_zero),
         web.get("/slow_rotate", slow_rotate),
         web.get("/seek", seek),
+        web.get("/off", off),
     ])
-
-    util.create_task(stepper.publish_active_loop())
 
     return app
 
