@@ -81,8 +81,11 @@ type Stand struct {
 	Disabled bool
 	Enabled  bool
 
-	Cameras map[string]*Camera `json:"cameras" yaml:"-"`
-	Heads   map[string]*Head   `json:"heads" yaml:"-"`
+	Cameras []*Camera `json:"cameras" yaml:"-"`
+	Heads   []*Head   `json:"heads" yaml:"-"`
+
+	CameraMap map[string]*Camera `json:"-" yaml:"-"`
+	HeadMap   map[string]*Head   `json:"-" yaml:"-"`
 }
 type Translate struct {
 	X int `json:"x"`
@@ -118,7 +121,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	definedHeads := map[string]*Head{}
 	definedCameras := map[string]*Camera{}
 
-	// Cameras
+	// CameraMap
 	cameraYAML, err := config.GetPrefix(consulClient, "/the-heads/cameras")
 	if err != nil {
 		return nil, err
@@ -135,7 +138,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		definedCameras[camera.Name] = camera
 	}
 
-	// Heads
+	// HeadMap
 	headYAML, err := config.GetPrefix(consulClient, "/the-heads/heads")
 	if err != nil {
 		return nil, err
@@ -159,9 +162,9 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 
 	for _, yml := range standYAML {
 		stand := &Stand{
-			Enabled: true,
-			Cameras: map[string]*Camera{},
-			Heads:   map[string]*Head{},
+			Enabled:   true,
+			CameraMap: map[string]*Camera{},
+			HeadMap:   map[string]*Head{},
 		}
 		err := yaml.Unmarshal(yml, &stand)
 		if err != nil {
@@ -180,7 +183,8 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 				return nil, errors.New(fmt.Sprintf("%s not found", name))
 			}
 			camera.Stand = stand
-			stand.Cameras[camera.Name] = camera
+			stand.CameraMap[camera.Name] = camera
+			stand.Cameras = append(stand.Cameras, camera)
 			scene.Cameras[camera.Name] = camera
 		}
 
@@ -191,7 +195,8 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 			}
 			head.Stand = stand
 			head.MInv = head.Stand.M.Mul(head.M).Inv() // hmmmm, we use Stand.M for MInv but not for head.M
-			stand.Heads[head.Name] = head
+			stand.HeadMap[head.Name] = head
+			stand.Heads = append(stand.Heads, head)
 			scene.Heads[head.Name] = head
 		}
 
