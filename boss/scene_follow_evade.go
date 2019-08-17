@@ -104,7 +104,7 @@ func (dj *DJ) RunScenes() {
 }
 
 var AllScenes = map[string]SceneRunner{
-	"InNOut":       InNOut,
-	"FollowEvade":  FollowEvade,
-	"Conversation": Conversation,
+	"in_n_out":     InNOut,
+	"follow_evade": FollowEvade,
+	"conversation": Conversation,
 }
