@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { popupInfoMove, popupInfoRemove } from '../actions'
+import { popupInfoMove, popupInfoRemove, popupInfoSetStandAsAnchor } from '../actions'
 import PopupInfo from '../components/PopupInfo'
 
 const mapStateToProps = (state, ownProps) => {
@@ -49,7 +49,11 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     // selectCamera: () => dispatch(menuSelectCamera({standIndex : ownProps.standIndex, cameraIndex: ownProps.cameraIndex})),
     popupInfoMove: (pos) => dispatch(popupInfoMove(ownProps.standIndex, pos)),
     popupInfoRemove: (pos) => dispatch(popupInfoRemove(ownProps.standIndex)),
-    // cameraRotate: (rot) => dispatch(cameraRotateByIndex(ownProps.standIndex, ownProps.cameraIndex, rot))
+    setAsAnchor: (stand) => dispatch(popupInfoSetStandAsAnchor({
+        pos: stand.get("pos").toJS(),
+        standIndex : ownProps.standIndex,
+        standName : stand.get("name")
+    }))
 });
 
 export default connect(

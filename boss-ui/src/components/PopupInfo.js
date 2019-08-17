@@ -276,6 +276,8 @@ export default class Popup extends React.Component {
 
         let endpoints = this.getEndpoints();
 
+        const anchorPoint = <button onClick={this.props.setAsAnchor.bind(this, this.props.stand)}>Set As Anchor</button>
+
         return (
             <div className="PopupInfo">
                 Links:
@@ -283,6 +285,7 @@ export default class Popup extends React.Component {
                 {headLink}
                 {cameraLink}
                 {kinectLink}
+                {anchorPoint}
                 {endpoints}
                 <div
                     className="PopupInfo-closeButton"
