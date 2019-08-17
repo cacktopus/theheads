@@ -1,11 +1,20 @@
 package main
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log"
+	"time"
 )
 
 const (
 	maxBrightness = 0.33
+)
+
+var (
+	frameRendered = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "heads_leds_frame_rendered",
+	})
 )
 
 func adaptForSpi(data []byte) []byte {
@@ -66,7 +75,7 @@ func (s *Strip) tx(x float64) int {
 	return int(numLeds*(x)/s.length) + s.startIndex
 }
 
-func (s *Strip) send() {
+func (s *Strip) send() int {
 	write := make([]byte, len(s.leds)*3)
 
 	for i := 0; i < len(s.leds); i++ {
@@ -75,11 +84,23 @@ func (s *Strip) send() {
 		write[i*3+2] = byte(255.0 * clamp(0, s.leds[i].b, maxBrightness))
 	}
 
+	write = append(write, make([]byte, 200)...)
+
 	adapted := adaptForSpi(write)
 	read := make([]byte, len(adapted))
 	if err := s.transactor.Tx(adapted, read); err != nil {
 		log.Fatal(err)
 	}
+	frameRendered.Inc()
+
+	// This is a silly guard against having our buffers GC'ed out from under us
+	time.Sleep(5 * time.Millisecond)
+	sum := 0
+	for _, v := range write {
+		sum += int(v)
+	}
+
+	return sum
 }
 
 func (s *Strip) Each(cb func(i int, led *Led)) {
