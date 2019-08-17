@@ -154,7 +154,8 @@ class Wall:
 
             if self.result.isHole(i):
                 h = find_inside_point(self.result, i)
-                holes.append(h)
+                if h is not None:
+                    holes.append(h)
 
         B, A = tess(contours, holes)
         make_stl(self.name, contours, B, A, 1.75)
