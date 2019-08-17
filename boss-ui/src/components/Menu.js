@@ -693,7 +693,7 @@ export default class Menu extends React.Component {
                         <a
                             href={`http://${
                                 document.location.hostname
-                            }:8000/restart?service=boss`}
+                            }/restart?service=boss`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ cursor: "pointer" }}
