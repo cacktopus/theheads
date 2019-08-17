@@ -66,7 +66,10 @@ func main() {
 	flag.IntVar(&port, "port", defaultPort, "port to listen on")
 	flag.Parse()
 
-	raspiStill()
+	err := raspiStill()
+	if err != nil {
+		log.WithError(err).Info("Error running raspistill")
+	}
 
 	fmt.Println("filename: ", filename)
 
