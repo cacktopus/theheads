@@ -71,6 +71,14 @@ export const menuShowAllRotates = () => ({
     type: 'MENU_SHOW_ALL_ROTATES'
 })
 
+export const menuShowAllDistances = () => ({
+    type: 'MENU_HIDE_ALL_DISTANCES'
+})
+
+export const menuHideAllDistances = () => ({
+    type: 'MENU_SHOW_ALL_DISTANCES'
+})
+
 export const menuEnableForceShowAllRotatesOnSelect = () => ({
     type: 'MENU_ENABLE_FORCE_SHOW_ALL_ROTATES_ON_SELECT'
 })
@@ -109,6 +117,9 @@ export function sceneFetchFromUrl(sceneUrl) {
                 }
                 
                 dispatch(standSetScene(json))
+                console.log('anchorSetScene', json);
+                window.c_json = json;
+                dispatch(anchorSetScene(json))
             })
             .catch(e => console.log(e))
     }
@@ -393,3 +404,12 @@ export const motionLinesRemoveLine = (options) => {
         lineId,
     }
 }
+
+// ANCHORS
+export const anchorSetScene = (sceneData) => ({
+    type: 'ANCHOR_SET_SCENE',
+    sceneData
+});
+
+
+

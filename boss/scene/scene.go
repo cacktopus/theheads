@@ -3,17 +3,19 @@ package scene
 import (
 	"errors"
 	"fmt"
+	"math"
+	"math/rand"
+
 	"github.com/cacktopus/heads/boss/config"
 	"github.com/cacktopus/heads/boss/geom"
 	consulApi "github.com/hashicorp/consul/api"
 	"gopkg.in/yaml.v2"
-	"math"
-	"math/rand"
 )
 
 type Scene struct {
 	Stands        []*Stand      `json:"stands"`
 	Scale         int           `json:"scale"`
+	Anchors       []*Anchor     `json:"anchors"`
 	Translate     Translate     `json:"translate"`
 	Scenes        []string      `json:"scenes"`
 	StartupScenes []interface{} `json:"startup_scenes"`
@@ -43,6 +45,12 @@ type Head struct {
 	M       geom.Mat `json:"-"`
 	MInv    geom.Mat `json:"-"`
 	Stand   *Stand   `json:"-"`
+}
+
+type Anchor struct {
+	Name    string `json:"name"`
+	Pos     Pos    `json:"pos"`
+	Enabled bool
 }
 
 func SelectHeads(
@@ -159,7 +167,6 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	for _, yml := range standYAML {
 		stand := &Stand{
 			Enabled:   true,
@@ -201,6 +208,21 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		}
 
 		scene.Stands = append(scene.Stands, stand)
+	}
+
+	// Anchors
+	anchorYAML, err := config.GetPrefix(consulClient, "/the-heads/anchors")
+	if err != nil {
+		return nil, err
+	}
+	for _, yml := range anchorYAML {
+		anchor := &Anchor{}
+		err := yaml.Unmarshal(yml, &anchor)
+		if err != nil {
+			return nil, err
+		}
+
+		scene.Anchors = append(scene.Anchors, anchor)
 	}
 
 	fmt.Println(scene)

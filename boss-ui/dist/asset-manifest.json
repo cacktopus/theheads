@@ -1,0 +1,9 @@
+{
+  "main.js": "/static/js/main.chunk.js",
+  "main.js.map": "/static/js/main.chunk.js.map",
+  "static/js/0.chunk.js": "/static/js/0.chunk.js",
+  "static/js/0.chunk.js.map": "/static/js/0.chunk.js.map",
+  "runtime~main.js": "/static/js/bundle.js",
+  "runtime~main.js.map": "/static/js/bundle.js.map",
+  "index.html": "/index.html"
+}

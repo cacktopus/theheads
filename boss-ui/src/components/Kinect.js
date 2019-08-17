@@ -138,7 +138,7 @@ export default class Kinect extends React.Component {
             let kinectName = kinect.get("name");
             let kinectFocalPoints;
             let kinectFocalPointsForThisKinect;
-            if (kinectName == "kinect-01")
+            if (kinectName === "kinect-01")
                 window.c_kfp = this;
 
             if (this.props.kinectFocalPoints && this.props.kinectFocalPoints.get) {

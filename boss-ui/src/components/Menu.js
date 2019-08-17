@@ -550,8 +550,8 @@ export default class Menu extends React.Component {
                     </div>
                     <div className="Menu-section">
                         {/* <span onClick={ajaxUrl.bion} style={{cursor: "pointer"}}>restart</span> <span style={{cursor: "pointer"}}>stop</span> */}
-                        <a href={`http://${document.location.hostname}:8000/restart?service=boss`} target="_blank" style={{cursor: "pointer"}}>restart</a>&nbsp; &nbsp; &nbsp;
-                        <a href={`http://${document.location.hostname}:8000/stop?service=boss`} target="_blank" style={{marginLeft: 20, cursor: "pointer"}}>stop</a>
+                        <a href={`http://${document.location.hostname}:8000/restart?service=boss`} target="_blank" rel="noopener noreferrer" style={{cursor: "pointer"}}>restart</a>&nbsp; &nbsp; &nbsp;
+                        <a href={`http://${document.location.hostname}:8000/stop?service=boss`} target="_blank" rel="noopener noreferrer" style={{marginLeft: 20, cursor: "pointer"}}>stop</a>
                     </div>
                     {standDetails}
                     {focalPointDetails}
@@ -604,6 +604,11 @@ export default class Menu extends React.Component {
                     <button onClick={this.props.menuShowAllRotates}>Show All</button>
                     <button onClick={this.props.menuHideAllRotates}>Hide All</button>
                     {/* <button>Toggle visuals</button> */}
+                </div>
+                <div style={{ display: "inline-block", background: "#EEFFFF", padding: "5px" }}>
+                    Show Distances:&nbsp;
+                    <button onClick={this.props.menuShowAllDistances}>Show All</button>
+                    <button onClick={this.props.menuHideAllDistances}>Hide All</button>
                 </div>
                 <div style={{ display: "inline-block", background: "#FFEEFF", padding: "5px" }}>
                     Force Show On Select:&nbsp;

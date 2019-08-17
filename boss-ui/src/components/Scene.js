@@ -2,6 +2,7 @@ import React from 'react'
 //import Heads from '../containers/Heads'
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 import Stand from '../containers/Stand';
+import Anchor from '../containers/Anchor';
 // import FocalPoint from '../containers/FocalPoint';
 import FocalPoints from '../containers/FocalPoints';
 // import Popups from '../components/Popups';
@@ -52,6 +53,10 @@ export default class Menu extends React.Component {
             position: "relative"
         }
 
+        const anchors = this.props.anchors.map((anchor, i) => {
+            return <Anchor key={i} index={i} anchor={anchor} />
+        });
+
         // let kinects = [];
         // try {
         //     var tempKinectsImmObj = this.props.kinects.get("kinects");
@@ -89,6 +94,9 @@ export default class Menu extends React.Component {
                     <UnderVisuals />
                     <div className="Stands">
                         {stands}
+                    </div>
+                    <div className="Anchors">
+                        {anchors}
                     </div>
                     <FocalPoints />
                     {/* <Popups popups={this.props.popups}/> */}

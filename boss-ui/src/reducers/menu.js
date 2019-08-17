@@ -20,6 +20,7 @@ const initialState = {
     isStandRotatesHidden : getCookieAsBoolean("menu-isStandRotatesHidden") || 0,
     isHeadRotatesHidden : getCookieAsBoolean("menu-isHeadRotatesHidden") || 0,
     isCameraRotatesHidden : getCookieAsBoolean("menu-isCameraRotatesHidden") || 0,
+    isShowDistances : getCookieAsBoolean("menu-isShowDistances") || 0,
     isForceShowStandRotatesOnSelect : getCookieAsBoolean("menu-isForceShowStandRotatesOnSelect") || 0,
     isForceShowHeadRotatesOnSelect : getCookieAsBoolean("menu-isForceShowHeadRotatesOnSelect") || 0,
     isForceShowCameraRotatesOnSelect : getCookieAsBoolean("menu-isForceShowCameraRotatesOnSelect") || 0,
@@ -66,6 +67,7 @@ const stands = (state = fromJS(initialState), action) => {
             newState = state.set("isStandRotatesHidden", true);
             newState = newState.set("isHeadRotatesHidden", true);
             return newState.set("isCameraRotatesHidden", true);
+            
         case 'MENU_SHOW_ALL_ROTATES':
             setCookie("menu-isStandRotatesHidden", false);
             setCookie("menu-isHeadRotatesHidden", false);
@@ -73,6 +75,26 @@ const stands = (state = fromJS(initialState), action) => {
             newState = state.set("isStandRotatesHidden", false);
             newState = newState.set("isHeadRotatesHidden", false);
             return newState.set("isCameraRotatesHidden", false);
+
+        case 'MENU_HIDE_ALL_DISTANCES':
+            setCookie("menu-isShowDistances", false);
+            // setCookie("menu-isHeadRotatesHidden", true);
+            // setCookie("menu-isCameraRotatesHidden", true);
+            newState = state.set("isShowDistances", false);
+            return newState;
+            // newState = newState.set("isHeadRotatesHidden", true);
+            // return newState.set("isCameraRotatesHidden", true);
+
+        case 'MENU_SHOW_ALL_DISTANCES':
+            setCookie("menu-isShowDistances", true);
+            newState = state.set("isShowDistances", true);
+            return newState;
+            // setCookie("menu-isHeadRotatesHidden", false);
+            // setCookie("menu-isCameraRotatesHidden", false);
+            // newState = state.set("isStandRotatesHidden", false);
+            // newState = newState.set("isHeadRotatesHidden", false);
+            // return newState.set("isCameraRotatesHidden", false);
+
         case 'MENU_TOGGLE_HIDE_ROTATES':
             if (action.rotateType === "stand") {
                 setCookie("menu-isStandRotatesHidden", !state.get("isStandRotatesHidden"));

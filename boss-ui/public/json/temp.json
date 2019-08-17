@@ -1,77 +1,77 @@
 {
-    "name": "export",
-    "stands": [{
-        "cameras": [],
-        "kinects": [{
-            "fov": 71,
-            "name": "kinect-01",
+    "stands": [
+        {
+            "name": "stand-01",
             "pos": {
-                "x": -0.3, 
-                "y": -0.3
-            },
-            "rot": -45
-        }],
-        "heads": [{
-            "name": "head-01",
-            "pos": {
-                "x": 0,
+                "x": -1,
                 "y": 0
             },
-            "rot": 0,
-            "vRot": 0
-        }],
-        "name": "stand-01",
-        "pos": {
-            "x": -2.7,
-            "y": -0.3
+            "rot": -90,
+            "Disabled": false,
+            "Enabled": true,
+            "cameras": {
+                "camera-42": {
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                    "fov": 64.33,
+                    "name": "camera-42",
+                    "pos": {
+                        "x": 0.15,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
+            },
+            "heads": {
+                "head-42": {
+                    "name": "head-42",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0,
+                    "virtual": true
+                }
+            }
         },
-        "rot": 0,
-        "isActive": false
-    }, {
-        "cameras": [],
-        "kinects": [],
-        "heads": [{
-            "name": "head-02",
+        {
+            "name": "stand-02",
             "pos": {
-                "x": 0,
+                "x": 1,
                 "y": 0
             },
-            "rot": 0,
-            "vRot": 0
-        }],
-        "name": "stand-02",
-        "pos": {
-            "x": -0.3,
-            "y": -0.3
-        },
-        "rot": 0,
-        "isActive": false
-    }, {
-        "cameras": [],
-        "kinects": [{
-            "fov": 71,
-            "name": "kinect-02",
-            "pos": {
-                "x": 0.3,
-                "y": 0.3
+            "rot": -90,
+            "Disabled": false,
+            "Enabled": true,
+            "cameras": {
+                "camera-43": {
+                    "description": "Raspberry Pi PiNoir Camera V2 Video Module",
+                    "fov": 64.33,
+                    "name": "camera-43",
+                    "pos": {
+                        "x": 0.15,
+                        "y": 0
+                    },
+                    "rot": 0
+                }
             },
-            "rot": 135
-        }],
-        "heads": [{
-            "name": "head-03",
-            "pos": {
-                "x": 0,
-                "y": 0
-            },
-            "rot": 0,
-            "vRot": 0
-        }],
-        "name": "stand-03",
-        "pos": {
-            "x": -0.3,
-            "y": -2.7
-        },
-        "rot": 0,
-        "isActive": false
-    }]
+            "heads": {
+                "head-43": {
+                    "name": "head-43",
+                    "pos": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rot": 0,
+                    "virtual": true
+                }
+            }
+        }
+    ],
+    "scale": 0,
+    "translate": {
+        "x": 0,
+        "y": 0
+    },
+    "scenes": null,
+    "startup_scenes": null
 }
