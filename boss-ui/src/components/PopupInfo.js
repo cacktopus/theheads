@@ -214,7 +214,7 @@ export default class Popup extends React.Component {
         }
         // }
 
-        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
+        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads`;
         // installation
 
         if (typeof window !== "undefined") {
