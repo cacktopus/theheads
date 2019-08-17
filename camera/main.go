@@ -66,6 +66,8 @@ func main() {
 	flag.IntVar(&port, "port", defaultPort, "port to listen on")
 	flag.Parse()
 
+	raspiStill()
+
 	fmt.Println("filename: ", filename)
 
 	if instance == "" {
