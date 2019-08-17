@@ -19,7 +19,7 @@ func raspiStill() error {
 	}
 
 	outdir := filepath.Join(usr.HomeDir, "photos")
-	err = os.MkdirAll(outdir, 0600)
+	err = os.MkdirAll(outdir, 0750)
 
 	filename := fmt.Sprintf("%d.jpg", time.Now().UnixNano())
 
