@@ -293,6 +293,8 @@ async def setup(
 
         steppers[m['id']] = stepper
 
+        util.create_task(stepper.publish_active_loop())
+
     app = web.Application()
     app['cfg'] = cfg
     app['steppers'] = steppers
@@ -309,8 +311,6 @@ async def setup(
         web.get("/slow_rotate", slow_rotate),
         web.get("/seek", seek),
     ])
-
-    util.create_task(stepper.publish_active_loop())
 
     return app
 

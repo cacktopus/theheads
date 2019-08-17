@@ -59,7 +59,7 @@ func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
 }
 
 func (h *HeadQueue) send(url string) error {
-	log.WithField("url", url).Info("sending")
+	log.WithField("url", url).Debug("sending")
 	resp, err := h.headClient.Get(url)
 	if err != nil {
 		return err
