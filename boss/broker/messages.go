@@ -53,3 +53,19 @@ type MotionLine struct {
 func (MotionLine) Name() string {
 	return "motion-line"
 }
+
+type Extra struct {
+	HeadName     string  `json:"headName"`
+	StepPosition int     `json:"stepPosition"`
+	Rotation     float64 `json:"rotation"`
+}
+
+type Active struct {
+	Component string `json:"component"`
+	Name_     string `json:"name"`
+	Extra     Extra  `json:"extra"`
+}
+
+func (Active) Name() string {
+	return "active"
+}

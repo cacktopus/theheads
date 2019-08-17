@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+type SceneRunner func(dj *DJ, done chan bool)
+
 func FollowClosestFocalPoint(
 	dj *DJ,
 	done chan bool,
@@ -90,17 +92,19 @@ func InNOut(dj *DJ, done chan bool) {
 }
 
 func (dj *DJ) RunScenes() {
-	var done chan bool
 	for {
-		//done = make(chan bool)
-		//go InNOut(dj, done)
-		//time.Sleep(20 * time.Second)
-		//close(done)
-		//
-		//done = make(chan bool)
-		//go FollowEvade(dj, done)
-		//time.Sleep(30 * time.Second)
-		//close(done)
-		Conversation(dj, done)
+		for _, sceneName := range dj.scene.Scenes {
+			done := make(chan bool)
+			f := AllScenes[sceneName]
+			go f(dj, done)
+			time.Sleep(20 * time.Second)
+			close(done)
+		}
 	}
+}
+
+var AllScenes = map[string]SceneRunner{
+	"in_n_out":     InNOut,
+	"follow_evade": FollowEvade,
+	"conversation": Conversation,
 }
