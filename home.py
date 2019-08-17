@@ -165,6 +165,11 @@ async def shutdown_host(request):
         return web.Response(text="Invalid \n", content_type="text/plain")
 
 
+async def gettime(request):
+    now = time.time()
+    return web.Response(text=f"{now}\n", content_type="text/plain")
+
+
 async def setup(
         port: int,
         consul_host: Optional[str] = "127.0.0.1",
@@ -218,7 +223,8 @@ async def setup(
         web.get('/start', start),
         web.get('/restart', restart),
         web.get('/restart-host', restart_host),
-        web.get('/shutdown-host', shutdown_host)
+        web.get('/shutdown-host', shutdown_host),
+        web.get('/time', gettime),
     ])
 
     return app
