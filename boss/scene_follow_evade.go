@@ -42,7 +42,7 @@ func FollowClosestFocalPoint(
 			}
 
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path)
 		case <-done.Chan():
 			logrus.WithField("head", head.Name).Println("Finishing FollowClosestFocalPoint")
 			wg.Done()
@@ -74,7 +74,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointAwayFrom(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path)
 		}
 
 		select {
@@ -86,7 +86,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path)
 		}
 
 		select {

@@ -20,6 +20,22 @@ func TimeF(d float64) time.Duration {
 	return time.Duration(d * float64(time.Second))
 }
 
+type HeadResult struct {
+	Eta float64 `json:"eta"`
+}
+
+func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
+	path0 := fmt.Sprintf("/rotation/%f", theta)
+
+	headResult := HeadResult{}
+	res := dj.headManager.sendWithResult("head", name, path0, &headResult)
+	if res.Err != nil {
+		logrus.WithError(res.Err).Error("Error sending to head")
+		return 0, res.Err
+	}
+	return TimeF(headResult.Eta), nil
+}
+
 func Conversation(dj *DJ, done util.BroadcastCloser) {
 	t := randomText(dj.texts)
 
@@ -32,7 +48,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(geom.NewVec(0, -10))
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path, nil)
+			dj.headManager.send("head", head.Name, path)
 		}
 
 		if stop := dj.Sleep(done, TimeF(1.5)); stop {
@@ -52,16 +68,27 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 			"t0": t0,
 		}).Info("selected head")
 
-		path0 := fmt.Sprintf("/rotation/%f", t0)
-		dj.headManager.send("head", h0.Name, path0, nil)
+		eta0, _ := PositionHead(dj, h0.Name, t0)
+		done0 := time.Now().Add(eta0)
 
 		if stop := dj.Sleep(done, TimeF(0.33)); stop {
 			return
 		}
 
 		t1 := h1.PointTo(h0.GlobalPos())
-		path1 := fmt.Sprintf("/rotation/%f", t1)
-		dj.headManager.send("head", h1.Name, path1, nil)
+		eta1, _ := PositionHead(dj, h1.Name, t1)
+		done1 := time.Now().Add(eta1)
+
+		if done0.After(done1) {
+			done0, done1 = done1, done0
+		}
+
+		// done1 is now the greater time
+		delay := time.Now().Sub(done1)
+
+		if stop := dj.Sleep(done, delay); stop {
+			return
+		}
 
 		// Should I time this to actual head pointing to where I want it?
 		if stop := dj.Sleep(done, TimeF(2.5)); stop {
@@ -69,11 +96,11 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		finished := make(chan error)
-		dj.headManager.send("voices", h0.Name, playPath, finished)
-		err := <-finished // TODO: timeout
-		if err != nil {
-			logrus.WithError(err).Error("error playing sound")
+		finished := make(chan Result)
+		dj.headManager.send("voices", h0.Name, playPath)
+		result := <-finished // TODO: timeout
+		if result.Err != nil {
+			logrus.WithError(result.Err).Error("error playing sound")
 		}
 
 		voiceWaitTime := TimeF(0.5)
