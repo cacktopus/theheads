@@ -79,6 +79,9 @@ class Stepper:
     def current_rotation(self) -> float:
         return self._pos / NUM_STEPS * 360.0
 
+    def controller_name(self) -> str:
+        return self._controller.__class__.__name__
+
     def find_zero(self):
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = zero_detector.ZeroDetector(self._gpio)
@@ -259,6 +262,19 @@ async def off(request):
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
+async def status(request):
+    stepper = get_stepper(request)
+
+    return web.Response(text=json.dumps({
+        "result": "ok",
+        "position": stepper.pos,
+        "rotation": stepper.current_rotation(),
+        "controller": stepper.controller_name(),
+        "steps_away": stepper.steps_away(),
+        "eta": stepper.eta(),
+    }), content_type="application/json", headers=CORS_ALL)
+
+
 async def get_config(config_endpoint: str, instance: str, port: int):
     consul_backend = ConsulBackend(config_endpoint)
 
@@ -343,6 +359,7 @@ async def setup(
         web.get("/slow_rotate", slow_rotate),
         web.get("/seek", seek),
         web.get("/off", off),
+        web.get("/status", status),
     ])
 
     return app
