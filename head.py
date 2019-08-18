@@ -91,6 +91,15 @@ class Stepper:
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = Seeker()
 
+    def steps_away(self) -> int:
+        return min(
+            (self._target - self._pos) % NUM_STEPS,
+            (self._pos - self._target) % NUM_STEPS,
+        )
+
+    def eta(self) -> float:
+        return self.steps_away() * (1.0 / self._speed)
+
     def off(self):
         self._motor.MC.setPin(self._motor.AIN2, 0)
         self._motor.MC.setPin(self._motor.BIN1, 0)
@@ -184,7 +193,13 @@ def adjust_position(request, speed, target):
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
-    result = json.dumps({"result": "ok"})
+
+    result = json.dumps({
+        "result": "ok",
+        "steps_away": stepper.steps_away(),
+        "eta": stepper.eta(),
+
+    })
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
