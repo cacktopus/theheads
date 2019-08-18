@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/cacktopus/heads/boss/util"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -15,7 +16,11 @@ type DJ struct {
 	texts       []*Text
 }
 
-func Conversation(dj *DJ, done chan bool) {
+func TimeF(d float64) time.Duration {
+	return time.Duration(d * float64(time.Second))
+}
+
+func Conversation(dj *DJ, done util.BroadcastCloser) {
 	t := randomText(dj.texts)
 
 	for _, part := range t.Content {
@@ -30,7 +35,7 @@ func Conversation(dj *DJ, done chan bool) {
 			dj.headManager.send("head", head.Name, path, nil)
 		}
 
-		if stop := dj.Sleep(done, 1500*time.Millisecond); stop {
+		if stop := dj.Sleep(done, TimeF(1.5)); stop {
 			return
 		}
 
@@ -50,7 +55,7 @@ func Conversation(dj *DJ, done chan bool) {
 		path0 := fmt.Sprintf("/rotation/%f", t0)
 		dj.headManager.send("head", h0.Name, path0, nil)
 
-		if stop := dj.Sleep(done, 333*time.Millisecond); stop {
+		if stop := dj.Sleep(done, TimeF(0.33)); stop {
 			return
 		}
 
@@ -58,7 +63,8 @@ func Conversation(dj *DJ, done chan bool) {
 		path1 := fmt.Sprintf("/rotation/%f", t1)
 		dj.headManager.send("head", h1.Name, path1, nil)
 
-		if stop := dj.Sleep(done, 2500*time.Millisecond); stop {
+		// Should I time this to actual head pointing to where I want it?
+		if stop := dj.Sleep(done, TimeF(2.5)); stop {
 			return
 		}
 
@@ -70,10 +76,12 @@ func Conversation(dj *DJ, done chan bool) {
 			logrus.WithError(err).Error("error playing sound")
 		}
 
-		//TODO: longer depending on duration
-		if stop := dj.Sleep(done, 500*time.Millisecond); stop {
+		voiceWaitTime := TimeF(0.5)
+
+		if stop := dj.Sleep(done, voiceWaitTime); stop {
 			return
 		}
 	}
 
+	done.Close()
 }

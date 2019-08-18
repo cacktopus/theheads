@@ -4,16 +4,22 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/cacktopus/heads/boss/util"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
-type SceneRunner func(dj *DJ, done chan bool)
+type SceneRunner func(dj *DJ, done util.BroadcastCloser)
+
+type SceneConfig struct {
+	Runner           SceneRunner
+	MaxLengthSeconds uint
+}
 
 func FollowClosestFocalPoint(
 	dj *DJ,
-	done chan bool,
+	done util.BroadcastCloser,
 	head *scene.Head,
 	wg *sync.WaitGroup,
 	evadeDistance float64,
@@ -37,7 +43,7 @@ func FollowClosestFocalPoint(
 
 			path := fmt.Sprintf("/rotation/%f", theta)
 			dj.headManager.send("head", head.Name, path, nil)
-		case <-done:
+		case <-done.Chan():
 			logrus.WithField("head", head.Name).Println("Finishing FollowClosestFocalPoint")
 			wg.Done()
 			return
@@ -45,7 +51,7 @@ func FollowClosestFocalPoint(
 	}
 }
 
-func FollowEvade(dj *DJ, done chan bool) {
+func FollowEvade(dj *DJ, done util.BroadcastCloser) {
 	var wg sync.WaitGroup
 	for _, head := range dj.scene.Heads {
 		wg.Add(1)
@@ -55,7 +61,7 @@ func FollowEvade(dj *DJ, done chan bool) {
 	logrus.Println("Finishing FollowEvade")
 }
 
-func InNOut(dj *DJ, done chan bool) {
+func InNOut(dj *DJ, done util.BroadcastCloser) {
 	center := geom.ZeroVec()
 
 	for _, h := range dj.scene.Heads {
@@ -73,7 +79,7 @@ func InNOut(dj *DJ, done chan bool) {
 
 		select {
 		case <-time.After(5 * time.Second):
-		case <-done:
+		case <-done.Chan():
 			return
 		}
 
@@ -85,7 +91,7 @@ func InNOut(dj *DJ, done chan bool) {
 
 		select {
 		case <-time.After(5 * time.Second):
-		case <-done:
+		case <-done.Chan():
 			return
 		}
 	}
@@ -94,26 +100,28 @@ func InNOut(dj *DJ, done chan bool) {
 func (dj *DJ) RunScenes() {
 	for {
 		for _, sceneName := range dj.scene.Scenes {
-			done := make(chan bool)
-			f := AllScenes[sceneName]
-			go f(dj, done)
-			time.Sleep(20 * time.Second)
-			close(done)
+			done := util.NewBroadcastCloser()
+			sc := AllScenes[sceneName]
+			go sc.Runner(dj, done)
+
+			maxLength := time.Duration(sc.MaxLengthSeconds) * time.Second
+			dj.Sleep(done, maxLength)
+			done.Close()
 		}
 	}
 }
 
-func (dj *DJ) Sleep(done chan bool, duration time.Duration) bool {
+func (dj *DJ) Sleep(done util.BroadcastCloser, duration time.Duration) bool {
 	select {
 	case <-time.After(duration):
 		return false
-	case <-done:
+	case <-done.Chan():
 		return true
 	}
 }
 
-var AllScenes = map[string]SceneRunner{
-	"in_n_out":     InNOut,
-	"follow_evade": FollowEvade,
-	"conversation": Conversation,
+var AllScenes = map[string]SceneConfig{
+	"in_n_out":     {InNOut, 60},
+	"follow_evade": {FollowEvade, 60},
+	"conversation": {Conversation, 5 * 60},
 }
