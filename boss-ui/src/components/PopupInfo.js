@@ -229,7 +229,7 @@ export default class Popup extends React.Component {
         }
         // }
 
-        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
+        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads`;
         // installation
 
         if (typeof window !== "undefined") {
@@ -274,7 +274,7 @@ export default class Popup extends React.Component {
                         style={{ display: "block" }}
                         target="_blank"
                         rel="noopener noreferrer"
-                        href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}
+                        href={`${consulInstallationUrl}/${type}/${name}.yaml/edit`}
                     >
                         {name}
                     </a>
@@ -291,6 +291,8 @@ export default class Popup extends React.Component {
 
         let endpoints = this.getEndpoints();
 
+        const anchorPoint = <button onClick={this.props.setAsAnchor.bind(this, this.props.stand)}>Set As Anchor</button>
+
         return (
             <div className="PopupInfo">
                 Links:
@@ -298,6 +300,7 @@ export default class Popup extends React.Component {
                 {headLink}
                 {cameraLink}
                 {kinectLink}
+                {anchorPoint}
                 {endpoints}
                 <div
                     className="PopupInfo-closeButton"

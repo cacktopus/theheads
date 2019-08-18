@@ -20,7 +20,9 @@ const initialState = {
     isStandRotatesHidden : getCookieAsBoolean("menu-isStandRotatesHidden") || 0,
     isHeadRotatesHidden : getCookieAsBoolean("menu-isHeadRotatesHidden") || 0,
     isCameraRotatesHidden : getCookieAsBoolean("menu-isCameraRotatesHidden") || 0,
-    isShowDistances : getCookieAsBoolean("menu-isShowDistances") || 0,
+    isShowDistances : typeof getCookieAsBoolean("menu-isShowDistances") !== "undefined" ? getCookieAsBoolean("menu-isShowDistances") : true,
+    anchorDistancesRound : getCookie("menu-anchorDistancesRound") || 4,
+    anchorDistancesUnit : getCookie("menu-anchorDistancesUnit") || "meters",
     isForceShowStandRotatesOnSelect : getCookieAsBoolean("menu-isForceShowStandRotatesOnSelect") || 0,
     isForceShowHeadRotatesOnSelect : getCookieAsBoolean("menu-isForceShowHeadRotatesOnSelect") || 0,
     isForceShowCameraRotatesOnSelect : getCookieAsBoolean("menu-isForceShowCameraRotatesOnSelect") || 0,
@@ -84,6 +86,16 @@ const stands = (state = fromJS(initialState), action) => {
             return newState;
             // newState = newState.set("isHeadRotatesHidden", true);
             // return newState.set("isCameraRotatesHidden", true);
+
+        case 'MENU_SET_ANCHOR_DISTANCES_ROUND':
+            setCookie("menu-anchorDistancesRound", action.value);
+            newState = state.set("anchorDistancesRound", action.value);
+            return newState;
+
+        case 'MENU_SET_ANCHOR_DISTANCES_UNIT':
+            setCookie("menu-anchorDistancesUnit", action.value);
+            newState = state.set("anchorDistancesUnit", action.value);
+            return newState;
 
         case 'MENU_SHOW_ALL_DISTANCES':
             setCookie("menu-isShowDistances", true);

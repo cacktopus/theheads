@@ -1,18 +1,18 @@
 import { fromJS } from "immutable";
 // https://www.npmjs.com/package/@giantmachines/redux-websocket
 
-// const createNewAnchor = ({
-//     name = undefined,
-//     pos = { x: 0, y: 0 },
-//     isSelected = false
-// } = {}, state) => {
+const createNewAnchor = ({
+    name = undefined,
+    pos = { x: 0, y: 0 },
+    standIndex = undefined
+} = {}, state) => {
 
-//     return fromJS({
-//         name,
-//         pos,
-//         isSelected
-//     })
-// }
+    return fromJS({
+        name,
+        pos,
+        standIndex
+    })
+}
 
 const anchors = (state = fromJS([]), action) => {    
     // let newState;
@@ -32,30 +32,22 @@ const anchors = (state = fromJS([]), action) => {
 
         // Scene
         case 'ANCHOR_SET_SCENE':
-            window.c_aaa = action.sceneData;
-            // eval('debugger');
             if (action.sceneData && action.sceneData.anchors && action.sceneData.anchors.length > 0) {
                 return fromJS(action.sceneData.anchors);
             }
             return state;
 
-        // // Active or not
-        // case 'ANCHOR_SET_IS_ACTIVE':
-        //     tempStandIndex = getStandIndexFromHeadName(state, action.headName);
+        // Active or not
+        case 'POPUP_INFO_SET_STAND_AS_ANCHOR':
+            return state.push(createNewAnchor({
+                pos: action.pos,
+                standIndex: action.standIndex,
+                name: `anchor-stand-${action.standName}`
+            }));
 
-        //     if (tempStandIndex >= 0) {
-        //         return state.setIn([tempStandIndex, "isActive"], true);
-        //     } else {
-        //         return state;
-        //     }
-        // case 'ANCHOR_SET_IS_NOT_ACTIVE':
-        //     tempStandIndex = getStandIndexFromHeadName(state, action.headName);
-
-        //     if (tempStandIndex >= 0) {
-        //         return state.setIn([tempStandIndex, "isActive"], false);
-        //     } else {
-        //         return state;
-        //     }
+        // Remove all stand related anchors
+        case 'POPUP_INFO_CLEAR_ALL_STAND_ANCHORS':
+            return state.filter(a => a.get("standIndex") === undefined)
 
         // Default
         default:
