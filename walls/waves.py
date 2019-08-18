@@ -54,7 +54,7 @@ def make_y(wall: Wall, svg: Drawing):
 
     w2 = 0.85
 
-    for x in np.arange(wall.x0 - 20, wall.x1 + 20, 5.0):
+    for x in np.arange(wall.x0 - 20, wall.x1 + 20, 6.0):
         points = []
         for y in rngy:
             fxy = f(x, y / 1.66)
@@ -80,7 +80,7 @@ def main():
 
     prod_svg = svgwrite.Drawing(f'{base}.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'{base}-debug.svg', profile='tiny')
-    for i in range(8):
+    for i in range(8, 10):
         wall = Wall(f"{base}-{i}", outer, x_offset=i * (146 + 10))
         make_y(wall, prod_svg)
 
