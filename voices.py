@@ -1,6 +1,7 @@
 import asyncio
 import os
 import platform
+import random
 
 from aiohttp import web
 
@@ -11,8 +12,7 @@ from health import health_check
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
 
-async def play(request):
-    sound = request.query['sound']
+async def _play(sound: str):
     log.info("playing", sound=sound)
 
     filename = os.path.join("sounds", sound)
@@ -31,6 +31,26 @@ async def play(request):
     return web.Response(text="ok")
 
 
+async def play(request):
+    sound = request.query['sound']
+    return await _play(sound)
+
+
+async def play_random(request):
+    sounds = []
+    for (dirpath, dirs, files) in os.walk('sounds'):
+        for f in files:
+            if f.endswith('.wav'):
+                full = os.path.join(dirpath, f)
+
+                full = os.path.relpath(full, "sounds")
+
+                sounds.append(full)
+
+    sound = random.choice(sounds)
+    return await _play(sound)
+
+
 async def setup(name: str, port: int):
     app = web.Application()
 
@@ -41,6 +61,7 @@ async def setup(name: str, port: int):
 
     app.add_routes([
         web.get("/play", play),
+        web.get("/random", play_random),
         web.get('/health', health_check),
     ])
 
