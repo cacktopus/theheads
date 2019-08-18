@@ -103,6 +103,15 @@ func (dj *DJ) RunScenes() {
 	}
 }
 
+func (dj *DJ) Sleep(done chan bool, duration time.Duration) bool {
+	select {
+	case <-time.After(duration):
+		return false
+	case <-done:
+		return true
+	}
+}
+
 var AllScenes = map[string]SceneRunner{
 	"in_n_out":     InNOut,
 	"follow_evade": FollowEvade,

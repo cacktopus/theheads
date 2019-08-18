@@ -30,7 +30,9 @@ func Conversation(dj *DJ, done chan bool) {
 			dj.headManager.send("head", head.Name, path, nil)
 		}
 
-		time.Sleep(1500 * time.Millisecond)
+		if stop := dj.Sleep(done, 1500*time.Millisecond); stop {
+			return
+		}
 
 		h0 := heads[0]
 		h1 := heads[1]
@@ -48,13 +50,17 @@ func Conversation(dj *DJ, done chan bool) {
 		path0 := fmt.Sprintf("/rotation/%f", t0)
 		dj.headManager.send("head", h0.Name, path0, nil)
 
-		time.Sleep(250 * time.Millisecond)
+		if stop := dj.Sleep(done, 333*time.Millisecond); stop {
+			return
+		}
 
 		t1 := h1.PointTo(h0.GlobalPos())
 		path1 := fmt.Sprintf("/rotation/%f", t1)
 		dj.headManager.send("head", h1.Name, path1, nil)
 
-		time.Sleep(1500 * time.Millisecond)
+		if stop := dj.Sleep(done, 2500*time.Millisecond); stop {
+			return
+		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
 		finished := make(chan error)
@@ -65,7 +71,9 @@ func Conversation(dj *DJ, done chan bool) {
 		}
 
 		//TODO: longer depending on duration
-		time.Sleep(500 * time.Millisecond)
+		if stop := dj.Sleep(done, 500*time.Millisecond); stop {
+			return
+		}
 	}
 
 }
