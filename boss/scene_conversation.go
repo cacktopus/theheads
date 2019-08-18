@@ -7,6 +7,7 @@ import (
 	"github.com/cacktopus/heads/boss/util"
 	"github.com/cacktopus/heads/boss/watchdog"
 	"github.com/sirupsen/logrus"
+	"math/rand"
 	"time"
 )
 
@@ -101,17 +102,16 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 
 		p := h0.GlobalPos()
 		selected, distance := dj.grid.ClosestFocalPointTo(p)
-		if selected == nil || distance > 5.0 {
-			pointHeads(h0, h1)
-		} else {
+
+		if selected != nil && distance <= 5.0 && rand.Float64() < 0.66 {
 			done2 := util.NewBroadcastCloser()
 			go FollowClosestFocalPoint(dj, done2, h0, -1)
 			defer done2.Close()
-
-			// give head time to point to fp. TODO: Compute actual time
 			if stop := dj.Sleep(done, TimeF(1.5)); stop {
 				return
 			}
+		} else {
+			pointHeads(h0, h1)
 		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
