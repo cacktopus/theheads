@@ -80,7 +80,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 	}
 
-	for _, part := range t.Content {
+	sayPart := func(part Content) {
 		logrus.WithField("part", part).Info("saying")
 
 		heads := scene.ShuffledHeads(dj.scene.Heads)
@@ -99,7 +99,20 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		h0 := heads[0]
 		h1 := heads[1]
 
-		pointHeads(h0, h1)
+		p := h0.GlobalPos()
+		selected, distance := dj.grid.ClosestFocalPointTo(p)
+		if selected == nil || distance > 5.0 {
+			pointHeads(h0, h1)
+		} else {
+			done2 := util.NewBroadcastCloser()
+			go FollowClosestFocalPoint(dj, done2, h0, -1)
+			defer done2.Close()
+
+			// give head time to point to fp. TODO: Compute actual time
+			if stop := dj.Sleep(done, TimeF(1.5)); stop {
+				return
+			}
+		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
 		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)
@@ -114,6 +127,10 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		watchdog.Feed()
+	}
+
+	for _, part := range t.Content {
+		sayPart(part)
 	}
 
 	done.Close()

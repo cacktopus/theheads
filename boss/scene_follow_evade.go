@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	trackingPeriod = 40 * time.Millisecond
+)
+
 func FollowClosestFocalPoint(
 	dj *DJ,
 	done util.BroadcastCloser,
@@ -17,7 +21,7 @@ func FollowClosestFocalPoint(
 ) {
 	for {
 		select {
-		case <-time.After(40 * time.Millisecond):
+		case <-time.After(trackingPeriod):
 			p := head.GlobalPos()
 
 			selected, distance := dj.grid.ClosestFocalPointTo(p)
@@ -36,6 +40,23 @@ func FollowClosestFocalPoint(
 			dj.headManager.send("head", head.Name, path)
 		case <-done.Chan():
 			logrus.WithField("head", head.Name).Println("Finishing FollowClosestFocalPoint")
+			return
+		}
+	}
+}
+
+func TrackFocalPoint(dj *DJ, done util.BroadcastCloser, head *scene.Head, fp *FocalPoint) {
+	for {
+		select {
+		case <-time.After(trackingPeriod):
+			if fp.isExpired() { // feels like concurrent access?
+				return
+			}
+			theta := head.PointTo(fp.pos)
+			path := fmt.Sprintf("/rotation/%f", theta)
+			dj.headManager.send("head", head.Name, path)
+		case <-done.Chan():
+			logrus.WithField("head", head.Name).Println("Finishing TrackFocalPoint")
 			return
 		}
 	}

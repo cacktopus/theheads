@@ -6,7 +6,7 @@ from functools import reduce
 import log
 import util
 from scene_follow_evade import follow_closest_focal_point
-
+    
 
 async def conversation(orchestrator: "Orchestrator"):
     heads = list(orchestrator.inst.heads.values())
