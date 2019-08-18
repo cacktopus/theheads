@@ -5,6 +5,7 @@ import (
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/cacktopus/heads/boss/util"
+	"github.com/cacktopus/heads/boss/watchdog"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -112,6 +113,8 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		if stop := dj.Sleep(done, voiceWaitTime); stop {
 			return
 		}
+
+		watchdog.Feed()
 	}
 
 	done.Close()

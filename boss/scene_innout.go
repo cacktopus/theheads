@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/util"
+	"github.com/cacktopus/heads/boss/watchdog"
 	"time"
 )
 
@@ -17,6 +18,8 @@ func InNOut(dj *DJ, done util.BroadcastCloser) {
 	center = center.Scale(1.0 / float64(len(dj.scene.Heads)))
 
 	for {
+		watchdog.Feed()
+
 		for _, head := range dj.scene.Heads {
 			theta := head.PointAwayFrom(center)
 			path := fmt.Sprintf("/rotation/%f", theta)

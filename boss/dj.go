@@ -16,7 +16,7 @@ type SceneConfig struct {
 func (dj *DJ) RunScenes() {
 	for {
 		for _, sceneName := range dj.scene.Scenes {
-			logrus.WithField("scene", sceneName).Info("Running")
+			logrus.WithField("scene", sceneName).Info("Running Scene")
 			done := util.NewBroadcastCloser()
 			sc := AllScenes[sceneName]
 			go sc.Runner(dj, done)
