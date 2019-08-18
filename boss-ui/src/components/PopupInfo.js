@@ -37,6 +37,11 @@ export default class Popup extends React.Component {
                         label: "Find Zero",
                         port: 8080,
                         route: "/find_zero"
+                    },
+                    {
+                        label: "Motor Off",
+                        port: 8080,
+                        route: "/off"
                     }
                 ]
             },
@@ -62,6 +67,16 @@ export default class Popup extends React.Component {
                         label: "Off",
                         port: 8082,
                         route: "/run/off"
+                    }
+                ]
+            },
+            {
+                categoryName: "Sound",
+                endpoints: [
+                    {
+                        label: "Random",
+                        port: 3031,
+                        route: "/random"
                     }
                 ]
             },
