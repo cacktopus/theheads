@@ -84,7 +84,13 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		// done1 is now the greater time
-		delay := time.Now().Sub(done1)
+		delay := done1.Sub(time.Now())
+
+		logrus.WithFields(logrus.Fields{
+			"eta0":  eta0.Seconds(),
+			"eta1":  eta1.Seconds(),
+			"delay": delay.Seconds(),
+		}).Info("etas")
 
 		if stop := dj.Sleep(done, delay); stop {
 			return
@@ -96,9 +102,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		finished := make(chan Result)
-		dj.headManager.send("voices", h0.Name, playPath)
-		result := <-finished // TODO: timeout
+		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)
 		if result.Err != nil {
 			logrus.WithError(result.Err).Error("error playing sound")
 		}
