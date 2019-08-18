@@ -40,25 +40,7 @@ func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
 func Conversation(dj *DJ, done util.BroadcastCloser) {
 	t := randomText(dj.texts)
 
-	for _, part := range t.Content {
-		logrus.WithField("part", part).Info("saying")
-
-		heads := scene.RandomHeads(dj.scene.Heads)
-
-		// all point forward
-		for _, head := range dj.scene.Heads {
-			theta := head.PointTo(geom.NewVec(0, -10))
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
-		}
-
-		if stop := dj.Sleep(done, TimeF(1.5)); stop {
-			return
-		}
-
-		h0 := heads[0]
-		h1 := heads[1]
-
+	pointHeads := func(h0, h1 *scene.Head) {
 		t0 := h0.PointTo(h1.GlobalPos())
 
 		logrus.WithFields(logrus.Fields{
@@ -80,12 +62,12 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		eta1, _ := PositionHead(dj, h1.Name, t1)
 		done1 := time.Now().Add(eta1)
 
+		// ensure done1 is the greater time
 		if done0.After(done1) {
 			done0, done1 = done1, done0
 		}
 
-		// done1 is now the greater time
-		delay := done1.Sub(time.Now())
+		delay := done1.Sub(time.Now()) + TimeF(0.20)
 
 		logrus.WithFields(logrus.Fields{
 			"eta0":  eta0.Seconds(),
@@ -96,11 +78,28 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		if stop := dj.Sleep(done, delay); stop {
 			return
 		}
+	}
 
-		// Should I time this to actual head pointing to where I want it?
-		if stop := dj.Sleep(done, TimeF(2.5)); stop {
+	for _, part := range t.Content {
+		logrus.WithField("part", part).Info("saying")
+
+		heads := scene.ShuffledHeads(dj.scene.Heads)
+
+		// all point forward
+		for _, head := range dj.scene.Heads {
+			theta := head.PointTo(geom.NewVec(0, -10))
+			path := fmt.Sprintf("/rotation/%f", theta)
+			dj.headManager.send("head", head.Name, path)
+		}
+
+		if stop := dj.Sleep(done, TimeF(1.5)); stop {
 			return
 		}
+
+		h0 := heads[0]
+		h1 := heads[1]
+
+		pointHeads(h0, h1)
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
 		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)

@@ -67,7 +67,7 @@ func SelectHeads(
 	return
 }
 
-func RandomHeads(heads map[string]*Head) (result []*Head) {
+func ShuffledHeads(heads map[string]*Head) (result []*Head) {
 	for _, head := range heads {
 		result = append(result, head)
 	}
