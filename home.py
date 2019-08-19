@@ -13,6 +13,7 @@ from jinja2 import Environment, select_autoescape, FileSystemLoader
 import health
 import log
 import read_temperature
+import synctime
 import util
 from boss_routes import static_text_handler
 from journald_tail import run_journalctl
@@ -228,6 +229,12 @@ async def setup(
     ])
 
     return app
+
+
+async def update_time():
+    while True:
+        await asyncio.sleep(60)
+        synctime.synctime()
 
 
 def main():
