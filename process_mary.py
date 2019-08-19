@@ -49,6 +49,9 @@ def get_audio(voice: Voice, filename: str, sentence: Sentence) -> float:
 
 
 def process_script(voice: Voice, title: str, content: str) -> Dict:
+    disabled = title.startswith("-")
+    title = title.lstrip("-")
+
     print(f" {title} ".center(80, "-"))
 
     result = []
@@ -60,12 +63,12 @@ def process_script(voice: Voice, title: str, content: str) -> Dict:
         print(digest)
 
         filename = os.path.join("sounds", digest)
-        duration = sound_duration(filename)
-        print(duration)
+
+        duration = get_audio(Rms(), filename, sentence)
 
         result.append({"id": digest, "duration": duration})
 
-    return {"title": title, "content": result}
+    return {"title": title, "content": result, "enabled": not disabled}
 
 
 def main():

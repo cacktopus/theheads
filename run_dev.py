@@ -49,7 +49,7 @@ async def run():
 
     await asyncio.wait(heads + [
         util.run_app(app2),
-        util.run_app(app3),
+        util.run_app(app3process_mary.py),
     ])
 
     await run_camera("camera-42", "../pi42.raw", 5002)
