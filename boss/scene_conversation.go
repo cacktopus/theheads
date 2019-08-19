@@ -102,6 +102,10 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		selected, distance := dj.grid.ClosestFocalPointTo(p)
 
 		if selected != nil && distance <= 5.0 && rand.Float64() < 0.66 {
+			logrus.WithFields(logrus.Fields{
+				"h0":       h0.Name,
+				"distance": distance,
+			}).Info("talking to viewer")
 			done2 := util.NewBroadcastCloser()
 			go FollowClosestFocalPoint(dj, done2, h0, -1)
 			defer done2.Close()
@@ -109,6 +113,11 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 				return
 			}
 		} else {
+			logrus.WithFields(logrus.Fields{
+				"distance": distance,
+				"h0":       h0.Name,
+				"h1":       h1.Name,
+			}).Info("talking to another head")
 			pointHeads(h0, h1)
 		}
 
