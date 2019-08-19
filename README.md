@@ -23,7 +23,9 @@ brew install go
 # brew upgrade go (if necessary)
 brew install opencv (3.4.3)
 brew install pkg-config
-cd camera; go build .
+cd camera; go build .; cd ..
+cd boss; go build .; cd..
+./boss (to start boss if you need to)
 
 Misc notes:
 gcc -O3 -shared trace.c -o trace.so
