@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import os
 import platform
 import time
 from typing import Tuple, Dict, Optional
@@ -13,6 +14,7 @@ from jinja2 import Environment, select_autoescape, FileSystemLoader
 import health
 import log
 import read_temperature
+import synctime
 import util
 from boss_routes import static_text_handler
 from journald_tail import run_journalctl
@@ -213,6 +215,9 @@ async def setup(
 
         asyncio.ensure_future(read_temperature.monitor_temperatures(TEMPERATURE))
 
+    if util.is_rpi3():
+        asyncio.create_task(update_time())
+
     app.add_routes([
         web.get('/', handle),
         web.get('/a', host_handler),
@@ -228,6 +233,13 @@ async def setup(
     ])
 
     return app
+
+
+async def update_time():
+    if os.environ.get("SYNC_TIME", None):
+        while True:
+            await synctime.synctime()
+            await asyncio.sleep(60)
 
 
 def main():

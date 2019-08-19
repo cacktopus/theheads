@@ -1,6 +1,5 @@
 import asyncio
 import os
-import traceback
 
 from aiohttp import web
 
