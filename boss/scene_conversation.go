@@ -11,19 +11,17 @@ import (
 	"time"
 )
 
-type DJ struct {
-	grid        *Grid
-	scene       *scene.Scene
-	headManager *HeadManager
-	texts       []*Text
-}
-
 func TimeF(d float64) time.Duration {
 	return time.Duration(d * float64(time.Second))
 }
 
 type HeadResult struct {
-	Eta float64 `json:"eta"`
+	Result     string  `json:"result"`
+	Position   float64 `json:"position"`
+	Rotation   float64 `json:"rotation"`
+	Controller string  `json:"controller"`
+	StepsAway  int     `json:"steps_away"`
+	Eta        float64 `json:"eta"`
 }
 
 func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
