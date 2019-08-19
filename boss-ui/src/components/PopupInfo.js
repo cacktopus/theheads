@@ -16,9 +16,12 @@ export default class Popup extends React.Component {
         super(props);
 
         let cameraFeedEndpoints = [];
-
+        
         try {
-            for (let cameraName in props.stand.toJS().cameras) {
+            const cams = props.stand.toJS().cameras;
+            for (let cameraIndex in cams) {
+                const cameraName = cams[cameraIndex].name;
+                
                 cameraFeedEndpoints.push({
                     label: `View ${cameraName} Feed`,
                     // port: 5000,
@@ -27,6 +30,7 @@ export default class Popup extends React.Component {
                 });
             }
         } catch(e) {
+            console.log('error in PopupInfor: ', e);
         }
 
         this.state = {
