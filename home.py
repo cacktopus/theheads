@@ -214,6 +214,9 @@ async def setup(
 
         asyncio.ensure_future(read_temperature.monitor_temperatures(TEMPERATURE))
 
+    if util.is_rpi3():
+        asyncio.create_task(update_time())
+
     app.add_routes([
         web.get('/', handle),
         web.get('/a', host_handler),
