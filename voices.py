@@ -19,7 +19,7 @@ async def _play(sound: str):
 
     if not os.path.isfile(filename):
         log.error("missing sound", path=os.path.abspath(filename))
-        return web.Response(status=404, text=f"missing {filename}")
+        return web.Response(status=404, text=f"missing {filename}", headers=CORS_ALL)
 
     process = await asyncio.create_subprocess_exec(
         play_cmd,
@@ -28,7 +28,8 @@ async def _play(sound: str):
 
     await process.wait()
 
-    return web.Response(text="ok")
+    # return web.Response(text="ok")
+    return web.Response(text="ok", content_type="application/json", headers=CORS_ALL)
 
 
 async def play(request):
