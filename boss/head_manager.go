@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/heads/boss/config"
 	consulapi "github.com/hashicorp/consul/api"
@@ -15,9 +16,15 @@ const (
 	defaultConsulEndpoint = "http://127.0.0.1:8500"
 )
 
+type Result struct {
+	Err        error
+	Body       []byte
+	StatusCode int
+}
+
 type SendItem struct {
 	path   string
-	result chan error
+	result chan Result
 }
 
 type HeadQueue struct {
@@ -58,25 +65,25 @@ func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
 	return services[0], nil
 }
 
-func (h *HeadQueue) send(url string) error {
+func (h *HeadQueue) send(url string) Result {
 	log.WithField("url", url).Debug("sending")
 	resp, err := h.headClient.Get(url)
 	if err != nil {
-		return err
+		return Result{Err: err}
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return errors.New("received non-200 status code")
+		return Result{Err: errors.New("received non-200 status code")}
 	}
 
-	_, err = ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return Result{Err: err}
 	}
 
-	return nil
+	return Result{Body: body, StatusCode: resp.StatusCode}
 }
 
 func (h *HeadQueue) sendLoop() {
@@ -86,20 +93,17 @@ func (h *HeadQueue) sendLoop() {
 		if err != nil {
 			log.WithError(err).Error("error looking up service")
 			if item.result != nil {
-				item.result <- err
+				item.result <- Result{Err: err}
 			}
 		}
 
-		err = h.send(url)
-		if err != nil {
-			log.WithError(err).Error("error sending to service")
-			if item.result != nil {
-				item.result <- err
-			}
+		result := h.send(url)
+		if result.Err != nil {
+			log.WithError(result.Err).Error("error sending to service")
 		}
 
 		if item.result != nil {
-			item.result <- nil
+			item.result <- result
 		}
 	}
 }
@@ -132,8 +136,29 @@ func (h *HeadManager) getQueue(serviceName, headName string) *HeadQueue {
 	return queue
 }
 
-// result is optional
-func (h *HeadManager) send(serviceName, headName, path string, result chan error) {
+func (h *HeadManager) sendWithResult(serviceName, headName, path string, unpack interface{}) Result {
+	resultChan := make(chan Result)
+
 	queue := h.getQueue(serviceName, headName)
-	queue.queue <- SendItem{path, result}
+	queue.queue <- SendItem{path, resultChan}
+
+	result := <-resultChan
+
+	if result.Err != nil {
+		return result
+	}
+
+	if unpack != nil {
+		err := json.Unmarshal(result.Body, unpack)
+		if err != nil {
+			return Result{Err: err}
+		}
+	}
+
+	return result
+}
+
+func (h *HeadManager) send(serviceName, headName, path string) {
+	queue := h.getQueue(serviceName, headName)
+	queue.queue <- SendItem{path, nil}
 }

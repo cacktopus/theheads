@@ -8,7 +8,7 @@ import {
     headRotateByHeadName
 } from "../actions";
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
-import { debounce } from 'throttle-debounce';
+import { throttle, debounce } from 'throttle-debounce';
 
 // const temp = [{
 //     "type": "kinect",
@@ -62,6 +62,24 @@ function clearKinectFocalPoint(store, kinectName) {
 const CLEAR_KINECT_FOCAL_POINTS_TIMEOUT = 5000; // Time of not getting message to then clear all focal points for that kinect.
 let debouncedClearKinectFocalPointFns = {};
 
+
+function sendMotionLine({store, lineId, shape, coords}) {
+    store.dispatch(motionLinesAddLine({
+        lineId,
+        shape,
+        coords
+    }))
+
+    setTimeout(() => {
+        store.dispatch(motionLinesRemoveLine({
+            lineId
+        }));
+    }, 350); // NOTE: this 350ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
+}
+
+const throttleSpeed = 300;
+const throttledSendMotionLine = throttle(throttleSpeed, sendMotionLine);
+
 export const customWebsocketMiddleware = store => next => action => {
     if (action.type === WEBSOCKET_MESSAGE) {
         let totalPayload; // parse through each payload
@@ -85,17 +103,8 @@ export const customWebsocketMiddleware = store => next => action => {
                             coords = coords.concat(payloadDataChunkData.p1);
                         } catch(e) {}
 
-                        store.dispatch(motionLinesAddLine({
-                            lineId,
-                            shape,
-                            coords
-                        }))
+                        throttledSendMotionLine({store, lineId, shape, coords});
 
-                        setTimeout(() => {
-                            store.dispatch(motionLinesRemoveLine({
-                                lineId
-                            }));
-                        }, 600); // NOTE: this 1500ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
                         break;
                     case "active":
                         try {

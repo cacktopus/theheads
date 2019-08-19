@@ -5,6 +5,7 @@ import (
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/config"
 	"github.com/cacktopus/heads/boss/scene"
+	"github.com/cacktopus/heads/boss/watchdog"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -18,6 +19,8 @@ var upgrader = websocket.Upgrader{}
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	go watchdog.Watch()
 
 	broker := broker.NewBroker()
 	go broker.Start()

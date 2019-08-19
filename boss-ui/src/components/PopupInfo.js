@@ -15,6 +15,20 @@ export default class Popup extends React.Component {
     constructor(props) {
         super(props);
 
+        let cameraFeedEndpoints = [];
+
+        try {
+            for (let cameraName in props.stand.toJS().cameras) {
+                cameraFeedEndpoints.push({
+                    label: `View ${cameraName} Feed`,
+                    // port: 5000,
+                    customUrl: `http://${cameraName}.camera.service.consul:5000/`,
+                    isOpenNewWindow: true
+                });
+            }
+        } catch(e) {
+        }
+
         this.state = {
             // moveRelativeStartPos: { x: 0, y: 0 },
             // pos : {x:0, y:0},
@@ -79,8 +93,10 @@ export default class Popup extends React.Component {
                         route: "/random"
                     }
                 ]
-            },
-            {
+            },{
+                categoryName: "Cameras",
+                endpoints: cameraFeedEndpoints
+            },{
                 categoryName: "Host",
                 endpoints: [
                     {
@@ -116,17 +132,34 @@ export default class Popup extends React.Component {
     }
 
     getEndpoints() {
-        const getRequestButton = ({ label, port, route }) => {
-            const getUrl = `http://${this.props.headName}.head.service.consul:${port}${route}`;
-
-            return (
-                <button
-                    style={{ marginRight: 15 }}
-                    onClick={this.makeRequest.bind(this, getUrl)}
-                >
-                    {label}
-                </button>
-            );
+        const getRequestButton = ({ label, port, route, customUrl, isOpenNewWindow }) => {
+            const getUrl = customUrl ? customUrl : `http://${this.props.headName}.head.service.consul:${port}${route}`;   
+            if (typeof window !== 'undefined') {
+                window.c__ = { label, port, route, customUrl, isOpenNewWindow }
+            }
+            if (isOpenNewWindow) {
+                if (typeof window !== 'undefined') {
+                    window.c__url = {getUrl,  label, port, route, isOpenNewWindow};
+                }
+    
+                return (
+                    <button
+                        style={{ marginRight: 15 }}
+                        onClick={() => window.open(getUrl)}
+                    >
+                        {label}
+                    </button>
+                );
+            } else {
+                return (
+                    <button
+                        style={{ marginRight: 15 }}
+                        onClick={this.makeRequest.bind(this, getUrl)}
+                    >
+                        {label}
+                    </button>
+                );
+            }
         };
 
         return this.popupEndpoints.map(({ categoryName, endpoints }) => {
@@ -137,9 +170,9 @@ export default class Popup extends React.Component {
                     <p>
                         {categoryName}
                         <br />
-                        {endpoints.map(({ label, port, route }) => {
+                        {endpoints.map(({ label, port, route, customUrl, isOpenNewWindow }) => {
                             // const {label, port, route} = endpoint
-                            return getRequestButton({ label, port, route });
+                            return getRequestButton({ label, port, route, customUrl, isOpenNewWindow });
                         })}
                     </p>
                 </>
