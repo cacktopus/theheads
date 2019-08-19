@@ -79,6 +79,9 @@ class Stepper:
     def current_rotation(self) -> float:
         return self._pos / NUM_STEPS * 360.0
 
+    def controller_name(self) -> str:
+        return self._controller.__class__.__name__
+
     def find_zero(self):
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = zero_detector.ZeroDetector(self._gpio)
@@ -90,6 +93,15 @@ class Stepper:
     def seek(self):
         self._next_controller = Seeker()  # TODO: derive from current controllers
         self._controller = Seeker()
+
+    def steps_away(self) -> int:
+        return min(
+            (self._target - self._pos) % NUM_STEPS,
+            (self._pos - self._target) % NUM_STEPS,
+        )
+
+    def eta(self) -> float:
+        return self.steps_away() * (1.0 / self._speed)
 
     def off(self):
         self._motor.MC.setPin(self._motor.AIN2, 0)
@@ -184,7 +196,13 @@ def adjust_position(request, speed, target):
     stepper.set_target(target)
     if speed is not None:
         stepper.set_speed(speed)
-    result = json.dumps({"result": "ok"})
+
+    result = json.dumps({
+        "result": "ok",
+        "steps_away": stepper.steps_away(),
+        "eta": stepper.eta(),
+
+    })
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
 
 
@@ -242,6 +260,19 @@ async def off(request):
 
     result = json.dumps({"result": "ok"})
     return web.Response(text=result + "\n", content_type="application/json", headers=CORS_ALL)
+
+
+async def status(request):
+    stepper = get_stepper(request)
+
+    return web.Response(text=json.dumps({
+        "result": "ok",
+        "position": stepper.pos,
+        "rotation": stepper.current_rotation(),
+        "controller": stepper.controller_name(),
+        "steps_away": stepper.steps_away(),
+        "eta": stepper.eta(),
+    }), content_type="application/json", headers=CORS_ALL)
 
 
 async def get_config(config_endpoint: str, instance: str, port: int):
@@ -328,6 +359,7 @@ async def setup(
         web.get("/slow_rotate", slow_rotate),
         web.get("/seek", seek),
         web.get("/off", off),
+        web.get("/status", status),
     ])
 
     return app
