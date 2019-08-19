@@ -907,7 +907,7 @@ body {
 
 .MotionLine.fadeOut {
   animation-name: fadeOutMotionLine;
-  animation-duration: 350ms;
+  animation-duration: 200ms;
   /* NOTE: this 1500ms should be the same value as what's in ./middleware/index.js => customWebsocketMiddleware, for the setTimeout duration of the removal for the MotionLine */
 }
 
