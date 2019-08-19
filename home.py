@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import os
 import platform
 import time
 from typing import Tuple, Dict, Optional
@@ -235,9 +236,10 @@ async def setup(
 
 
 async def update_time():
-    while True:
-        await synctime.synctime()
-        await asyncio.sleep(60)
+    if os.environ.get("SYNC_TIME", None):
+        while True:
+            await synctime.synctime()
+            await asyncio.sleep(60)
 
 
 def main():
