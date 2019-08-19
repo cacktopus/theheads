@@ -74,7 +74,7 @@ function sendMotionLine({store, lineId, shape, coords}) {
         store.dispatch(motionLinesRemoveLine({
             lineId
         }));
-    }, 200); // NOTE: this 350ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
+    }, 150); // NOTE: this 350ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
 }
 
 // const throttleSpeed = 300;
