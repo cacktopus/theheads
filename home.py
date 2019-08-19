@@ -236,8 +236,8 @@ async def setup(
 
 async def update_time():
     while True:
+        await synctime.synctime()
         await asyncio.sleep(60)
-        synctime.synctime()
 
 
 def main():
