@@ -167,12 +167,13 @@ export default class Menu extends React.Component {
     }
 
     handleRestart() {
-        const url = `http://${document.location.hostname}:8000/restart?service=boss`;
+        const url = `http://${document.location.hostname}:80/restart?service=boss`;
         axios.get(url);
+        setTimeout( () => window.location.reload(), 1500);
     }
 
     handleStop() {
-        const url = `http://${document.location.hostname}:8000/stop?service=boss`;
+        const url = `http://${document.location.hostname}:80/stop?service=boss`;
         axios.get(url);
     }
 
