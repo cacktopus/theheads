@@ -17,6 +17,7 @@ import {
     cameraRemoveByIndex,
     standAdd,
     focalPointAdd,
+    menuDeselectStandAndAll,
     menuSelectStand,
     menuSelectCamera,
     menuSelectHead,
@@ -60,6 +61,8 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
     setScale: scale => dispatch(menuSetScale(scale)),
     setTranslateX: x => dispatch(menuSetTranslateX(x)),
     setTranslateY: y => dispatch(menuSetTranslateY(y)),
+
+    menuDeselectStandAndAll: () => dispatch(menuDeselectStandAndAll()),
 
     menuToggleHideCameraRotates: () => dispatch(menuToggleHideRotates("camera")),
     menuToggleHideStandRotates: () => dispatch(menuToggleHideRotates("stand")),

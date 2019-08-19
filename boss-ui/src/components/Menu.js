@@ -859,15 +859,21 @@ export default class Menu extends React.Component {
                         padding: "5px"
                     }}
                 >
-                    Show Distances:&nbsp;
+                    
                     {this.props.menu.get("isShowDistances") ? (
-                        <button onClick={this.props.menuShowAllDistances}>
-                            Hide All
-                        </button>
+                        <>
+                            Showing Distances:&nbsp;
+                            <button onClick={this.props.menuShowAllDistances}>
+                                Hide All
+                            </button>
+                        </>
                     ) : (
-                        <button onClick={this.props.menuHideAllDistances}>
-                            Show All
-                        </button>
+                        <>
+                            Hiding Distances:&nbsp;
+                            <button onClick={this.props.menuHideAllDistances}>
+                                Show All
+                            </button>
+                        </>
                     )}
                     <label>Round</label>
                     <input
@@ -933,7 +939,22 @@ export default class Menu extends React.Component {
                     >
                         Hide All
                     </button>
+                </div><div
+                    style={{
+                        display: "inline-block",
+                        background: "#8FCbEF",
+                        padding: "5px"
+                    }}
+                >
+                    <button
+                        onClick={
+                            this.props.menuDeselectStandAndAll
+                        }
+                    >
+                        Deselect Stand
+                    </button>
                 </div>
+
             </div>
         );
     }

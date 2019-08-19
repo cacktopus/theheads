@@ -381,6 +381,11 @@ body {
   position: relative;
 }
 
+.AnchorDistance, 
+.AnchorDistance-text,
+.AnchorDistance-text-span {
+  z-index: 20;
+}
 .AnchorDistance {
   position: absolute;
   height: 0;
@@ -389,8 +394,17 @@ body {
   text-align: center;
 }
 
+
 .AnchorDistance-text {
-  
+  height: 0px;
+}
+
+.AnchorDistance-text-span {
+  background: white;
+  padding: 2px;
+  margin-top: -5px;
+  height: 0px;
+  z-index: 9999;
 }
 
 .AnchorDistance-text--flipped {
