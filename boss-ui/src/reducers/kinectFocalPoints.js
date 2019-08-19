@@ -10,7 +10,7 @@ console.log("**NEED TO SETUP A TIMEOUT IF WE GET NO MESSAGE FROM KINECT**");
 
 const kinect = (state = fromJS(initialState), action) => {
     window.c_KK123 = { state, action };
-    let newState = state; 
+    // let newState = state; 
     // let tempFocalPointIndex; 
 
     switch (action.type) {

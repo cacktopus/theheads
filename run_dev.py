@@ -4,7 +4,7 @@ import asyncio
 import head
 import home
 import util
-import fake_voices
+import voices
 from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend
 from seed_dev_data import head_names
@@ -41,7 +41,8 @@ async def run():
 
     for i, name in enumerate(["voices-01", "voices-02", "voices-03"]):
         # TODO: use service ports from consul
-        await fake_voices.run(name, 3030 + i)
+        voice = await voices.setup(name, 3030 + i)
+        await util.run_app(voice)
 
     app2 = await run_boss()
     app3 = await home.setup(port=8000)

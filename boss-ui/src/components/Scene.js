@@ -2,6 +2,8 @@ import React from 'react'
 //import Heads from '../containers/Heads'
 // import Draggable, {DraggableCore} from 'react-draggable'; 
 import Stand from '../containers/Stand';
+import Anchor from '../containers/Anchor';
+import AnchorDistances from '../containers/AnchorDistances';
 // import FocalPoint from '../containers/FocalPoint';
 import FocalPoints from '../containers/FocalPoints';
 // import Popups from '../components/Popups';
@@ -27,18 +29,25 @@ export default class Menu extends React.Component {
     componentDidMount() {
         var html = document.getElementsByTagName("html")[0];
 
+        // const deselectForTagName = (e) => {
+        //     const sourceTagName = e.target.tagName.toUpperCase();
+        //     if (sourceTagName === "HTML" ||
+        //         sourceTagName === "TD"
+        //     ) {
+        //         console.log('deselet all ');
+        //         this.props.menuDeselectStandAndAll();
+        //     } else {
+        //         console.log('deselet all : NOPE, ', e.target.tagName);
+        //     }
+        // }
 
-        html.addEventListener("mousedown", (e) => {
-            if (e.target.tagName.toUpperCase() === "HTML") {
-                this.props.menuDeselectStandAndAll();
-            }
-        })
+        // html.addEventListener("mousedown", (e) => {
+        //     deselectForTagName(e);
+        // })
 
-        html.addEventListener("touchstart", (e) => {
-            if (e.target.tagName.toUpperCase() === "HTML") {
-                this.props.menuDeselectStandAndAll();
-            }
-        })
+        // html.addEventListener("touchstart", (e) => {
+        //     deselectForTagName(e);
+        // })
     }
 
     render() {
@@ -51,6 +60,10 @@ export default class Menu extends React.Component {
         const standsContainerStyle = {
             position: "relative"
         }
+
+        const anchors = this.props.anchors.map((anchor, i) => {
+            return <Anchor key={i} index={i} anchor={anchor} />
+        });
 
         // let kinects = [];
         // try {
@@ -87,8 +100,12 @@ export default class Menu extends React.Component {
             <div id="Scene" className="Scene">
                 <div style={standsContainerStyle}>
                     <UnderVisuals />
+                    <AnchorDistances />
                     <div className="Stands">
                         {stands}
+                    </div>
+                    <div className="Anchors">
+                        {anchors}
                     </div>
                     <FocalPoints />
                     {/* <Popups popups={this.props.popups}/> */}

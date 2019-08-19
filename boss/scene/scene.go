@@ -3,17 +3,19 @@ package scene
 import (
 	"errors"
 	"fmt"
+	"math"
+	"math/rand"
+
 	"github.com/cacktopus/heads/boss/config"
 	"github.com/cacktopus/heads/boss/geom"
 	consulApi "github.com/hashicorp/consul/api"
 	"gopkg.in/yaml.v2"
-	"math"
-	"math/rand"
 )
 
 type Scene struct {
 	Stands        []*Stand      `json:"stands"`
 	Scale         int           `json:"scale"`
+	Anchors       []*Anchor     `json:"anchors"`
 	Translate     Translate     `json:"translate"`
 	Scenes        []string      `json:"scenes"`
 	StartupScenes []interface{} `json:"startup_scenes"`
@@ -21,6 +23,7 @@ type Scene struct {
 	Cameras map[string]*Camera `json:"-"`
 	Heads   map[string]*Head   `json:"-"`
 }
+
 type Pos struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
@@ -42,6 +45,12 @@ type Head struct {
 	M       geom.Mat `json:"-"`
 	MInv    geom.Mat `json:"-"`
 	Stand   *Stand   `json:"-"`
+}
+
+type Anchor struct {
+	Name    string `json:"name"`
+	Pos     Pos    `json:"pos"`
+	Enabled bool
 }
 
 func SelectHeads(
@@ -80,8 +89,11 @@ type Stand struct {
 	Disabled bool
 	Enabled  bool
 
-	Cameras map[string]*Camera `json:"cameras" yaml:"-"`
-	Heads   map[string]*Head   `json:"heads" yaml:"-"`
+	Cameras []*Camera `json:"cameras" yaml:"-"`
+	Heads   []*Head   `json:"heads" yaml:"-"`
+
+	CameraMap map[string]*Camera `json:"-" yaml:"-"`
+	HeadMap   map[string]*Head   `json:"-" yaml:"-"`
 }
 type Translate struct {
 	X int `json:"x"`
@@ -111,11 +123,13 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		Heads:   map[string]*Head{},
 	}
 
+	config.MustGetYAML(consulClient, "/the-heads/scene.yaml", scene)
+
 	// heads and cameras don't "exist" until they are added to a stand
 	definedHeads := map[string]*Head{}
 	definedCameras := map[string]*Camera{}
 
-	// Cameras
+	// CameraMap
 	cameraYAML, err := config.GetPrefix(consulClient, "/the-heads/cameras")
 	if err != nil {
 		return nil, err
@@ -132,7 +146,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		definedCameras[camera.Name] = camera
 	}
 
-	// Heads
+	// HeadMap
 	headYAML, err := config.GetPrefix(consulClient, "/the-heads/heads")
 	if err != nil {
 		return nil, err
@@ -153,12 +167,11 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	for _, yml := range standYAML {
 		stand := &Stand{
-			Enabled: true,
-			Cameras: map[string]*Camera{},
-			Heads:   map[string]*Head{},
+			Enabled:   true,
+			CameraMap: map[string]*Camera{},
+			HeadMap:   map[string]*Head{},
 		}
 		err := yaml.Unmarshal(yml, &stand)
 		if err != nil {
@@ -177,7 +190,8 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 				return nil, errors.New(fmt.Sprintf("%s not found", name))
 			}
 			camera.Stand = stand
-			stand.Cameras[camera.Name] = camera
+			stand.CameraMap[camera.Name] = camera
+			stand.Cameras = append(stand.Cameras, camera)
 			scene.Cameras[camera.Name] = camera
 		}
 
@@ -188,11 +202,27 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 			}
 			head.Stand = stand
 			head.MInv = head.Stand.M.Mul(head.M).Inv() // hmmmm, we use Stand.M for MInv but not for head.M
-			stand.Heads[head.Name] = head
+			stand.HeadMap[head.Name] = head
+			stand.Heads = append(stand.Heads, head)
 			scene.Heads[head.Name] = head
 		}
 
 		scene.Stands = append(scene.Stands, stand)
+	}
+
+	// Anchors
+	anchorYAML, err := config.GetPrefix(consulClient, "/the-heads/anchors")
+	if err != nil {
+		return nil, err
+	}
+	for _, yml := range anchorYAML {
+		anchor := &Anchor{}
+		err := yaml.Unmarshal(yml, &anchor)
+		if err != nil {
+			return nil, err
+		}
+
+		scene.Anchors = append(scene.Anchors, anchor)
 	}
 
 	fmt.Println(scene)

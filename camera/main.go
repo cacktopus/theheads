@@ -27,6 +27,8 @@ const (
 	numFrames = 10
 
 	defaultPort = 5000
+
+	warmupFrames = 36
 )
 
 type frameGrabber func(dst *gocv.Mat) bool
@@ -66,6 +68,11 @@ func main() {
 	flag.IntVar(&port, "port", defaultPort, "port to listen on")
 	flag.Parse()
 
+	err := raspiStill()
+	if err != nil {
+		log.WithError(err).Info("Error running raspistill")
+	}
+
 	fmt.Println("filename: ", filename)
 
 	if instance == "" {
@@ -99,7 +106,6 @@ func main() {
 			grabber = fromWebCam()
 		}
 	}
-	// TODO: camera warmup
 
 	avg := gocv.NewMat()
 	frameDelta := gocv.NewMat()
@@ -112,6 +118,10 @@ func main() {
 
 	ffmpegFeeder := runFfmpeg()
 	go sendToStepper()
+
+	for frameNo := 0; frameNo < warmupFrames; frameNo++ {
+		grabber(&orig)
+	}
 
 	for frameNo := 0; ; frameNo++ {
 		t("whole-frame", func() {

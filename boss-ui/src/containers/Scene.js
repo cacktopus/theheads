@@ -5,6 +5,7 @@ import Scene from '../components/Scene'
 const mapStateToProps = (state, ownProps) =>
   ({
     stands: state.stands,
+    anchors: state.anchors,
     kinects: state.kinects,
     focalPoints: state.focalPoints,
     menu: state.menu

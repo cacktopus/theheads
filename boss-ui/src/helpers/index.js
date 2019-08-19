@@ -3,6 +3,8 @@ import { scale, translate, compose, applyToPoint } from 'transformation-matrix';
 // import { scale, rotate, translate, compose, applyToPoint } from 'transformation-matrix';
 
 export const STAND_WIDTH = 0.381;
+export const ANCHOR_WIDTH = 0.381;
+// export const ANCHOR_DISTANCE_WIDTH = 0.381;
 
 // E.g.: rotateVector([0,1], 90); for point 0,1 rotate by 90degrees.
 export const rotateVector = (vec, ang, origin) => {

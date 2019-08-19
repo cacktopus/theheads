@@ -19,7 +19,7 @@ func manageWebsocket(conn *websocket.Conn, msgBroker *broker.Broker) {
 
 		for m := range msgs {
 			switch msg := m.(type) {
-			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints:
+			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints, broker.Active:
 				data, err := json.Marshal(msg)
 				if err != nil {
 					panic(err)

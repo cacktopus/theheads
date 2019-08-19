@@ -11,8 +11,6 @@ import axios from "axios";
 import { decodeRot, encodePosScale, decodePosScale } from "../helpers";
 // import {encodeRot, decodeRot, encodePosScale, decodePosScale} from '../helpers';
 
-window.c_a = axios;
-
 export default class Popup extends React.Component {
     constructor(props) {
         super(props);
@@ -39,6 +37,11 @@ export default class Popup extends React.Component {
                         label: "Find Zero",
                         port: 8080,
                         route: "/find_zero"
+                    },
+                    {
+                        label: "Motor Off",
+                        port: 8080,
+                        route: "/off"
                     }
                 ]
             },
@@ -64,6 +67,16 @@ export default class Popup extends React.Component {
                         label: "Off",
                         port: 8082,
                         route: "/run/off"
+                    }
+                ]
+            },
+            {
+                categoryName: "Sound",
+                endpoints: [
+                    {
+                        label: "Random",
+                        port: 3031,
+                        route: "/random"
                     }
                 ]
             },
@@ -104,7 +117,6 @@ export default class Popup extends React.Component {
 
     getEndpoints() {
         const getRequestButton = ({ label, port, route }) => {
-            console.log({ label, port, route });
             const getUrl = `http://${this.props.headName}.head.service.consul:${port}${route}`;
 
             return (
@@ -217,7 +229,7 @@ export default class Popup extends React.Component {
         }
         // }
 
-        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads/`;
+        const consulInstallationUrl = `${rootVal}:8500/ui/dc1/kv/the-heads`;
         // installation
 
         if (typeof window !== "undefined") {
@@ -244,12 +256,12 @@ export default class Popup extends React.Component {
         const headRefName = heads && heads.keySeq ? heads.keySeq().first() : "";
         const headName = this.props.stand.getIn(["heads", 0, headRefName]);
 
-        const cameras = this.props.stand.getIn(["cameras"]);
+        // const cameras = this.props.stand.getIn(["cameras"]);
         // const cameraRefName = cameras && cameras.keySeq ? cameras.keySeq().first() : "";
         const cameraName = this.props.stand.getIn(["cameras"]).keySeq().first();
         // const cameraName = this.props.stand.getIn(["cameras", 0, cameraRefName]);
 
-        const kinects = this.props.stand.getIn(["kinects"]);
+        // const kinects = this.props.stand.getIn(["kinects"]);
         const kinectName = this.props.stand.getIn(["kinects", 0, "name"]);
         // const kinectRefName = kinects && kinects.keySeq ? kinects : kinects.keySeq().first();
         // const kinectName = this.props.stand.getIn(["kinects", 0, kinectRefName]);
@@ -261,7 +273,8 @@ export default class Popup extends React.Component {
                     <a
                         style={{ display: "block" }}
                         target="_blank"
-                        href={`http://${consulInstallationUrl}/${type}/${name}.yaml/edit`}
+                        rel="noopener noreferrer"
+                        href={`${consulInstallationUrl}/${type}/${name}.yaml/edit`}
                     >
                         {name}
                     </a>
@@ -278,6 +291,8 @@ export default class Popup extends React.Component {
 
         let endpoints = this.getEndpoints();
 
+        const anchorPoint = <button onClick={this.props.setAsAnchor.bind(this, this.props.stand)}>Set As Anchor</button>
+
         return (
             <div className="PopupInfo">
                 Links:
@@ -285,6 +300,7 @@ export default class Popup extends React.Component {
                 {headLink}
                 {cameraLink}
                 {kinectLink}
+                {anchorPoint}
                 {endpoints}
                 <div
                     className="PopupInfo-closeButton"

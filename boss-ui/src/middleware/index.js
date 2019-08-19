@@ -10,44 +10,45 @@ import {
 import { WEBSOCKET_MESSAGE } from "@giantmachines/redux-websocket";
 import { debounce } from 'throttle-debounce';
 
-const temp = [{
-    "type": "kinect",
-    "data": {
-        "name": "kinect-01",
-        "simplifiedBodies": [{
-            "bodyIndex": 0,
-            "tracked": false
-        }, {
-            "bodyIndex": 1,
-            "tracked": false
-        }, {
-            "bodyIndex": 2,
-            "tracked": true,
-            "joints": [{
-                "cameraX": -0.3352165222167969,
-                "cameraY": 0.6552982330322266,
-                "cameraZ": 2.0847411155700684,
-                "jointType": 3,
-                "trackingState": 2
-            }]
-        }, {
-            "bodyIndex": 3,
-            "tracked": false
-        }, {
-            "bodyIndex": 4,
-            "tracked": false
-        }, {
-            "bodyIndex": 5,
-            "tracked": false
-        }],
-        "pos0": {
-            "x": 12.5,
-            "y": 12,
-            "z": 34
-        }
-    }
-}];
-const payloadDataChunkData_HARDCODED = temp[0].data;
+// const temp = [{
+//     "type": "kinect",
+//     "data": {
+//         "name": "kinect-01",
+//         "simplifiedBodies": [{
+//             "bodyIndex": 0,
+//             "tracked": false
+//         }, {
+//             "bodyIndex": 1,
+//             "tracked": false
+//         }, {
+//             "bodyIndex": 2,
+//             "tracked": true,
+//             "joints": [{
+//                 "cameraX": -0.3352165222167969,
+//                 "cameraY": 0.6552982330322266,
+//                 "cameraZ": 2.0847411155700684,
+//                 "jointType": 3,
+//                 "trackingState": 2
+//             }]
+//         }, {
+//             "bodyIndex": 3,
+//             "tracked": false
+//         }, {
+//             "bodyIndex": 4,
+//             "tracked": false
+//         }, {
+//             "bodyIndex": 5,
+//             "tracked": false
+//         }],
+//         "pos0": {
+//             "x": 12.5,
+//             "y": 12,
+//             "z": 34
+//         }
+//     }
+// }];
+
+// const payloadDataChunkData_HARDCODED = temp[0].data;
 
 // This is used as a timeout for specific headNames, to set a previously active head (stand) to isNotActive
 let timeoutSetActive = {};
@@ -136,7 +137,7 @@ export const customWebsocketMiddleware = store => next => action => {
                                 if (body.joints && body.joints.length > 0) {
                                     // This is where we decide which of the joints to use as the 
 
-                                    var joint_pos = {};
+                                    // var joint_pos = {};
                                     body.joints.filter(joint => joint.jointType === JOINT_NUM.HEAD).forEach(joint => {
                                         joint_pos = {
                                             x: joint.cameraX,

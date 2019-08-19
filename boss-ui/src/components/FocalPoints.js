@@ -1,8 +1,8 @@
 import React from 'react';
 import FocalPoint from '../containers/FocalPoint';
-import cn from "classnames";
-// import { isKeyed } from 'immutable';
-import { encodePos } from '../helpers';
+// import cn from "classnames";
+// // import { isKeyed } from 'immutable';
+// import { encodePos } from '../helpers';
 
 export default class Menu extends React.Component {
     constructor(props) {
