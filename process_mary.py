@@ -68,7 +68,7 @@ def process_script(voice: Voice, title: str, content: str) -> Dict:
 
         result.append({"id": digest, "duration": duration})
 
-    return {"title": title, "content": result, "enabled": not disabled}
+    return title, {"title": title, "disabled": disabled, "content": result}
 
 
 def main():
@@ -80,7 +80,7 @@ def main():
     secret = vault_client.get("texts")
 
     for title, content in secret.items():
-        result = process_script(voice, title, content)
+        title, result = process_script(voice, title, content)
         body = json.dumps(result, indent=4)
         print(body)
 

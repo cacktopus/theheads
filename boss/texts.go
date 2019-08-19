@@ -8,8 +8,9 @@ import (
 )
 
 type Text struct {
-	Title   string    `json:"title"`
-	Content []Content `json:"content"`
+	Title    string    `json:"title"`
+	Content  []Content `json:"content"`
+	Disabled bool      `json:"disabled"`
 }
 type Content struct {
 	ID       string  `json:"id"`
@@ -31,7 +32,9 @@ func LoadTexts(consulClient *api.Client) []*Text {
 		if err != nil {
 			panic(err)
 		}
-		result = append(result, &text)
+		if !text.Disabled {
+			result = append(result, &text)
+		}
 	}
 
 	return result
