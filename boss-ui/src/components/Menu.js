@@ -5,7 +5,7 @@ import React from 'react'
 // import { fromJS } from 'immutable';
 // import Slider, { Range } from 'rc-slider';
 import Slider from 'rc-slider';
-
+import axios from 'axios';
 let exportSceneMsgTimeout;
 
 let defaultWebsocketUrl;
@@ -32,6 +32,8 @@ export default class Menu extends React.Component {
 
         this.addStand = this.addStand.bind(this);
         this.addFocalPoint = this.addFocalPoint.bind(this);
+        this.handleRestart = this.handleRestart.bind(this);
+        this.handleStop = this.handleStop.bind(this);
         this.setLoadSceneUrl = this.setLoadSceneUrl.bind(this);
         this.loadScene = this.loadScene.bind(this);
         this.loadTempSceneJson = this.loadTempSceneJson.bind(this);
@@ -136,6 +138,16 @@ export default class Menu extends React.Component {
 
     }
 
+    handleRestart() {
+        const url = `http://${document.location.hostname}:8000/restart?service=boss`;
+        axios.get(url);
+    }
+
+    handleStop() {
+        const url = `http://${document.location.hostname}:8000/stop?service=boss`;
+        axios.get(url);
+    }
+
     render() {
         // {
         //     "name": "stand0",
@@ -231,7 +243,7 @@ export default class Menu extends React.Component {
                 this.props.standSetInFields(this.props.selectedStandIndex, fieldNames, value);
                 // this.props.standSetField(this.props.selectedStandIndex, fieldName, value);
             }
-        }
+        } 
 
         // // `fieldNames` param is of type array. e.g. fieldNames = [0, "heads", 0, "rot"]
         // const inputHandlerForFieldNames = fieldNames => {
@@ -542,16 +554,18 @@ export default class Menu extends React.Component {
                     </div>
                 </div>
                 <div>
-                    <div className="Menu-section">
+                    {/* <div className="Menu-section">
                         <div className="Menu-bigButton" onClick={this.addStand}>Add Stand</div>
+                    </div> */}
+                    <div className="Menu-section">
+                        <button className="Menu-bigButton" onClick={this.addFocalPoint}>Add Focal Point</button>
+                        {/* <div className="Menu-bigButton" onClick={this.addFocalPoint}>Add Focal Point</div> */}
                     </div>
                     <div className="Menu-section">
-                        <div className="Menu-bigButton" onClick={this.addFocalPoint}>Add Focal Point</div>
+                        <button className="Menu-bigButton" onClick={this.handleRestart}>Restart</button>
                     </div>
                     <div className="Menu-section">
-                        {/* <span onClick={ajaxUrl.bion} style={{cursor: "pointer"}}>restart</span> <span style={{cursor: "pointer"}}>stop</span> */}
-                        <a href={`http://${document.location.hostname}:8000/restart?service=boss`} target="_blank" style={{cursor: "pointer"}}>restart</a>&nbsp; &nbsp; &nbsp;
-                        <a href={`http://${document.location.hostname}:8000/stop?service=boss`} target="_blank" style={{marginLeft: 20, cursor: "pointer"}}>stop</a>
+                        <button className="Menu-bigButton" onClick={this.handleStop}>Stop</button>
                     </div>
                     {standDetails}
                     {focalPointDetails}
