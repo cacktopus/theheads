@@ -4,19 +4,22 @@ import traceback
 from pythonjsonlogger import jsonlogger
 
 
-def setup_logging():
+def _setup_logging():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     logHandler = logging.StreamHandler()
     formatter = jsonlogger.JsonFormatter()
     logHandler.setFormatter(formatter)
+
     logger.addHandler(logHandler)
+
+    print(len(logger.handlers))
 
     return logger
 
 
-_logger = setup_logging()
+_logger = _setup_logging()
 
 
 def debug(message, **extra_fields):

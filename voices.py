@@ -7,7 +7,7 @@ from aiohttp import web
 
 import log
 import util
-from health import health_check
+from health import health_check, CORS_ALL
 
 play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
 
@@ -72,8 +72,6 @@ async def setup(name: str, port: int):
 
 
 def main():
-    log.setup_logging()
-
     os.chdir(os.path.expanduser("~"))  # TODO: use config
     loop = asyncio.get_event_loop()
 
