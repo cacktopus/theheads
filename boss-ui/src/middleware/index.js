@@ -74,11 +74,11 @@ function sendMotionLine({store, lineId, shape, coords}) {
         store.dispatch(motionLinesRemoveLine({
             lineId
         }));
-    }, 350); // NOTE: this 350ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
+    }, 150); // NOTE: this 350ms should be the same value as what's in App.css for .MotionLine.fadeOut's keyframe animation
 }
 
-const throttleSpeed = 300;
-const throttledSendMotionLine = throttle(throttleSpeed, sendMotionLine);
+// const throttleSpeed = 300;
+// const throttledSendMotionLine = throttle(throttleSpeed, sendMotionLine);
 
 export const customWebsocketMiddleware = store => next => action => {
     if (action.type === WEBSOCKET_MESSAGE) {
@@ -103,7 +103,7 @@ export const customWebsocketMiddleware = store => next => action => {
                             coords = coords.concat(payloadDataChunkData.p1);
                         } catch(e) {}
 
-                        throttledSendMotionLine({store, lineId, shape, coords});
+                        sendMotionLine({store, lineId, shape, coords});
 
                         break;
                     case "active":

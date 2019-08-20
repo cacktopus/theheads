@@ -45,13 +45,13 @@ export default class Anchor extends React.Component {
         // // this.props.anchorMove(1,a.)
     }
 
-    onMouseEnter() {
-        console.log("onMouseEnter");
-    }
+    // onMouseEnter() {
+    //     console.log("onMouseEnter");
+    // }
 
-    onMouseLeave() {
-        console.log("onMouseLeave");
-    }
+    // onMouseLeave() {
+    //     console.log("onMouseLeave");
+    // }
 
     render() {
         const anchorDistancesRound = this.props.menu.get("anchorDistancesRound");
@@ -129,12 +129,13 @@ export default class Anchor extends React.Component {
 
             // If the stand is to the left of the anchor,
             // to deal with TOA trig quadrants, rotate an extra 180 degrees.
-            if (diffPosDecoded.x > 0) {
+            if (diffPosDecoded.x >= 0) {
                 angleRad += Math.PI;
                 flipTextUpsideDown = true;
             }
 
             const anchorDistanceStyle = {
+                height: 0,
                 width: hypoLengthDecoded,
                 border: "1px solid red",
                 transform: `translate(${posAnchorDecoded.x}px, ${
@@ -173,15 +174,15 @@ export default class Anchor extends React.Component {
                 <div
                     style={anchorDistanceStyle}
                     className="AnchorDistance"
-                    onMouseEnter={this.onMouseEnter}
-                    onMouseLeave={this.onMouseLeave}
+                    // onMouseEnter={this.onMouseEnter}
+                    // onMouseLeave={this.onMouseLeave}
                 >
                     <div
                         className={cn("AnchorDistance-text", {
                             "AnchorDistance-text--flipped": flipTextUpsideDown
                         })}
                     >
-                        {displayedLength}
+                        <span className="AnchorDistance-text-span">{displayedLength}</span>
                     </div>
                 </div>
             );
