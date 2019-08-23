@@ -50,5 +50,6 @@ var AllScenes = map[string]SceneConfig{
 	"follow_evade": {FollowEvade, 60},
 	"conversation": {Conversation, 5 * 60},
 	"find_zeros":   {FindZeros, 30},
+	"follow_convo": {FollowConvo, 5* 60},
 	"idle":         {Idle, 60},
 }

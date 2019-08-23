@@ -1,6 +1,8 @@
 import asyncio
 
 # import boss
+import os
+
 import head
 import home
 import util
@@ -44,11 +46,13 @@ async def run():
         voice = await voices.setup(name, 3030 + i)
         await util.run_app(voice)
 
-    app2 = await run_boss()
+    boss_enabled = not os.environ.get("NO_BOSS", False)
+
+    if boss_enabled:
+        await run_boss()
     app3 = await home.setup(port=8000)
 
     await asyncio.wait(heads + [
-        util.run_app(app2),
         util.run_app(app3),
     ])
 

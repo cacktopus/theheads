@@ -20,8 +20,11 @@ type Scene struct {
 	Scenes        []string      `json:"scenes"`
 	StartupScenes []interface{} `json:"startup_scenes"`
 
-	Cameras map[string]*Camera `json:"-"`
-	Heads   map[string]*Head   `json:"-"`
+	Heads    map[string]*Head `json:"-"`
+	HeadList []*Head          `json:"-"`
+
+	Cameras    map[string]*Camera `json:"-" yaml:"-"`
+	CameraList []*Camera          `json:"-" yaml:"-"`
 }
 
 type Pos struct {
@@ -193,6 +196,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 			stand.CameraMap[camera.Name] = camera
 			stand.Cameras = append(stand.Cameras, camera)
 			scene.Cameras[camera.Name] = camera
+			scene.CameraList = append(scene.CameraList, camera)
 		}
 
 		for _, name := range stand.HeadNames {
@@ -205,6 +209,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 			stand.HeadMap[head.Name] = head
 			stand.Heads = append(stand.Heads, head)
 			scene.Heads[head.Name] = head
+			scene.HeadList = append(scene.HeadList, head)
 		}
 
 		scene.Stands = append(scene.Stands, stand)
