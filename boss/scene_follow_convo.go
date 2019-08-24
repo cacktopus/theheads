@@ -98,4 +98,5 @@ func FollowConvo(dj *DJ, done util.BroadcastCloser) {
 	}
 
 	logrus.Println("Finishing Tracking Convo")
+	done.Close()
 }
