@@ -68,6 +68,8 @@ class Sentence:
         sentence = sentence.replace("shit", "shiit")
         sentence = sentence.replace("uber", "oober")
 
+        sentence = sentence.replace("she's", "shees")
+
         return sentence
 
     @property

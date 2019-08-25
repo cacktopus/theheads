@@ -90,6 +90,8 @@ def main():
             data=body.encode(),
         )
 
+    print("*** Don't forget to rsync ***")
+
 
 if __name__ == '__main__':
     main()
