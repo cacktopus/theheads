@@ -61,7 +61,7 @@ func FollowConvo(dj *DJ, done util.BroadcastCloser) {
 			choices = append(choices, pairs[2])
 		}
 
-		i := rand.Intn(len(pairs))
+		i := rand.Intn(len(choices))
 		choice := choices[i]
 
 		return choice.head
