@@ -8,14 +8,6 @@ func lowred(strip *Strip, t, dt float64) {
 	})
 }
 
-func off(strip *Strip, t, dt float64) {
-	strip.Each(func(_ int, led *Led) {
-		led.r = 0
-		led.g = 0
-		led.b = 0
-	})
-}
-
 func decay(strip *Strip, t, dt float64) {
 	decayConstant := 0.99
 

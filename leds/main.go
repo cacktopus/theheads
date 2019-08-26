@@ -97,7 +97,6 @@ func main() {
 		"decay":   decay,
 		"lowred":  lowred,
 		"bounce":  Bounce().Tick,
-		"off":     off,
 	}
 
 	addr := ":8082"
