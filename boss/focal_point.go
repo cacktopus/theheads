@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DefaultTTL = 5 * time.Second
+	DefaultTTL = 20 * time.Second
 )
 
 type FocalPoint struct {

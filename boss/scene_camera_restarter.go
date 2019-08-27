@@ -10,6 +10,9 @@ import (
 
 func CameraRestarter(dj *DJ, done util.BroadcastCloser) {
 	rate_limiter.Limit("camera.restart", 10*time.Minute, func() {
+		if len(dj.grid.focalPoints) == 0 {
+			return
+		}
 		for _, c := range dj.scene.Cameras {
 			go func(camera *scene.Camera) {
 				logrus.WithField("camera", camera.Name).Info("Restarting camera")
