@@ -116,7 +116,7 @@ func (g *Grid) traceFocalPoints(p0, p1 geom.Vec) bool {
 	if minFp != nil {
 		midpoint := m0.Add(m1.Sub(m0).Scale(0.5))
 		to := midpoint.Sub(minFp.pos)
-		minFp.pos = minFp.pos.Add(to.Scale(0.2))
+		minFp.pos = minFp.pos.Add(to.Scale(g.scene.CameraSensitivity))
 		minFp.refresh()
 		return true
 	}

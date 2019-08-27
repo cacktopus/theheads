@@ -12,6 +12,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	defaultCameraSensitivity = 0.2
+)
+
 type Scene struct {
 	Stands        []*Stand      `json:"stands"`
 	Scale         int           `json:"scale"`
@@ -25,6 +29,9 @@ type Scene struct {
 
 	Cameras    map[string]*Camera `json:"-" yaml:"-"`
 	CameraList []*Camera          `json:"-" yaml:"-"`
+
+	// TODO: don't hang these config values off of here
+	CameraSensitivity float64 `json:"camera_sensitivity" yaml:"camera_sensitivity"`
 }
 
 type Pos struct {
@@ -228,6 +235,11 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		}
 
 		scene.Anchors = append(scene.Anchors, anchor)
+	}
+
+	if scene.CameraSensitivity == 0 {
+		scene.CameraSensitivity = defaultCameraSensitivity
+
 	}
 
 	fmt.Println(scene)
