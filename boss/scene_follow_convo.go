@@ -33,12 +33,27 @@ func (p FpHeadPairs) Less(i, j int) bool {
 func (p FpHeadPairs) Swap(i, j int) {
 }
 
-func FollowConvo(dj *DJ, done util.BroadcastCloser) {
+type FollowConvo struct {
+	texts        []*Text
+	textPosition int
+}
+
+func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
+	// initialize texts if first run
+	if f.texts == nil {
+		// copy texts
+		f.texts = append(f.texts, dj.texts...)
+		rand.Shuffle(len(f.texts), func(i, j int) {
+			f.texts[i], f.texts[j] = f.texts[j], f.texts[i]
+		})
+	}
+
 	for _, head := range dj.scene.Heads {
 		go FollowClosestFocalPoint(dj, done, head, -1.0)
 	}
 
-	text := randomText(dj.texts)
+	text := f.texts[f.textPosition]
+	f.textPosition++
 
 	selectHead := func(pairs FpHeadPairs, allHeads []*scene.Head) *scene.Head {
 		var choices FpHeadPairs
