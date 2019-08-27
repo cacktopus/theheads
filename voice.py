@@ -29,7 +29,8 @@ def split(text):
     sentences = parts[::2]
     endings = parts[1::2]
 
-    assert len(sentences) == len(endings)
+    if len(sentences) != len(endings):
+        1/0
 
     results = [
         s + e
@@ -69,6 +70,10 @@ class Sentence:
         sentence = sentence.replace("uber", "oober")
 
         sentence = sentence.replace("she's", "shees")
+        sentence = sentence.replace("She's", "shees")
+
+        sentence = sentence.replace("she'll", "sheel")
+        sentence = sentence.replace("She'll", "sheel")
 
         return sentence
 
