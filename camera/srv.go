@@ -13,6 +13,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"time"
 )
 
 var clients = make(map[*websocket.Conn]bool) // connected clients
@@ -125,6 +126,14 @@ func serve(port int) {
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK\n"))
+	})
+
+	http.HandleFunc("/restart", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK\n"))
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			os.Exit(0)
+		}()
 	})
 
 	fmt.Println("Listening on port", port)
