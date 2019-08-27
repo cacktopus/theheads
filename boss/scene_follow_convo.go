@@ -92,7 +92,7 @@ func FollowConvo(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		delay := (300 + time.Duration(rand.Intn(400))) * time.Millisecond
-		time.Sleep(delay)
+		dj.Sleep(done, delay)
 
 		watchdog.Feed()
 	}

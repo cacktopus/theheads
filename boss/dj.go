@@ -46,11 +46,13 @@ func (dj *DJ) Sleep(done util.BroadcastCloser, duration time.Duration) bool {
 }
 
 var AllScenes = map[string]SceneConfig{
-	"in_n_out":     {InNOut, 60},
-	"follow_evade": {FollowEvade, 60},
-	"conversation": {Conversation, 5 * 60},
-	"find_zeros":   {FindZeros, 30},
-	"follow_convo": {FollowConvo, 5 * 60},
-	"idle":         {Idle, 60},
-	"random":       {Random, 120},
+	"in_n_out":         {InNOut, 60},
+	"follow_evade":     {FollowEvade, 60},
+	"conversation":     {Conversation, 5 * 60},
+	"find_zeros":       {FindZeros, 30},
+	"follow_convo":     {FollowConvo, 5 * 60},
+	"idle":             {Idle, 60},
+	"random":           {Random, 120},
+	"boss_restarter":   {BossRestarter, 10},
+	"camera_restarter": {CameraRestarter, 10},
 }

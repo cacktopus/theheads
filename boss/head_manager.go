@@ -87,6 +87,7 @@ func (h *HeadQueue) send(url string) Result {
 }
 
 func (h *HeadQueue) sendLoop() {
+loop:
 	for item := range h.queue {
 		// TODO: dedup/ratelimit
 		url, err := h.lookupServiceURL(item.path)
@@ -94,6 +95,7 @@ func (h *HeadQueue) sendLoop() {
 			log.WithError(err).Error("error looking up service")
 			if item.result != nil {
 				item.result <- Result{Err: err}
+				continue loop
 			}
 		}
 
@@ -104,6 +106,7 @@ func (h *HeadQueue) sendLoop() {
 
 		if item.result != nil {
 			item.result <- result
+			continue loop
 		}
 	}
 }
