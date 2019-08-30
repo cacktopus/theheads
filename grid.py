@@ -308,6 +308,7 @@ class Grid:
         # if we find a single overlap just deal with it and get to any other overlaps on the
         # next run
         for fp0, fp1 in itertools.combinations(self._focal_points, 2):
+        
             if fp0.overlaps(fp1, debug=False):
                 midpoint = (fp0.pos + fp1.pos).scale(0.5)
                 fp0.pos = midpoint

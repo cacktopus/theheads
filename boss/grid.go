@@ -181,8 +181,29 @@ func (g *Grid) Start() {
 	for {
 		time.Sleep(250 * time.Millisecond)
 		g.maybeSpawnFocalPoint()
+		g.mergeOverlappingFocalPoints()
 		g.decay()
 		g.cleanupStale()
+	}
+}
+
+func (g *Grid) mergeOverlappingFocalPoints() {
+	// this runs every update and we can tolerate some overlap, so to keep things simple,
+	// if we find a single overlap just deal with it and get to any other overlaps on the
+	// next run
+
+	for _, fp0 := range g.focalPoints {
+		for id, fp1 := range g.focalPoints {
+			if fp0 == fp1 {
+				continue
+			}
+			if fp0.overlaps(fp1) {
+				// midpoint = (fp0.pos + fp1.pos).scale(0.5
+				midpoint := fp0.pos.Add(fp1.pos).Scale(0.5)
+				fp0.pos = midpoint
+				delete(g.focalPoints, id)
+			}
+		}
 	}
 }
 
