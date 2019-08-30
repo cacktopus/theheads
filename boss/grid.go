@@ -197,7 +197,7 @@ func (g *Grid) mergeOverlappingFocalPoints() {
 			if fp0 == fp1 {
 				continue
 			}
-			if fp0.overlaps(fp1) {
+			if fp0.overlaps(fp1, 0.5) {
 				// midpoint = (fp0.pos + fp1.pos).scale(0.5
 				midpoint := fp0.pos.Add(fp1.pos).Scale(0.5)
 				fp0.pos = midpoint
@@ -293,14 +293,14 @@ func (g *Grid) maybeSpawnFocalPoint() {
 	newFp := NewFocalPoint(p, fpRadius, "", DefaultTTL)
 
 	for _, fp := range g.focalPoints {
-		if newFp.overlaps(fp) {
+		if newFp.overlaps(fp, 1.0) {
 			return
 		}
 	}
 
 	for _, cam := range g.scene.Cameras {
 		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "", DefaultTTL)
-		if newFp.overlaps(fakeFp) {
+		if newFp.overlaps(fakeFp, 1.0) {
 			return
 		}
 	}

@@ -41,10 +41,10 @@ func (fp *FocalPoint) expiry() time.Time {
 	return fp.updatedAt.Add(fp.ttl)
 }
 
-func (fp *FocalPoint) overlaps(other *FocalPoint) bool {
+func (fp *FocalPoint) overlaps(other *FocalPoint, scale float64) bool {
 	to := other.pos.Sub(fp.pos)
 	d := to.Abs()
-	return d < fp.radius+other.radius
+	return d < (fp.radius+other.radius)*scale
 }
 
 func (fp *FocalPoint) refresh() {
