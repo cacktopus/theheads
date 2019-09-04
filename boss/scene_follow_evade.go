@@ -45,23 +45,6 @@ func FollowClosestFocalPoint(
 	}
 }
 
-func TrackFocalPoint(dj *DJ, done util.BroadcastCloser, head *scene.Head, fp *FocalPoint) {
-	for {
-		select {
-		case <-time.After(trackingPeriod):
-			if fp.isExpired() { // feels like concurrent access?
-				return
-			}
-			theta := head.PointTo(fp.pos)
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
-		case <-done.Chan():
-			logrus.WithField("head", head.Name).Println("Finishing TrackFocalPoint")
-			return
-		}
-	}
-}
-
 func FollowEvade(dj *DJ, done util.BroadcastCloser) {
 	for _, head := range dj.scene.Heads {
 		go FollowClosestFocalPoint(dj, done, head, -1.0)

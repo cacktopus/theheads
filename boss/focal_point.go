@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	DefaultTTL = 20 * time.Second
+	DefaultTTL = 5 * time.Second
+	DefaultTTLLast = 30 * time.Second
 )
 
 type FocalPoint struct {
@@ -16,16 +17,18 @@ type FocalPoint struct {
 	radius    float64
 	id        string
 	updatedAt time.Time
-	ttl       time.Duration
+	ttl       time.Duration // time to live if more than one focal point present
+	ttlLast   time.Duration // time to live for last focal point
 }
 
-func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl time.Duration) *FocalPoint {
+func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Duration) *FocalPoint {
 	return &FocalPoint{
 		pos:       pos,
 		radius:    radius,
 		id:        id,
 		updatedAt: time.Now(),
 		ttl:       ttl,
+		ttlLast:   ttlLast,
 	}
 }
 
@@ -37,8 +40,11 @@ func (fp *FocalPoint) ToMsg() *broker.FocalPoint {
 	}
 }
 
-func (fp *FocalPoint) expiry() time.Time {
-	return fp.updatedAt.Add(fp.ttl)
+func (fp *FocalPoint) expiry(globalFocalPointCount int) time.Time {
+	if globalFocalPointCount > 1 {
+		return fp.updatedAt.Add(fp.ttl)
+	}
+	return fp.updatedAt.Add(fp.ttlLast)
 }
 
 func (fp *FocalPoint) overlaps(other *FocalPoint, scale float64) bool {
@@ -51,9 +57,9 @@ func (fp *FocalPoint) refresh() {
 	fp.updatedAt = time.Now()
 }
 
-func (fp *FocalPoint) isExpired() bool {
+func (fp *FocalPoint) isExpired(globalFocalPointCount int) bool {
 	t := time.Now()
-	return t.After(fp.expiry())
+	return t.After(fp.expiry(globalFocalPointCount))
 }
 
 func sq(a float64) float64 {

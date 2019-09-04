@@ -290,7 +290,7 @@ func (g *Grid) maybeSpawnFocalPoint() {
 		return
 	}
 
-	newFp := NewFocalPoint(p, fpRadius, "", DefaultTTL)
+	newFp := NewFocalPoint(p, fpRadius, "", DefaultTTL, DefaultTTLLast)
 
 	for _, fp := range g.focalPoints {
 		if newFp.overlaps(fp, 1.0) {
@@ -299,7 +299,7 @@ func (g *Grid) maybeSpawnFocalPoint() {
 	}
 
 	for _, cam := range g.scene.Cameras {
-		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "", DefaultTTL)
+		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "", DefaultTTL, DefaultTTLLast)
 		if newFp.overlaps(fakeFp, 1.0) {
 			return
 		}
@@ -339,7 +339,7 @@ func (g *Grid) publishFocalPoints() {
 func (g *Grid) cleanupStale() {
 	var toRemove []string
 	for id, fp := range g.focalPoints {
-		if fp.isExpired() {
+		if fp.isExpired(len(g.focalPoints)) {
 			toRemove = append(toRemove, id)
 		}
 	}
