@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cacktopus/heads/boss/broker"
+	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"

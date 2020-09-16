@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/cacktopus/heads/boss/config"
+	"github.com/cacktopus/theheads/boss/config"
 	"github.com/hashicorp/consul/api"
 	"math/rand"
 )

@@ -1,4 +1,4 @@
-module github.com/cacktopus/heads/leds
+module github.com/cacktopus/theheads/leds
 
 go 1.12
 

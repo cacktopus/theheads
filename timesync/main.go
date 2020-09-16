@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/cacktopus/heads/boss/config"
+	"github.com/cacktopus/theheads/boss/config"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/consul/api"
 	"github.com/prometheus/client_golang/prometheus"

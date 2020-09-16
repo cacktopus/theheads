@@ -1,4 +1,4 @@
-module github.com/cacktopus/heads/camera
+module github.com/cacktopus/theheads/camera
 
 go 1.12
 

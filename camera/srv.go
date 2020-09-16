@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/cacktopus/heads/camera/cpumon"
+	"github.com/cacktopus/theheads/camera/cpumon"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"

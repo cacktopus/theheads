@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/cacktopus/heads/boss/rate_limiter"
-	"github.com/cacktopus/heads/boss/scene"
-	"github.com/cacktopus/heads/boss/util"
+	"github.com/cacktopus/theheads/boss/rate_limiter"
+	"github.com/cacktopus/theheads/boss/scene"
+	"github.com/cacktopus/theheads/boss/util"
 	"github.com/sirupsen/logrus"
 	"time"
 )

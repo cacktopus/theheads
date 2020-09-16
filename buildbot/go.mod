@@ -1,4 +1,4 @@
-module github.com/cacktopus/heads/buildbot
+module github.com/cacktopus/theheads/buildbot
 
 go 1.12
 

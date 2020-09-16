@@ -1,4 +1,4 @@
-module github.com/cacktopus/heads/boss
+module github.com/cacktopus/theheads/boss
 
 go 1.12
 

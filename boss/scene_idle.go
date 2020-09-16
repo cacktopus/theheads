@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/cacktopus/heads/boss/util"
-	"github.com/cacktopus/heads/boss/watchdog"
+	"github.com/cacktopus/theheads/boss/util"
+	"github.com/cacktopus/theheads/boss/watchdog"
 	"time"
 )
 

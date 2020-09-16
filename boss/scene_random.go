@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/cacktopus/heads/boss/util"
+	"github.com/cacktopus/theheads/boss/util"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"time"

@@ -1,13 +1,10 @@
-module github.com/cacktopus/heads/timesync
+module github.com/cacktopus/theheads/timesync
 
 go 1.12
 
 require (
-	github.com/cacktopus/heads/boss v0.0.0-00010101000000-000000000000
-	github.com/gin-gonic/gin v1.5.0
-	github.com/hashicorp/consul/api v1.1.0
-	github.com/prometheus/client_golang v1.4.1
-	github.com/sirupsen/logrus v1.4.2
+	github.com/gin-gonic/gin v1.6.3
+	github.com/hashicorp/consul/api v1.7.0
+	github.com/prometheus/client_golang v1.7.1
+	github.com/sirupsen/logrus v1.6.0
 )
-
-replace github.com/cacktopus/heads/boss => ../boss/

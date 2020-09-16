@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cacktopus/heads/boss/config"
+	"github.com/cacktopus/theheads/boss/config"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

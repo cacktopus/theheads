@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/cacktopus/heads/boss/geom"
-	"github.com/cacktopus/heads/boss/util"
-	"github.com/cacktopus/heads/boss/watchdog"
+	"github.com/cacktopus/theheads/boss/geom"
+	"github.com/cacktopus/theheads/boss/util"
+	"github.com/cacktopus/theheads/boss/watchdog"
 	"time"
 )
 

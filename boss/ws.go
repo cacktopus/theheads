@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/cacktopus/heads/boss/broker"
+	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/gorilla/websocket"
 )
 

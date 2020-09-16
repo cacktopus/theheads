@@ -1,8 +1,8 @@
 package grid
 
 import (
-	"github.com/cacktopus/heads/boss/broker"
-	"github.com/cacktopus/heads/boss/geom"
+	"github.com/cacktopus/theheads/boss/broker"
+	"github.com/cacktopus/theheads/boss/geom"
 	"math"
 	"time"
 )

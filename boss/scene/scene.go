@@ -6,8 +6,8 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/cacktopus/heads/boss/config"
-	"github.com/cacktopus/heads/boss/geom"
+	"github.com/cacktopus/theheads/boss/config"
+	"github.com/cacktopus/theheads/boss/geom"
 	consulApi "github.com/hashicorp/consul/api"
 	"gopkg.in/yaml.v2"
 )

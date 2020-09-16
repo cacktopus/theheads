@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/cacktopus/heads/boss/rate_limiter"
-	"github.com/cacktopus/heads/boss/util"
+	"github.com/cacktopus/theheads/boss/rate_limiter"
+	"github.com/cacktopus/theheads/boss/util"
 	"os"
 	"time"
 )

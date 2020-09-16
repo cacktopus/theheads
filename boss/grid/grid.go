@@ -2,9 +2,9 @@ package grid
 
 import (
 	"fmt"
-	"github.com/cacktopus/heads/boss/broker"
-	"github.com/cacktopus/heads/boss/geom"
-	"github.com/cacktopus/heads/boss/scene"
+	"github.com/cacktopus/theheads/boss/broker"
+	"github.com/cacktopus/theheads/boss/geom"
+	"github.com/cacktopus/theheads/boss/scene"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
