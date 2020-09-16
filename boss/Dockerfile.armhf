@@ -17,7 +17,7 @@ RUN mkdir -p /packages
 RUN tar -czvf /packages/boss_${VERSION}_armhf.tar.gz -C /install boss
 
 RUN curl -XPUT \
-    http://boss.service.consul:9000/theheads/build/boss_${VERSION}_armhf.tar.gz \
+    http://raftsync.service.consul:9000/theheads/build/boss_${VERSION}_armhf.tar.gz \
     --data-binary @/packages/boss_${VERSION}_armhf.tar.gz
 
 

@@ -130,7 +130,7 @@ func main() {
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	go func() {
-		client := config.NewClient()
+		client := config.NewClient("127.0.0.1:8500")
 		for {
 			synctime(client)
 			time.Sleep(15 * time.Second)
