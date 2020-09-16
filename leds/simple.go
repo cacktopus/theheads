@@ -8,6 +8,14 @@ func lowred(strip *Strip, t, dt float64) {
 	})
 }
 
+func white(strip *Strip, t, dt float64) {
+	strip.Each(func(_ int, led *Led) {
+		led.r = maxBrightness
+		led.g = maxBrightness
+		led.b = maxBrightness
+	})
+}
+
 func decay(strip *Strip, t, dt float64) {
 	decayConstant := 0.99
 

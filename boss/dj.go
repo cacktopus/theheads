@@ -1,8 +1,10 @@
 package main
 
 import (
+	"github.com/cacktopus/heads/boss/grid"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/cacktopus/heads/boss/util"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -14,8 +16,21 @@ type SceneConfig struct {
 	MaxLengthSeconds uint
 }
 
+var currentSceneMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "heads",
+	Subsystem: "boss",
+	Name:      "scene_running",
+}, []string{
+	"scene",
+})
+
+func init() {
+	prometheus.MustRegister(currentSceneMetric)
+	prometheus.MustRegister(redisEventReceived)
+}
+
 type DJ struct {
-	grid        *Grid
+	grid        *grid.Grid
 	scene       *scene.Scene
 	headManager *HeadManager
 	texts       []*Text
@@ -27,8 +42,11 @@ func (dj *DJ) RunScenes() {
 			logrus.WithField("scene", sceneName).Info("Running Scene")
 			done := util.NewBroadcastCloser()
 			sc := AllScenes[sceneName]
-			go sc.Runner(dj, done)
-
+			go func(sceneName string) {
+				currentSceneMetric.WithLabelValues(sceneName).Inc()
+				sc.Runner(dj, done)
+				currentSceneMetric.WithLabelValues(sceneName).Dec()
+			}(sceneName)
 			maxLength := time.Duration(sc.MaxLengthSeconds) * time.Second
 			dj.Sleep(done, maxLength)
 			done.Close()

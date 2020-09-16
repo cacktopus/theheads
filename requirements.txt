@@ -11,8 +11,6 @@ idna==2.8
 idna-ssl==1.1.0
 Jinja2==2.10
 MarkupSafe==1.1.0
-multidict==4.5.2
-numpy==1.15.4
 prometheus-client==0.5.0
 python-json-logger==0.1.11
 PyYAML==3.13

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gvalkov/golang-evdev"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -13,6 +16,9 @@ import (
 const (
 	defaultNumLeds    = 74
 	defaultStartIndex = 10
+
+	updatePeriod = 40 * time.Millisecond
+	enableIR     = false
 )
 
 func setup() *Strip {
@@ -38,7 +44,7 @@ func setup() *Strip {
 	}
 
 	conn := SetupSPI()
-	strip := NewStrip(numLeds, startIndex, 5.0*74.0/150.0, conn)
+	strip := NewStrip(numLeds, startIndex, 5.0*74.0/150.0, conn) // TODO: length is all wrong here; not general
 
 	// reset
 	strip.send()
@@ -58,7 +64,7 @@ func runLeds(strip *Strip, animations map[string]callback, ch <-chan callback, d
 
 	cb := animations[animation]
 
-	ticker := time.NewTicker(40 * time.Millisecond)
+	ticker := time.NewTicker(updatePeriod)
 
 loop:
 	for {
@@ -70,6 +76,10 @@ loop:
 			now := time.Now()
 			t := now.Sub(startTime).Seconds()
 			dt := now.Sub(t0).Seconds()
+
+			if dt > 2*updatePeriod.Seconds() {
+				dt = 2 * updatePeriod.Seconds()
+			}
 
 			cb(strip, t, dt)
 			t0 = now
@@ -96,7 +106,12 @@ func main() {
 		"rainbow": rainbow(strip),
 		"decay":   decay,
 		"lowred":  lowred,
+		"white":   white,
 		"bounce":  Bounce().Tick,
+		"cycle1": cycle(
+			Bounce().Tick,
+			rainbow(strip),
+		),
 	}
 
 	addr := ":8082"
@@ -130,6 +145,36 @@ func main() {
 	go func() {
 		r.Run(addr)
 	}()
+
+	if enableIR {
+		device, err := evdev.Open("/dev/input/event0")
+		if err != nil {
+			panic(err)
+		}
+
+		go func() {
+			for {
+				event, err := device.ReadOne()
+				if err != nil {
+					panic(err)
+				}
+				fmt.Println(event)
+				if event.Code == 4 && event.Type == 4 {
+					log.Println("code", event.Code)
+					switch event.Value {
+					case 48912: // 1
+						ch <- animations["bounce"]
+					case 48913: // 2
+						ch <- animations["rainbow"]
+					case 48896: // vol-
+						strip.ScaleDown()
+					case 48898: // vol+
+						strip.ScaleUp()
+					}
+				}
+			}
+		}()
+	}
 
 	signals := make(chan os.Signal, 1)
 	done := make(chan bool)

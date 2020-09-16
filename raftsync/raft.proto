@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "gen/raft";
+
+message File {
+  string filename = 1;
+  bytes content = 2;
+}
+
+message UploadIn {
+  File file = 1;
+}
+
+message HeadIn {
+  string filename = 1; // TODO: consider bucket, key
+}
+
+message HeadOut {
+  int64 size = 1;
+  bool ok = 2;
+}
+
+message FileChunk {
+  string uuid = 1;
+  string filename = 2;
+  int64 id = 3;
+  int64 pos = 4;
+  int64 size = 5;
+  bytes content = 6;
+}
+
+message Empty {}
+
+message FinishIn {
+  string staging_uuid = 1;
+  string bucket = 2;
+  string key = 3;
+  int64 size = 4;
+}
+
+service Raft {
+  rpc PartialUpload(FileChunk) returns (Empty);
+  rpc Finish(FinishIn) returns (Empty);
+  rpc Head(HeadIn) returns (HeadOut);
+}
+
+

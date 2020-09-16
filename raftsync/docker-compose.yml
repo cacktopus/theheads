@@ -1,0 +1,50 @@
+version: "3.8"
+services:
+  base01:
+    hostname: base01
+    networks:
+      headnet:
+        ipv4_address: 10.0.0.10
+    ports:
+    - '9000:9000'
+    - '9001:9001'
+    environment:
+      HOSTS: base01,base02,base03
+      BUCKETS: theheads,other
+    image: raftsync
+    command: /build/raftdemo 0
+
+  base02:
+    hostname: base02
+    networks:
+      headnet:
+        ipv4_address: 10.0.0.11
+    ports:
+    - '9010:9000'
+    - '9011:9001'
+    environment:
+      HOSTS: base01,base02,base03
+      BUCKETS: theheads,other
+    image: raftsync
+    command: /build/raftdemo 1
+
+  base03:
+    hostname: base03
+    networks:
+      headnet:
+        ipv4_address: 10.0.0.12
+    ports:
+    - '9020:9000'
+    - '9021:9001'
+    environment:
+      HOSTS: base01,base02,base03
+      BUCKETS: theheads,other
+    image: raftsync
+    command: /build/raftdemo 2
+
+
+networks:
+  headnet:
+    ipam:
+      config:
+      - subnet: 10.0.0.0/24

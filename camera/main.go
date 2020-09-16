@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
@@ -25,8 +25,6 @@ const (
 
 	minArea   = width * height / 400
 	numFrames = 10
-
-	defaultPort = 5000
 
 	warmupFrames = 36
 )
@@ -59,39 +57,39 @@ func fromRaspi(frames chan []byte) frameGrabber {
 	}
 }
 
-func main() {
-	var filename string
-	var port int
-	var instance string
-	flag.StringVar(&instance, "instance", "", "instance name to run as")
-	flag.StringVar(&filename, "filename", "", "stream recording from raw file")
-	flag.IntVar(&port, "port", defaultPort, "port to listen on")
-	flag.Parse()
+type Cfg struct {
+	Instance string
 
-	err := raspiStill()
+	RedisAddr string `envconfig:"default=127.0.0.1:6379"`
+	Filename  string `envconfig:"optional"`
+
+	Port int `envconfig:"default=5000"`
+}
+
+func main() {
+	envCfg := &Cfg{}
+
+	err := envconfig.Init(envCfg)
+	if err != nil {
+		panic(err)
+	}
+
+	err = raspiStill()
 	if err != nil {
 		log.WithError(err).Info("Error running raspistill")
 	}
 
-	fmt.Println("filename: ", filename)
+	go serve(envCfg.Port)
 
-	if instance == "" {
-		log.Fatalf("instance not specified")
-	}
-
-	cfg := getConfig(instance)
-
-	go serve(port)
-
-	redisPublish := NewRedisPublisher(cfg.RedisServer, instance)
+	redisPublish := NewRedisPublisher(envCfg.RedisAddr, envCfg.Instance)
 	defer redisPublish.Stop()
 	go redisPublish.Run()
 
 	var grabber frameGrabber
 
-	if filename != "" {
-		fmt.Println("Streaming from file: ", filename)
-		frames, err := runFileStreamer(filename)
+	if envCfg.Filename != "" {
+		fmt.Println("Streaming from file: ", envCfg.Filename)
+		frames, err := runFileStreamer(envCfg.Filename)
 		if err != nil {
 			panic(err)
 		}
@@ -182,6 +180,16 @@ func main() {
 			}
 
 			t("copy", func() {
+				sz := orig.Size()
+				x := sz[1]
+				y := sz[0]
+				gocv.Line(
+					&orig,
+					image.Point{X: x/2 - 1, Y: 0},
+					image.Point{X: x/2 - 1, Y: y},
+					color.RGBA{B: 128, G: 128, R: 128, A: 128},
+					2,
+				)
 				orig.CopyTo(&ffmpegBuf)
 			})
 
@@ -206,7 +214,7 @@ func main() {
 					},
 					MotionDetectedData{
 						Position:   float64(pos2),
-						CameraName: cfg.CameraName,
+						CameraName: envCfg.Instance,
 					},
 				}
 

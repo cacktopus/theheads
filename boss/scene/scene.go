@@ -242,7 +242,5 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 
 	}
 
-	fmt.Println(scene)
-
 	return scene, nil
 }

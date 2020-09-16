@@ -2,54 +2,80 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/consul/api"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
+	"net/http/cgi"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/user"
+	"path"
+	"strconv"
+	"strings"
 )
 
 func main() {
-	client, err := api.NewClient(api.DefaultConfig())
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("client", client)
-
-	members, err := client.Agent().Members(false)
-	if err != nil {
-		panic(err)
-	}
-	for i, member := range members {
-		fmt.Println("member", i, member)
+	strPort, ok := os.LookupEnv("HTTP_PORT")
+	if !ok {
+		strPort = "80"
 	}
 
-	fmt.Println("")
-
-	nodes, _, err := client.Catalog().Nodes(nil)
-	if err != nil {
-		panic(err)
-	}
-	for i, node := range nodes {
-		fmt.Println("node", i, node)
-		fmt.Println(node.Address, node.ID, node.Node)
-	}
-
-	services, _, err := client.Catalog().Services(nil)
+	port, err := strconv.Atoi(strPort)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("")
+	http.HandleFunc("/health", func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("ok\n"))
+	})
 
-	for service, tags := range services {
-		fmt.Println("service:", service, tags)
+	http.HandleFunc("/grafana/", func(res http.ResponseWriter, req *http.Request) {
+		serveRevereProxy("http://localhost:3000", res, req)
+	})
 
-		svc, _, err := client.Catalog().Service(service, "", nil)
-		if err != nil {
-			panic(err)
+	http.Handle("/metrics", promhttp.Handler())
+
+	http.HandleFunc("/monero/metrics", moneroMetrics)
+
+	http.HandleFunc("/git/heads.git/", func(res http.ResponseWriter, req *http.Request) {
+		// remember to put an empty `git-daemon-export-ok` file in a bare directory
+
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/git")
+
+		usr, err := user.Lookup("git")
+		switch err.(type) {
+		case nil:
+		case user.UnknownUserError:
+			res.WriteHeader(404)
+			return
+		default:
+			res.WriteHeader(500)
+			return
 		}
-		for j, node := range svc {
-			fmt.Println("  ", j, node.Node, node.Address, node.ServicePort,
-				node.ServiceID, node.ServiceName, node.ServiceTags,
-			)
-		}
-	}
 
+		dir := path.Join(usr.HomeDir, "git")
+
+		handler := cgi.Handler{
+			Path: "/usr/bin/git", // TODO
+			Args: []string{"http-backend"},
+			Dir:  dir,
+			Env: []string{
+				fmt.Sprintf("GIT_PROJECT_ROOT=%s", dir),
+			},
+		}
+		handler.ServeHTTP(res, req)
+	})
+
+	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func serveRevereProxy(target string, res http.ResponseWriter, req *http.Request) {
+	dst, _ := url.Parse(target)
+	req.URL.Path = strings.TrimPrefix(req.URL.Path, "/grafana")
+	req.Header.Add("X-WEBAUTH-USER", "jsu")
+	proxy := httputil.NewSingleHostReverseProxy(dst)
+	proxy.ServeHTTP(res, req)
 }

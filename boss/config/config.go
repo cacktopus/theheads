@@ -3,17 +3,13 @@ package config
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	RedisServer string
-	CameraName  string
-}
-
-func NewClient() *api.Client {
+func NewClient(address string) *api.Client {
 	config := api.DefaultConfig()
-	config.Address = "127.0.0.1:8500"
+	config.Address = address
 	client, err := api.NewClient(config)
 	if err != nil {
 		panic(err)
@@ -28,13 +24,20 @@ func AllServiceURLs(client *api.Client, serviceName, tag, prefix, postfix string
 	}
 
 	for _, s := range services {
-		result = append(result, fmt.Sprintf(
-			"%s%s:%d%s",
-			prefix,
-			s.Address,
-			s.ServicePort,
-			postfix,
-		))
+		if s.ServiceAddress != "" {
+			result = append(result, fmt.Sprintf(
+				"%s%s%s",
+				prefix, s.ServiceAddress, postfix,
+			))
+		} else {
+			result = append(result, fmt.Sprintf(
+				"%s%s:%d%s",
+				prefix,
+				s.Address,
+				s.ServicePort,
+				postfix,
+			))
+		}
 	}
 
 	return
@@ -44,6 +47,10 @@ func MustGetYAML(client *api.Client, path string, result interface{}) {
 	resp, _, err := client.KV().Get(path, &api.QueryOptions{})
 	if err != nil {
 		panic(err)
+	}
+
+	if resp == nil {
+		panic(errors.New(path + " not found"))
 	}
 
 	err = yaml.Unmarshal(resp.Value, result)

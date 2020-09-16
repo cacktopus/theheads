@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cacktopus/heads/boss/grid"
 	"github.com/cacktopus/heads/boss/scene"
 	"github.com/cacktopus/heads/boss/util"
 	"github.com/cacktopus/heads/boss/watchdog"
@@ -13,7 +14,7 @@ import (
 
 type FpHeadPair struct {
 	head *scene.Head
-	fp   *FocalPoint
+	fp   *grid.FocalPoint
 }
 
 type FpHeadPairs []FpHeadPair
@@ -23,8 +24,8 @@ func (p FpHeadPairs) Len() int {
 }
 
 func (p FpHeadPairs) Less(i, j int) bool {
-	di := p[i].head.GlobalPos().Sub(p[i].fp.pos).AbsSq()
-	dj := p[j].head.GlobalPos().Sub(p[j].fp.pos).AbsSq()
+	di := p[i].head.GlobalPos().Sub(p[i].fp.Pos).AbsSq()
+	dj := p[j].head.GlobalPos().Sub(p[j].fp.Pos).AbsSq()
 
 	return di < dj
 
@@ -52,6 +53,7 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
 		go FollowClosestFocalPoint(dj, done, head, -1.0)
 	}
 
+	f.textPosition %= len(f.texts)
 	text := f.texts[f.textPosition]
 	f.textPosition++
 
@@ -86,7 +88,7 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
 		var pairs FpHeadPairs
 		// find closest focal point + head pairs
 		for _, h := range dj.scene.Heads {
-			for _, fp := range dj.grid.focalPoints {
+			for _, fp := range dj.grid.GetFocalPoints() {
 				p := FpHeadPair{head: h, fp: fp}
 				pairs = append(pairs, p)
 			}
@@ -99,7 +101,7 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
 		logrus.WithFields(logrus.Fields{
 			"part": part.ID,
 			"head": h0.Name,
-		}).Info("saying")
+		}).Debug("saying")
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
 		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)
 		if result.Err != nil {
@@ -112,6 +114,6 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
 		watchdog.Feed()
 	}
 
-	logrus.Println("Finishing Tracking Convo")
+	logrus.Info("Finishing Tracking Convo")
 	done.Close()
 }

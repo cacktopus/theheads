@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-ln -s ~build/builds/python-env/prod/env env
+cd home
+GO=~build/builds/go/prod/bin/go
+${GO} build

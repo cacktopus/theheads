@@ -1,0 +1,6 @@
+*.bolt
+snapshot-*
+fs/*/*
+cli
+raftdemo
+docker-compose.yml

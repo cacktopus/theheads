@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import os
 from collections import deque
 from typing import Optional
 
@@ -284,7 +285,7 @@ async def get_config(config_endpoint: str, instance: str, port: int):
 
     head_cfg = await cfg.get_config_yaml("/the-heads/heads/{instance}.yaml")
 
-    redis_server = _DEFAULT_REDIS  # TODO
+    redis_server = os.environ.get("REDIS_ADDR", _DEFAULT_REDIS)  # TODO
 
     result = dict(
         condig_endpoint=config_endpoint,
@@ -384,22 +385,26 @@ async def home(request):
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
 
-    parser.add_argument('--instance', type=str,
-                        help='Instance name override for this head')
-
     parser.add_argument('--port', type=int, default=None,
                         help='Port override')
 
     parser.add_argument('--endpoint', type=str, default="http://127.0.0.1:8500",
                         help='Config service endpoint')
 
+    instance = os.environ.get("INSTANCE")
+
+    if not instance:
+        raise RuntimeError("Must set INSTANCE environment variable")
+
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()
 
+    consul_addr = "http://" + os.environ.get("CONSUL_ADDR", "127.0.0.1:8500")
+
     app = loop.run_until_complete(setup(
-        instance=args.instance,
-        config_endpoint=args.endpoint,
+        instance=instance,
+        config_endpoint=consul_addr,
         port_override=args.port or 8080,
     ))
 

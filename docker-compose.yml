@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+  boss:
+    #    build: ./boss
+    image: boss
+    environment:
+      CONSUL_ADDR: 'consul:8500'
+      GIN_MODE: 'release'
+    ports:
+      - '8081:8081'
+    depends_on:
+      - consul
+
+  consul:
+    image: 'consul:1.8'
+    ports:
+      - '8500:8500'
+
+  redis:
+    image: 'redis:5-alpine'
+    ports:
+      - '6379:6379'
+
+  head42:
+    image: 'head'
+    ports:
+      - '8080'
+    environment:
+      CONSUL_ADDR: 'consul:8500'
+      REDIS_ADDR: 'redis:6379'
+      INSTANCE: head-42
+
+  head43:
+    image: 'head'
+    ports:
+      - '8080'
+    environment:
+      CONSUL_ADDR: 'consul:8500'
+      REDIS_ADDR: 'redis:6379'
+      INSTANCE: head-43
+
+  camera42:
+    image: camera
+    environment:
+      REDIS_ADDR: 'redis:6379'
+      INSTANCE: camera-42
+      FILENAME: pi42.raw
+
+  camera43:
+    image: camera
+    environment:
+      REDIS_ADDR: 'redis:6379'
+      INSTANCE: camera-43
+      FILENAME: pi43.raw
+
+
+

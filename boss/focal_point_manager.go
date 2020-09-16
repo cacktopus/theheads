@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
+	"github.com/cacktopus/heads/boss/grid"
 	"github.com/cacktopus/heads/boss/scene"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
-func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *Grid) {
+func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *grid.Grid) {
 	msgs := msgBroker.Subscribe()
 
 	for i := range msgs {
@@ -15,7 +16,7 @@ func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *Gr
 		case broker.MotionDetected:
 			cam, ok := theScene.Cameras[msg.CameraName]
 			if !ok {
-				log.Error("Unknown camera: ", msg.CameraName)
+				logrus.Error("Unknown camera: ", msg.CameraName)
 			} else {
 				rotz := geom.Rotz(msg.Position)
 

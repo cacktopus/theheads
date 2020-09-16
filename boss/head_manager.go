@@ -6,14 +6,10 @@ import (
 	"github.com/cacktopus/heads/boss/config"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"sync"
-)
-
-const (
-	defaultConsulEndpoint = "http://127.0.0.1:8500"
 )
 
 type Result struct {
@@ -35,12 +31,12 @@ type HeadQueue struct {
 	headClient   *http.Client
 }
 
-func NewHeadQueue(serviceName, tagName string) *HeadQueue {
+func NewHeadQueue(serviceName, tagName, consulAddr string) *HeadQueue {
 	return &HeadQueue{
 		serviceName:  serviceName,
 		tagName:      tagName,
 		queue:        make(chan SendItem, 64),
-		consulClient: config.NewClient(),
+		consulClient: config.NewClient(consulAddr),
 		headClient:   &http.Client{},
 	}
 }
@@ -66,7 +62,7 @@ func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
 }
 
 func (h *HeadQueue) send(url string) Result {
-	log.WithField("url", url).Debug("sending")
+	logrus.WithField("url", url).Debug("sending")
 	resp, err := h.headClient.Get(url)
 	if err != nil {
 		return Result{Err: err}
@@ -92,7 +88,7 @@ loop:
 		// TODO: dedup/ratelimit
 		url, err := h.lookupServiceURL(item.path)
 		if err != nil {
-			log.WithError(err).Error("error looking up service")
+			logrus.WithError(err).Error("error looking up service")
 			if item.result != nil {
 				item.result <- Result{Err: err}
 				continue loop
@@ -101,7 +97,7 @@ loop:
 
 		result := h.send(url)
 		if result.Err != nil {
-			log.WithError(result.Err).Error("error sending to service")
+			logrus.WithError(result.Err).Error("error sending to service")
 		}
 
 		if item.result != nil {
@@ -112,13 +108,15 @@ loop:
 }
 
 type HeadManager struct {
-	queues map[string]*HeadQueue
-	lock   sync.Mutex
+	queues     map[string]*HeadQueue
+	lock       sync.Mutex
+	consulAddr string
 }
 
-func NewHeadManager() *HeadManager {
+func NewHeadManager(consulAddr string) *HeadManager {
 	return &HeadManager{
-		queues: map[string]*HeadQueue{},
+		queues:     map[string]*HeadQueue{},
+		consulAddr: consulAddr,
 	}
 }
 
@@ -131,7 +129,7 @@ func (h *HeadManager) getQueue(serviceName, headName string) *HeadQueue {
 	queue, ok := h.queues[key]
 
 	if !ok {
-		queue = NewHeadQueue(serviceName, headName)
+		queue = NewHeadQueue(serviceName, headName, h.consulAddr)
 		h.queues[key] = queue
 		go queue.sendLoop()
 	}

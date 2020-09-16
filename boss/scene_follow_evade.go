@@ -31,15 +31,15 @@ func FollowClosestFocalPoint(
 
 			var theta float64
 			if distance < evadeDistance {
-				theta = head.PointAwayFrom(selected.pos)
+				theta = head.PointAwayFrom(selected.Pos)
 			} else {
-				theta = head.PointTo(selected.pos)
+				theta = head.PointTo(selected.Pos)
 			}
 
 			path := fmt.Sprintf("/rotation/%f", theta)
 			dj.headManager.send("head", head.Name, path)
 		case <-done.Chan():
-			logrus.WithField("head", head.Name).Println("Finishing FollowClosestFocalPoint")
+			logrus.WithField("head", head.Name).Info("Finishing FollowClosestFocalPoint")
 			return
 		}
 	}
@@ -62,5 +62,5 @@ loop:
 		}
 	}
 
-	logrus.Println("Finishing FollowEvade")
+	logrus.Info("Finishing FollowEvade")
 }

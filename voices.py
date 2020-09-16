@@ -3,13 +3,28 @@ import os
 import platform
 import random
 
+import prometheus_client
 from aiohttp import web
 
 import log
 import util
 from health import health_check, CORS_ALL
+from metrics import handle_metrics
 
-play_cmd = "afplay" if platform.system() == "Darwin" else "aplay"
+play_cmd = ["afplay"] if platform.system() == "Darwin" else ["aplay", "--device", "default:CARD=Device"]
+
+FILE_COUNT = prometheus_client.Gauge(
+    "heads_voices_wav_file_count",
+    "Number of .wav files on disk",
+    [],
+)
+
+
+def count_files() -> int:
+    return len(all_sounds())
+
+
+FILE_COUNT.set_function(count_files)
 
 
 async def _play(sound: str):
@@ -21,9 +36,10 @@ async def _play(sound: str):
         log.error("missing sound", path=os.path.abspath(filename))
         return web.Response(status=404, text=f"missing {filename}", headers=CORS_ALL)
 
+    args = play_cmd + [filename]
+
     process = await asyncio.create_subprocess_exec(
-        play_cmd,
-        filename,
+        *args,
     )
 
     await process.wait()
@@ -37,7 +53,7 @@ async def play(request):
     return await _play(sound)
 
 
-async def play_random(request):
+def all_sounds():
     sounds = []
     for (dirpath, dirs, files) in os.walk('sounds'):
         for f in files:
@@ -47,8 +63,11 @@ async def play_random(request):
                 full = os.path.relpath(full, "sounds")
 
                 sounds.append(full)
+    return sounds
 
-    sound = random.choice(sounds)
+
+async def play_random(request):
+    sound = random.choice(all_sounds())
     return await _play(sound)
 
 
@@ -64,6 +83,7 @@ async def setup(name: str, port: int):
         web.get("/play", play),
         web.get("/random", play_random),
         web.get('/health', health_check),
+        web.get('/metrics', handle_metrics),
     ])
 
     log.info("Running", service="voices", port=port)

@@ -95,13 +95,13 @@ func (p *RedisPublisher) drainQueue() {
 }
 
 func (p *RedisPublisher) mainLoop() error {
-	log.Println("Connecting to redis @ ", p.redisServer)
+	log.Println("Connecting to redis:", p.redisServer)
 	redisClient, err := redis.Dial("tcp", p.redisServer)
 	if err != nil {
 		log.WithError(err).Error("Error connecting to redis")
 		return err
 	}
-	log.Println("Connected to redis @ ", p.redisServer)
+	log.Println("Connected to redis:", p.redisServer)
 	return p.publishLoop(redisClient)
 }
 

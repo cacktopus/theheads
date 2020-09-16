@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List
 
-from config import get, put, NoDefault, NotFound
+from config import get, put,  NotFound
 from const import DEFAULT_CONSUL_ENDPOINT
 from rpc_util import d64
 
@@ -74,9 +74,9 @@ class ConsulBackend:
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
         return await put(url, value)
 
-    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None, meta=None):
+    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None, meta=None, address=""):
         url = self._consul_endpoint + "/v1/agent/service/register"
-        payload = {"Name": name, "Port": port}
+        payload = {"Name": name, "Port": port, "Address": address}
 
         if ID is not None:
             payload["ID"] = ID

@@ -1,14 +1,14 @@
-package main
+package grid
 
 import (
 	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/cacktopus/heads/boss/geom"
 	"github.com/cacktopus/heads/boss/scene"
-	"github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -43,10 +43,14 @@ type Grid struct {
 	minX, minY, maxX, maxY float64
 	imgsizeX, imgsizeY     int
 	scaleX, scaleY         float64
-	layers                 map[string]*mat.Dense
-	focalPoints            map[string]*FocalPoint
-	scene                  *scene.Scene
-	broker                 *broker.Broker
+
+	layers map[string]*mat.Dense
+	lock   sync.Mutex // currently coarse-grained locking (API-level)
+
+	_focalPoints *focalPoints
+
+	scene  *scene.Scene
+	broker *broker.Broker
 }
 
 func NewGrid(
@@ -58,15 +62,25 @@ func NewGrid(
 	g := &Grid{
 		minX: minX, minY: minY, maxX: maxX, maxY: maxY,
 		imgsizeX: imgsizeX, imgsizeY: imgsizeY,
-		scene:       scene,
-		scaleX:      float64(imgsizeX) / (maxX - minX),
-		scaleY:      float64(imgsizeY) / (maxY - minY),
-		layers:      map[string]*mat.Dense{},
-		focalPoints: map[string]*FocalPoint{},
-		broker:      broker,
+		scene:  scene,
+		scaleX: float64(imgsizeX) / (maxX - minX),
+		scaleY: float64(imgsizeY) / (maxY - minY),
+		layers: map[string]*mat.Dense{},
+		broker: broker,
+		_focalPoints: &focalPoints{
+			focalPoints: map[string]*focalPoint{},
+			broker:      broker,
+			scene:       scene,
+		},
 	}
 
 	return g
+}
+
+func (g *Grid) withLock(callback func()) {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+	callback()
 }
 
 // Returns the size of a Grid cell (in meters)
@@ -87,41 +101,14 @@ func (g *Grid) getLayer(cameraName string) *mat.Dense {
 }
 
 func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
-	hit := g.traceFocalPoints(p0, p1)
+	hit := g._focalPoints.traceFocalPoints(p0, p1)
 
 	if !hit {
-		g.traceGrid(cameraName, p0, p1)
+		g.withLock(func() {
+			g.traceGrid(cameraName, p0, p1)
+		})
 	}
-	g.publishFocalPoints()
-}
-
-func (g *Grid) traceFocalPoints(p0, p1 geom.Vec) bool {
-	minDist := maxFloat
-	var minFp *FocalPoint
-	var m0, m1 geom.Vec
-
-	for _, fp := range g.focalPoints {
-		q0, q1, hit := fp.lineIntersection(p0, p1)
-		if hit {
-			d := q0.Sub(p0).AbsSq()
-			if d < minDist {
-				m0, m1 = q0, q1
-				minDist = d
-				minFp = fp
-			}
-		}
-	}
-
-	// only interact with closest fp
-	if minFp != nil {
-		midpoint := m0.Add(m1.Sub(m0).Scale(0.5))
-		to := midpoint.Sub(minFp.pos)
-		minFp.pos = minFp.pos.Add(to.Scale(g.scene.CameraSensitivity))
-		minFp.refresh()
-		return true
-	}
-
-	return false
+	g._focalPoints.publishFocalPoints()
 }
 
 func (g *Grid) traceGrid(cameraName string, p0, p1 geom.Vec) {
@@ -180,30 +167,14 @@ func (g *Grid) Start() {
 	time.Sleep(1000 * time.Millisecond)
 	for {
 		time.Sleep(250 * time.Millisecond)
-		g.maybeSpawnFocalPoint()
-		g.mergeOverlappingFocalPoints()
-		g.decay()
-		g.cleanupStale()
-	}
-}
-
-func (g *Grid) mergeOverlappingFocalPoints() {
-	// this runs every update and we can tolerate some overlap, so to keep things simple,
-	// if we find a single overlap just deal with it and get to any other overlaps on the
-	// next run
-
-	for _, fp0 := range g.focalPoints {
-		for id, fp1 := range g.focalPoints {
-			if fp0 == fp1 {
-				continue
-			}
-			if fp0.overlaps(fp1, 0.5) {
-				// midpoint = (fp0.pos + fp1.pos).scale(0.5
-				midpoint := fp0.pos.Add(fp1.pos).Scale(0.5)
-				fp0.pos = midpoint
-				delete(g.focalPoints, id)
-			}
-		}
+		g.withLock(func() {
+			g.maybeSpawnFocalPoint()
+		})
+		g._focalPoints.mergeOverlappingFocalPoints()
+		g.withLock(func() {
+			g.decay()
+		})
+		g._focalPoints.cleanupStale()
 	}
 }
 
@@ -290,85 +261,13 @@ func (g *Grid) maybeSpawnFocalPoint() {
 		return
 	}
 
-	newFp := NewFocalPoint(p, fpRadius, "", DefaultTTL, DefaultTTLLast)
-
-	for _, fp := range g.focalPoints {
-		if newFp.overlaps(fp, 1.0) {
-			return
-		}
-	}
-
-	for _, cam := range g.scene.Cameras {
-		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "", DefaultTTL, DefaultTTLLast)
-		if newFp.overlaps(fakeFp, 1.0) {
-			return
-		}
-	}
-
-	// create new focal point
-	newFp.id = assignID()
-	logrus.WithField("pos", p.AsStr()).Println("Spawning new focal point")
-
-	g.focalPoints[newFp.id] = newFp
-	g.publishFocalPoints()
+	g._focalPoints.maybeSpawnFocalPoint(p)
 }
 
-func (g *Grid) publishFocalPoints() {
-	var points []*broker.FocalPoint
-	for _, fp := range g.focalPoints {
-		points = append(points, fp.ToMsg())
-	}
-
-	msg := broker.FocalPoints{
-		FocalPoints: points,
-	}
-
-	g.broker.Publish(msg)
-
-	/*
-			self.send({
-		                "type": "focal-points",
-		                "data": {
-		                    "focal_points": [fp.to_object() for fp in focal_points.values()]
-		                }
-		            })
-
-	*/
+func (g *Grid) GetFocalPoints() []*FocalPoint {
+	return g._focalPoints.getFocalPoints()
 }
 
-func (g *Grid) cleanupStale() {
-	var toRemove []string
-	for id, fp := range g.focalPoints {
-		if fp.isExpired(len(g.focalPoints)) {
-			toRemove = append(toRemove, id)
-		}
-	}
-
-	// TODO: focalpoints will need synchrnoization
-	for _, id := range toRemove {
-		delete(g.focalPoints, id)
-	}
-
-	g.publishFocalPoints()
-}
 func (g *Grid) ClosestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
-	minDist := maxFloat
-	var minFp *FocalPoint
-
-	for _, fp := range g.focalPoints {
-		d2 := fp.pos.Sub(p).AbsSq()
-		if d2 < 1e-5 {
-			continue
-		}
-		if d2 < minDist {
-			minDist = d2
-			minFp = fp
-		}
-	}
-
-	if minFp != nil {
-		return minFp, math.Sqrt(minDist)
-	}
-
-	return nil, -1
+	return g._focalPoints.closestFocalPointTo(p)
 }

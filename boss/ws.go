@@ -10,13 +10,6 @@ func manageWebsocket(conn *websocket.Conn, msgBroker *broker.Broker) {
 	msgs := msgBroker.Subscribe()
 
 	for {
-		//type_, msg, err := conn.ReadMessage()
-		//if err != nil {
-		//	break
-		//}
-		//conn.WriteMessage(type_, msg)
-		//log.Println("ws", type_, string(msg))
-
 		for m := range msgs {
 			switch msg := m.(type) {
 			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints, broker.Active:

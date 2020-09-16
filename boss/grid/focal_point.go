@@ -1,4 +1,4 @@
-package main
+package grid
 
 import (
 	"github.com/cacktopus/heads/boss/broker"
@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	DefaultTTL = 5 * time.Second
+	DefaultTTL     = 5 * time.Second
 	DefaultTTLLast = 30 * time.Second
 )
 
-type FocalPoint struct {
+// Internal representation
+type focalPoint struct {
 	pos       geom.Vec
 	radius    float64
 	id        string
@@ -21,8 +22,14 @@ type FocalPoint struct {
 	ttlLast   time.Duration // time to live for last focal point
 }
 
-func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Duration) *FocalPoint {
-	return &FocalPoint{
+// External representation
+type FocalPoint struct {
+	Pos    geom.Vec
+	Radius float64
+}
+
+func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Duration) *focalPoint {
+	return &focalPoint{
 		pos:       pos,
 		radius:    radius,
 		id:        id,
@@ -32,7 +39,14 @@ func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Du
 	}
 }
 
-func (fp *FocalPoint) ToMsg() *broker.FocalPoint {
+func (fp *focalPoint) ToExternal() *FocalPoint {
+	return &FocalPoint{
+		Pos:    geom.NewVec(fp.pos.X(), fp.pos.Y()),
+		Radius: fp.radius,
+	}
+}
+
+func (fp *focalPoint) ToMsg() *broker.FocalPoint {
 	return &broker.FocalPoint{
 		Name: fp.id,
 		Pos:  broker.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
@@ -40,24 +54,24 @@ func (fp *FocalPoint) ToMsg() *broker.FocalPoint {
 	}
 }
 
-func (fp *FocalPoint) expiry(globalFocalPointCount int) time.Time {
+func (fp *focalPoint) expiry(globalFocalPointCount int) time.Time {
 	if globalFocalPointCount > 1 {
 		return fp.updatedAt.Add(fp.ttl)
 	}
 	return fp.updatedAt.Add(fp.ttlLast)
 }
 
-func (fp *FocalPoint) overlaps(other *FocalPoint, scale float64) bool {
+func (fp *focalPoint) overlaps(other *focalPoint, scale float64) bool {
 	to := other.pos.Sub(fp.pos)
 	d := to.Abs()
 	return d < (fp.radius+other.radius)*scale
 }
 
-func (fp *FocalPoint) refresh() {
+func (fp *focalPoint) refresh() {
 	fp.updatedAt = time.Now()
 }
 
-func (fp *FocalPoint) isExpired(globalFocalPointCount int) bool {
+func (fp *focalPoint) isExpired(globalFocalPointCount int) bool {
 	t := time.Now()
 	return t.After(fp.expiry(globalFocalPointCount))
 }
@@ -66,7 +80,7 @@ func sq(a float64) float64 {
 	return a * a
 }
 
-func (fp *FocalPoint) lineIntersection(p0 geom.Vec, p1 geom.Vec) (geom.Vec, geom.Vec, bool) {
+func (fp *focalPoint) lineIntersection(p0 geom.Vec, p1 geom.Vec) (geom.Vec, geom.Vec, bool) {
 	// transform to circle's reference frame
 
 	p0 = p0.Sub(fp.pos)

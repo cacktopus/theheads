@@ -102,7 +102,9 @@ type Simulation struct {
 	G      float64
 }
 
-func (sim *Simulation) Tick(strip *Strip, t, dt float64) {
+func (sim *Simulation) Tick(strip *Strip, _, dt float64) {
+	dt *= 0.5
+
 	da := -sim.G * dt
 
 	// ball/plane collisions

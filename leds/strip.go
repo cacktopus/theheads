@@ -3,12 +3,13 @@ package main
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"log"
+	"sync"
 	"time"
 )
 
 const (
 	maxBrightness = 0.33
+	scaleIncr     = 0.02
 )
 
 var (
@@ -38,6 +39,8 @@ type Strip struct {
 	length     float64
 	startIndex int
 	transactor Transactor
+	scale      float64
+	mu         sync.Mutex
 }
 
 func NewStrip(numLeds, startLed int, length float64, transactor Transactor) *Strip {
@@ -46,6 +49,7 @@ func NewStrip(numLeds, startLed int, length float64, transactor Transactor) *Str
 		startIndex: startLed,
 		length:     length,
 		transactor: transactor,
+		scale:      1.0,
 	}
 }
 
@@ -78,10 +82,14 @@ func (s *Strip) tx(x float64) int {
 func (s *Strip) send() int {
 	write := make([]byte, len(s.leds)*3)
 
+	s.mu.Lock()
+	scale := clamp(0, s.scale, 1.0)
+	s.mu.Unlock()
+
 	for i := 0; i < len(s.leds); i++ {
-		write[i*3+0] = byte(255.0 * clamp(0, s.leds[i].g, maxBrightness))
-		write[i*3+1] = byte(255.0 * clamp(0, s.leds[i].r, maxBrightness))
-		write[i*3+2] = byte(255.0 * clamp(0, s.leds[i].b, maxBrightness))
+		write[i*3+0] = byte(255.0 * clamp(0, s.leds[i].g*scale, maxBrightness))
+		write[i*3+1] = byte(255.0 * clamp(0, s.leds[i].r*scale, maxBrightness))
+		write[i*3+2] = byte(255.0 * clamp(0, s.leds[i].b*scale, maxBrightness))
 	}
 
 	write = append(write, make([]byte, 200)...)
@@ -89,7 +97,7 @@ func (s *Strip) send() int {
 	adapted := adaptForSpi(write)
 	read := make([]byte, len(adapted))
 	if err := s.transactor.Tx(adapted, read); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	frameRendered.Inc()
 
@@ -119,4 +127,16 @@ func (s *Strip) Each(cb func(i int, led *Led)) {
 
 func (s *Strip) NumActiveLeds() int {
 	return len(s.leds) - s.startIndex
+}
+
+func (s *Strip) ScaleUp() {
+	s.mu.Lock()
+	s.scale = clamp(0, s.scale+scaleIncr, 1.0)
+	s.mu.Unlock()
+}
+
+func (s *Strip) ScaleDown() {
+	s.mu.Lock()
+	s.scale = clamp(0, s.scale-scaleIncr, 1.0)
+	s.mu.Unlock()
 }

@@ -105,15 +105,24 @@ async def main(inst_name: str):
     async def setup_instances():
         names = await head_names(consul_backend)
         for i, name in enumerate(names):
-            await consul_backend.register_service_with_agent("head", 18080 + i, ID=name, tags=[name, "frontend"])
+            fixed_name = name.replace("-", "")
+            address = f"{fixed_name}:8080"
+            print(address)
+            await consul_backend.register_service_with_agent(
+                "head",
+                8080,
+                ID=name,
+                tags=[name, "frontend"],
+                address=address,
+            )
             await consul_backend.register_service_with_agent(
                 "voices", 3030 + i,
-                ID=f"voices-{i+1:02}",
+                ID=f"voices-{i + 1:02}",
                 tags=[name, "frontend"]
             )
 
         # redis
-        await consul_backend.register_service_with_agent("redis", 6379)
+        await consul_backend.register_service_with_agent("redis", 6379, address="host.docker.internal:6379")
 
         # boss
         await consul_backend.register_service_with_agent("boss", 8081, ID="boss-01", tags=["boss-01", "frontend"])

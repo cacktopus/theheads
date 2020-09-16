@@ -71,7 +71,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(1 - up{job!=\"camera\"}) > 0",
+          "expr": "(1 - up) > 0",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{job}} {{instance}}",

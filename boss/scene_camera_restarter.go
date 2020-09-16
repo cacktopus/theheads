@@ -10,7 +10,7 @@ import (
 
 func CameraRestarter(dj *DJ, done util.BroadcastCloser) {
 	rate_limiter.Limit("camera.restart", 10*time.Minute, func() {
-		if len(dj.grid.focalPoints) == 0 {
+		if len(dj.grid.GetFocalPoints()) == 0 {
 			return
 		}
 		for _, c := range dj.scene.Cameras {

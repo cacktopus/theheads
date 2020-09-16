@@ -2,20 +2,31 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/cacktopus/heads/boss/broker"
 	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"time"
 )
+
+var redisEventReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "heads",
+	Subsystem: "boss",
+	Name:      "redis_event_received",
+}, []string{
+	"type",
+	"source",
+})
 
 func retryFunc(delay time.Duration, description string, f func() error) {
 	for {
 		err := f()
 		if err == nil {
-			log.WithField("operation", description).Println("Retrying")
+			logrus.WithField("operation", description).Info("Retrying")
 			break
 		} else {
-			log.WithField("operation", description).WithError(err).Println("Retrying")
+			logrus.WithField("operation", description).WithError(err).Info("Retrying")
 			time.Sleep(delay)
 		}
 	}
@@ -31,13 +42,13 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 	// https://godoc.org/github.com/garyburd/redigo/redis#example-PubSubConn
 	// TODO: use callback approach to separate concerns
 
-	log.Println("Connecting to redis @ ", redisServer)
+	logrus.WithField("server", redisServer).Info("Connecting to redis")
 	redisClient, err := redis.Dial("tcp", redisServer)
 	if err != nil {
-		log.WithError(err).Error("Error connecting to redis")
+		logrus.WithError(err).Error("Error connecting to redis")
 		return err
 	}
-	log.Println("Connected to redis @ ", redisServer)
+	logrus.WithField("server", redisServer).Info("Connected to redis")
 
 	psc := redis.PubSubConn{Conn: redisClient}
 
@@ -53,6 +64,7 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 			case redis.Message:
 				event := broker.HeadEvent{}
 				err := json.Unmarshal(v.Data, &event)
+
 				if err != nil {
 					done <- err
 					return
@@ -61,11 +73,13 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 				switch event.Type {
 				case "head-positioned":
 					msg := broker.HeadPositioned{}
+
 					err = json.Unmarshal(event.Data, &msg)
 					if err != nil {
 						done <- err
 						return
 					}
+					redisEventReceived.WithLabelValues(event.Type, msg.HeadName).Inc()
 					msgBroker.Publish(msg)
 				case "motion-detected":
 					msg := broker.MotionDetected{}
@@ -74,6 +88,7 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 						done <- err
 						return
 					}
+					redisEventReceived.WithLabelValues(event.Type, msg.CameraName).Inc()
 					msgBroker.Publish(msg)
 
 				case "active":
@@ -83,6 +98,8 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 						done <- err
 						return
 					}
+					source := fmt.Sprintf("%s-%s", msg.Component, msg.Name_)
+					redisEventReceived.WithLabelValues(event.Type, source).Inc()
 					msgBroker.Publish(msg)
 				}
 
@@ -93,7 +110,7 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 				}
 			case error:
 				err = v
-				log.WithError(err).Println("redis error")
+				logrus.WithError(err).Error("redis error")
 				done <- err
 				return
 			}
@@ -107,11 +124,11 @@ loop:
 	for err == nil {
 		select {
 		case <-ticker.C:
-			log.Debugln("ping", redisServer)
+			logrus.Debugln("ping", redisServer)
 			if err = psc.Ping(""); err != nil {
 				break loop
 			}
-			log.Debugln("pong", redisServer)
+			logrus.Debugln("pong", redisServer)
 		case err := <-done:
 			return err
 		}
