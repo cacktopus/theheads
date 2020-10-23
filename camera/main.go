@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cacktopus/theheads/common/redis_publisher"
+	"github.com/cacktopus/theheads/common/schema"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"gocv.io/x/gocv"
@@ -81,7 +83,7 @@ func main() {
 
 	go serve(envCfg.Port)
 
-	redisPublish := NewRedisPublisher(envCfg.RedisAddr, envCfg.Instance)
+	redisPublish := redis_publisher.NewRedisPublisher(envCfg.RedisAddr, envCfg.Instance)
 	defer redisPublish.Stop()
 	go redisPublish.Run()
 
@@ -208,11 +210,11 @@ func main() {
 				pos2 := -int(scale * t)
 				// fmt.Println("pos", pos, "t", t, "pos2", pos2)
 
-				msg := MotionDetected{
-					MessageHeader{
+				msg := schema.MotionDetected{
+					schema.MessageHeader{
 						Type: "motion-detected",
 					},
-					MotionDetectedData{
+					schema.MotionDetectedData{
 						Position:   float64(pos2),
 						CameraName: envCfg.Instance,
 					},

@@ -1,15 +1,20 @@
-FROM golang:1.14-buster as build
+FROM golang:1.15-buster as build
 
-WORKDIR /build
-COPY go.mod go.sum ./
+WORKDIR /build/boss
+
+COPY boss/go.* /build/boss/
+COPY common/go.* /build/common/
+
 RUN go mod download
 
-COPY . .
+COPY boss /build/boss
+COPY common /build/common
+
 RUN GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build .
 
-FROM golang:1.14-buster as package
+FROM golang:1.15-buster as package
 
-COPY --from=build /build/boss /build/boss.html /install/boss/
+COPY --from=build /build/boss/boss /build/boss/boss.html /install/boss/
 COPY --from=boss-ui /install /install/boss/boss-ui/build
 
 ARG VERSION

@@ -1,0 +1,42 @@
+FROM golang:1.14-buster
+
+WORKDIR /pkg
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
+
+RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
+    wget https://theheads.sfo2.digitaloceanspaces.com/build/opencv_4.4.0-2_${arch}.deb
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.4.0-2_*.deb
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+
+COPY camera/go.* /build/camera/
+COPY common/go.* /build/common/
+
+WORKDIR /build/camera/
+RUN go mod download
+
+COPY camera /build/camera
+COPY common /build/common
+
+RUN CGO_ENABLED=1 go build .
+
+WORKDIR /app
+RUN cp /build/camera/camera /build/camera/index.html .
+RUN cp -r /build/camera/js js
+
+ARG VERSION
+WORKDIR /
+RUN mkdir -p /packages
+RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
+    tar -cjvf /packages/camera_${VERSION}_${arch}.tar.bz2 app
+
+RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
+    curl -XPUT \
+    http://raftsync.service.consul:9000/theheads/build/camera/camera_${VERSION}_${arch}.tar.bz2 \
+    --data-binary @/packages/camera_${VERSION}_${arch}.tar.bz2
+
+WORKDIR /app
+
+CMD ["./camera"]

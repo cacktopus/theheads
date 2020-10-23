@@ -37,7 +37,7 @@ func FollowClosestFocalPoint(
 			}
 
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
+			dj.headManager.Send("head", head.Name, path)
 		case <-done.Chan():
 			logrus.WithField("head", head.Name).Info("Finishing FollowClosestFocalPoint")
 			return
@@ -45,7 +45,7 @@ func FollowClosestFocalPoint(
 	}
 }
 
-func FollowEvade(dj *DJ, done util.BroadcastCloser) {
+func FollowEvade(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 	for _, head := range dj.scene.Heads {
 		go FollowClosestFocalPoint(dj, done, head, -1.0)
 	}

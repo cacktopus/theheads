@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "gen/head";
+
+message rotationIn {
+  float theta = 1;
+  float speed = 2;
+}
+
+message Empty {
+}
+
+service head {
+  rpc rotation(rotationIn) returns (Empty);
+}

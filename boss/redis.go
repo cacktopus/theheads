@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/theheads/boss/broker"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -62,7 +63,7 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
-				event := broker.HeadEvent{}
+				event := schema.HeadEvent{}
 				err := json.Unmarshal(v.Data, &event)
 
 				if err != nil {
@@ -92,7 +93,7 @@ func runRedisInternal(msgBroker *broker.Broker, redisServer string) error {
 					msgBroker.Publish(msg)
 
 				case "active":
-					msg := broker.Active{}
+					msg := schema.Active{}
 					err = json.Unmarshal(event.Data, &msg)
 					if err != nil {
 						done <- err

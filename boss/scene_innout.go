@@ -5,10 +5,11 @@ import (
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
-func InNOut(dj *DJ, done util.BroadcastCloser) {
+func InNOut(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 	center := geom.ZeroVec()
 
 	for _, h := range dj.scene.Heads {
@@ -23,7 +24,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointAwayFrom(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
+			dj.headManager.Send("head", head.Name, path)
 		}
 
 		select {
@@ -35,7 +36,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(center)
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
+			dj.headManager.Send("head", head.Name, path)
 		}
 
 		select {

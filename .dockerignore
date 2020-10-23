@@ -1,3 +1,8 @@
-*
-!*.py
-!requirements.txt
+boss-ui/node_modules/
+walls/
+py/env/
+dev/
+head/head
+boss/boss
+camera/camera
+sounds/

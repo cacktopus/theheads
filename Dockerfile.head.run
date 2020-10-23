@@ -1,0 +1,21 @@
+FROM golang:1.14-buster
+
+WORKDIR /build
+COPY head/go.* /build/head/
+COPY common/go.* /build/common/
+
+WORKDIR /build/head
+RUN go mod download
+
+COPY head /build/head
+COPY common /build/common
+
+RUN CGO_ENABLED=0 go build .
+
+FROM alpine as run
+
+WORKDIR /app
+
+COPY --from=build /build/head/head /app/
+
+CMD ["/app/head"]

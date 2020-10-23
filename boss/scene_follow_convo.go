@@ -39,7 +39,7 @@ type FollowConvo struct {
 	textPosition int
 }
 
-func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
+func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 	// initialize texts if first run
 	if f.texts == nil {
 		// copy texts
@@ -103,7 +103,7 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser) {
 			"head": h0.Name,
 		}).Debug("saying")
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)
+		result := dj.headManager.SendWithResult("voices", h0.Name, playPath, nil)
 		if result.Err != nil {
 			logrus.WithError(result.Err).Error("error playing sound")
 		}

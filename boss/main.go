@@ -5,6 +5,7 @@ import (
 	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/cacktopus/theheads/boss/config"
 	"github.com/cacktopus/theheads/boss/grid"
+	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/watchdog"
 	"github.com/gin-contrib/pprof"
@@ -15,6 +16,7 @@ import (
 	"github.com/vrischmann/envconfig"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -134,11 +136,29 @@ func main() {
 		manageWebsocket(conn, broker)
 	}))
 
+	r.GET("/restart", func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		logrus.WithField("origin", origin).Info("restart")
+
+		c.Header("Access-Control-Allow-Origin", "*")
+
+		service := c.Query("service")
+		if service == "boss" {
+			c.Status(200)
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				os.Exit(0)
+			}()
+		} else {
+			c.Status(http.StatusBadRequest)
+		}
+	})
+
 	go func() {
 		r.Run(addr)
 	}()
 
-	headManager := NewHeadManager(cfg.ConsulAddr)
+	headManager := head_manager.NewHeadManager(cfg.ConsulAddr)
 
 	texts := LoadTexts(consulClient)
 

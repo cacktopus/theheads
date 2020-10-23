@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/cacktopus/theheads/boss/grid"
+	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-type SceneRunner func(dj *DJ, done util.BroadcastCloser)
+type SceneRunner func(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry)
 
 type SceneConfig struct {
 	Runner           SceneRunner
@@ -32,19 +33,21 @@ func init() {
 type DJ struct {
 	grid        *grid.Grid
 	scene       *scene.Scene
-	headManager *HeadManager
+	headManager *head_manager.HeadManager
 	texts       []*Text
 }
 
 func (dj *DJ) RunScenes() {
-	for {
+	sceneNumber := 1
+	for ; ; sceneNumber++ {
 		for _, sceneName := range dj.scene.Scenes {
-			logrus.WithField("scene", sceneName).Info("Running Scene")
+			logger := logrus.WithField("scene", sceneName).WithField("number", sceneNumber)
+			logger.Info("Running Scene")
 			done := util.NewBroadcastCloser()
 			sc := AllScenes[sceneName]
 			go func(sceneName string) {
 				currentSceneMetric.WithLabelValues(sceneName).Inc()
-				sc.Runner(dj, done)
+				sc.Runner(dj, done, logger)
 				currentSceneMetric.WithLabelValues(sceneName).Dec()
 			}(sceneName)
 			maxLength := time.Duration(sc.MaxLengthSeconds) * time.Second

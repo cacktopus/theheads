@@ -4,6 +4,7 @@ import (
 	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 	"math"
 	"sync"
@@ -76,14 +77,14 @@ func (fps *focalPoints) mergeOverlappingFocalPoints() {
 }
 
 func (fps *focalPoints) publishFocalPoints() {
-	var points []*broker.FocalPoint
+	var points []*schema.FocalPoint
 	fps.withLock(func() {
 		for _, fp := range fps.focalPoints {
 			points = append(points, fp.ToMsg())
 		}
 	})
 
-	msg := broker.FocalPoints{
+	msg := schema.FocalPoints{
 		FocalPoints: points,
 	}
 

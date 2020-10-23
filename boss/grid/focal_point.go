@@ -1,8 +1,8 @@
 package grid
 
 import (
-	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/cacktopus/theheads/boss/geom"
+	"github.com/cacktopus/theheads/common/schema"
 	"math"
 	"time"
 )
@@ -46,10 +46,10 @@ func (fp *focalPoint) ToExternal() *FocalPoint {
 	}
 }
 
-func (fp *focalPoint) ToMsg() *broker.FocalPoint {
-	return &broker.FocalPoint{
+func (fp *focalPoint) ToMsg() *schema.FocalPoint {
+	return &schema.FocalPoint{
 		Name: fp.id,
-		Pos:  broker.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
+		Pos:  schema.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
 		Ttl:  float64(fp.ttl / time.Second),
 	}
 }

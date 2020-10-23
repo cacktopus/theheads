@@ -5,6 +5,7 @@ import (
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/scene"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +29,7 @@ func ManageFocalPoints(theScene *scene.Scene, msgBroker *broker.Broker, grid *gr
 				p0 = m.MulVec(p0)
 				p1 = m.MulVec(p1)
 
-				ml := broker.MotionLine{
+				ml := schema.MotionLine{
 					P0: [2]float64{p0.X(), p0.Y()},
 					P1: [2]float64{p1.X(), p1.Y()},
 				}

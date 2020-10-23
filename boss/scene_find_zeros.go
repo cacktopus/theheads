@@ -4,6 +4,7 @@ import (
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -12,20 +13,21 @@ import (
 func pollHead(dj *DJ, done util.BroadcastCloser, ws *sync.WaitGroup, h *scene.Head) {
 	log := logrus.WithField("head", h.Name)
 
-	dj.headManager.sendWithResult("head", h.Name, "/find_zero", nil)
+	dj.headManager.SendWithResult("head", h.Name, "/find_zero", nil)
 
 	ticker := time.NewTicker(1 * time.Second)
 
 	for {
 		select {
 		case <-ticker.C:
-			headResult := HeadResult{}
-			result := dj.headManager.sendWithResult("head", h.Name, "/status", &headResult)
+			headResult := schema.HeadResult{}
+			result := dj.headManager.SendWithResult("head", h.Name, "/status", &headResult)
 			if result.Err != nil {
 				log.WithError(result.Err).Error("Error polling head status")
 				continue
 			}
 
+			log.WithField("controller", headResult.Controller).Info("polled status")
 			if headResult.Controller != "" && headResult.Controller != "ZeroDetector" {
 				ws.Done()
 				return
@@ -40,6 +42,7 @@ func pollHead(dj *DJ, done util.BroadcastCloser, ws *sync.WaitGroup, h *scene.He
 func FindZeros(
 	dj *DJ,
 	done util.BroadcastCloser,
+	entry *logrus.Entry,
 ) {
 	ws := &sync.WaitGroup{}
 
@@ -54,6 +57,6 @@ func FindZeros(
 	}()
 
 	<-done.Chan()
-	logrus.Info("Exiting FindZeros")
+	entry.Info("Exiting FindZeros")
 	watchdog.Feed()
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/cacktopus/theheads/boss/broker"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/gorilla/websocket"
 )
 
@@ -12,13 +13,13 @@ func manageWebsocket(conn *websocket.Conn, msgBroker *broker.Broker) {
 	for {
 		for m := range msgs {
 			switch msg := m.(type) {
-			case broker.HeadPositioned, broker.MotionLine, broker.FocalPoints, broker.Active:
+			case broker.HeadPositioned, schema.MotionLine, schema.FocalPoints, schema.Active:
 				data, err := json.Marshal(msg)
 				if err != nil {
 					panic(err)
 				}
 
-				events := []broker.HeadEvent{{
+				events := []schema.HeadEvent{{
 					Type: msg.Name(),
 					Data: data,
 				}}

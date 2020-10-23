@@ -13,7 +13,7 @@ const (
 	speakChance = 0.0005
 )
 
-func Random(dj *DJ, done util.BroadcastCloser) {
+func Random(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 	for {
 		select {
 		case <-time.After(trackingPeriod):
@@ -21,7 +21,7 @@ func Random(dj *DJ, done util.BroadcastCloser) {
 				if rand.Float64() < moveChance {
 					theta := rand.Float64() * 360.0
 					path := fmt.Sprintf("/rotation/%f", theta)
-					dj.headManager.send("head", head.Name, path)
+					dj.headManager.Send("head", head.Name, path)
 					logrus.WithFields(logrus.Fields{
 						"head":  head.Name,
 						"theta": theta,
@@ -30,7 +30,7 @@ func Random(dj *DJ, done util.BroadcastCloser) {
 
 				if rand.Float64() < speakChance {
 					playPath := fmt.Sprintf("/random")
-					dj.headManager.send("voices", head.Name, playPath)
+					dj.headManager.Send("voices", head.Name, playPath)
 					logrus.WithFields(logrus.Fields{
 						"head": head.Name,
 					}).Info("Saying")

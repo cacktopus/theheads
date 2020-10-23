@@ -6,6 +6,7 @@ import (
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"time"
@@ -15,20 +16,11 @@ func TimeF(d float64) time.Duration {
 	return time.Duration(d * float64(time.Second))
 }
 
-type HeadResult struct {
-	Result     string  `json:"result"`
-	Position   float64 `json:"position"`
-	Rotation   float64 `json:"rotation"`
-	Controller string  `json:"controller"`
-	StepsAway  int     `json:"steps_away"`
-	Eta        float64 `json:"eta"`
-}
-
 func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
 	path0 := fmt.Sprintf("/rotation/%f", theta)
 
-	headResult := HeadResult{}
-	res := dj.headManager.sendWithResult("head", name, path0, &headResult)
+	headResult := schema.HeadResult{}
+	res := dj.headManager.SendWithResult("head", name, path0, &headResult)
 	if res.Err != nil {
 		logrus.WithError(res.Err).Error("Error sending to head")
 		return 0, res.Err
@@ -36,7 +28,7 @@ func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
 	return TimeF(headResult.Eta), nil
 }
 
-func Conversation(dj *DJ, done util.BroadcastCloser) {
+func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 	t := randomText(dj.texts)
 
 	pointHeads := func(h0, h1 *scene.Head) {
@@ -88,7 +80,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(geom.NewVec(0, -10))
 			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.send("head", head.Name, path)
+			dj.headManager.Send("head", head.Name, path)
 		}
 
 		if stop := dj.Sleep(done, TimeF(1.5)); stop {
@@ -122,7 +114,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser) {
 		}
 
 		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		result := dj.headManager.sendWithResult("voices", h0.Name, playPath, nil)
+		result := dj.headManager.SendWithResult("voices", h0.Name, playPath, nil)
 		if result.Err != nil {
 			logrus.WithError(result.Err).Error("error playing sound")
 		}

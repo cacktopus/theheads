@@ -167,9 +167,9 @@ export default class Menu extends React.Component {
     }
 
     handleRestart() {
-        const url = `http://${document.location.hostname}:80/restart?service=boss`;
+        const url = `/restart?service=boss`;
         axios.get(url);
-        setTimeout( () => window.location.reload(), 1500);
+        setTimeout( () => window.location.reload(), 5000);
     }
 
     handleStop() {
@@ -275,7 +275,7 @@ export default class Menu extends React.Component {
                 );
                 // this.props.standSetField(this.props.selectedStandIndex, fieldName, value);
             }
-        } 
+        }
 
         // // `fieldNames` param is of type array. e.g. fieldNames = [0, "heads", 0, "rot"]
         // const inputHandlerForFieldNames = fieldNames => {
@@ -859,7 +859,7 @@ export default class Menu extends React.Component {
                         padding: "5px"
                     }}
                 >
-                    
+
                     {this.props.menu.get("isShowDistances") ? (
                         <>
                             Showing Distances:&nbsp;

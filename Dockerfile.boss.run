@@ -1,0 +1,22 @@
+FROM golang:1.14-buster as build
+
+WORKDIR /build/boss
+
+COPY boss/go.* /build/boss/
+COPY common/go.* /build/common/
+
+RUN go mod download
+
+COPY boss /build/boss
+COPY common /build/common
+
+RUN CGO_ENABLED=0 go build .
+
+FROM alpine as run
+
+WORKDIR /app
+
+COPY --from=build /build/boss/boss /build/boss/boss.html /app/
+COPY --from=boss-ui /install /app/boss-ui/build
+
+CMD ["/app/boss"]
