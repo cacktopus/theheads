@@ -2,9 +2,9 @@ package grid
 
 import (
 	"fmt"
-	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
+	"github.com/cacktopus/theheads/common/broker"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
@@ -28,7 +28,7 @@ func assignID() string {
 func argmax(l *mat.Dense) (int, int, float64) {
 	result := mat.DenseCopyOf(l)
 	var maxI, maxJ int
-	maxV := -1E-99
+	maxV := -1e-99
 	result.Apply(func(i, j int, v float64) float64 {
 		if v > maxV {
 			maxI, maxJ = i, j

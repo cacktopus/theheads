@@ -1,8 +1,9 @@
-package main
+package camera
 
 import (
 	"fmt"
 	"github.com/cacktopus/theheads/camera/cpumon"
+	"github.com/cacktopus/theheads/common/broker"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gocv.io/x/gocv"
@@ -86,7 +87,7 @@ func spawnFfmpeg() (
 	return stdin, stdout
 }
 
-func runFfmpeg() chan gocv.Mat {
+func runFfmpeg(b *broker.Broker) chan gocv.Mat {
 	ffmpegFeeder := make(chan gocv.Mat)
 	ffStdin, ffStdout := spawnFfmpeg()
 	go func() {
@@ -100,7 +101,11 @@ func runFfmpeg() chan gocv.Mat {
 		buf := make([]byte, 1024*64)
 		for {
 			nread, err := ffStdout.Read(buf)
-			broadcast <- buf[:nread]
+
+			b.Publish(&Buffer{
+				data: buf[:nread],
+			})
+
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				panic(err)

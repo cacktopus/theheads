@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
+package heads;
+
+import "common.proto";
+
+message TimeIn {
+}
+
+
+message TimeOut {
+  double t = 1;
+  bool has_rtc = 2;
+}
+
+
+service time {
+  rpc time(TimeIn) returns (TimeOut);
+}

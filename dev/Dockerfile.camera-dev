@@ -1,3 +1,0 @@
-FROM camera
-
-COPY pi??.raw ./

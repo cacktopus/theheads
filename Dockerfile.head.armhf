@@ -18,7 +18,3 @@ COPY --from=build /build/head/head /install/head/
 ARG VERSION
 RUN mkdir -p /packages
 RUN tar -czvf /packages/head_${VERSION}_armhf.tar.gz -C /install head
-
-RUN curl -XPUT \
-    http://raftsync.service.consul:9000/theheads/build/head_${VERSION}_armhf.tar.gz \
-    --data-binary @/packages/head_${VERSION}_armhf.tar.gz

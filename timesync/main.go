@@ -1,22 +1,22 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/cacktopus/theheads/boss/config"
-	"github.com/gin-gonic/gin"
-	"github.com/hashicorp/consul/api"
+	"context"
+	"fmt"
+	"github.com/cacktopus/theheads/common/discovery"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/common/standard_server"
+	"github.com/grandcat/zeroconf"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"github.com/vrischmann/envconfig"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"math"
-	"net/http"
 	"sort"
-	"syscall"
+	"strings"
+	"sync"
 	"time"
 )
-
-const addr = ":8086"
 
 func now() float64 {
 	t := time.Now().UnixNano()
@@ -33,113 +33,161 @@ func init() {
 	prometheus.MustRegister(currentTimestamp)
 }
 
-type Time struct {
-	T float64
+func synctime(env *cfg, logger *zap.Logger, discovery discovery.Discovery) {
+	var lock sync.Mutex
+	addrs := map[string]bool{}
+
+	discovery.Discover(context.Background(), "_timesync._tcp", func(entry *zeroconf.ServiceEntry) {
+		lock.Lock()
+		defer lock.Unlock()
+
+		host := strings.TrimRight(entry.HostName, ".")
+		addr := fmt.Sprintf("%s:%d", host, entry.Port)
+		addrs[addr] = true
+	})
+
+	allAddrs := func() (result []string) {
+		lock.Lock()
+		defer lock.Unlock()
+
+		for k, _ := range addrs {
+			result = append(result, k)
+		}
+
+		return
+	}
+
+	body := func() {
+		addrs := allAddrs()
+		logger.Debug("syncing time", zap.Strings("addrs", addrs))
+
+		ch := make(chan float64)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+
+		for _, addr := range addrs {
+			// TODO: this needs work and should share code (with e.g. boss)
+			go func(addr string) {
+				conn, err := grpc.Dial(addr, grpc.WithInsecure())
+				if err != nil {
+					logger.Warn("dial", zap.Error(err))
+					return
+				}
+				defer conn.Close()
+				client := gen.NewTimeClient(conn)
+				resp, err := client.Time(ctx, &gen.TimeIn{})
+				if err != nil {
+					logger.Warn("time rpc failed", zap.Error(err))
+					return
+				}
+				if resp.HasRtc {
+					ch <- resp.T
+				}
+			}(addr)
+		}
+
+		var values []float64
+
+	collect:
+		for {
+			select {
+			case val := <-ch:
+				values = append(values, val)
+			case <-ctx.Done():
+				break collect
+			}
+		}
+
+		if len(values) < 2 {
+			logger.Warn("Less than two clock sources found")
+			return
+		}
+
+		sort.Float64s(values)
+		min := values[0]
+		max := values[len(values)-1]
+
+		rtcDelta := max - min
+
+		if rtcDelta > 5.0 {
+			logger.Warn("Clock source (RTC) delta is too large", zap.Float64("rtcDelta", rtcDelta))
+			return
+		}
+
+		localDelta := math.Abs(now() - max)
+		if localDelta < 5.0 {
+			logger.Debug("Local clock is fine, not changing", zap.Float64("localDelta", localDelta))
+			return
+		}
+
+		if err := setTime(max); err != nil {
+			logger.Error("Error setting time", zap.Error(err))
+			return
+		}
+
+		return
+	}
+
+	for range time.NewTicker(env.Interval).C {
+		body()
+	}
 }
 
-func synctime(client *api.Client) error {
-	urls, err := config.AllServiceURLs(
-		client,
-		"timesync",
-		"rtc",
-		"http://",
-		"/time",
-	)
+type handler struct {
+	rtc bool
+}
 
+func (h *handler) Time(ctx context.Context, in *gen.TimeIn) (*gen.TimeOut, error) {
+	return &gen.TimeOut{
+		T:      now(),
+		HasRtc: h.rtc,
+	}, nil
+}
+
+type cfg struct {
+	Port     int           `envconfig:"default=8086"`
+	RTC      bool          `envconfig:"optional"`
+	Interval time.Duration `envconfig:"default=60s"`
+}
+
+func run(env *cfg, discovery discovery.Discovery) {
+	logger, err := zap.NewProduction()
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	var values []float64
-
-	for _, url := range urls {
-		client := &http.Client{
-			Timeout: 500 * time.Millisecond,
-		}
-		resp, err := client.Get(url)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		var t Time
-		json.Unmarshal(body, &t)
-		values = append(values, t.T)
+	h := &handler{
+		rtc: env.RTC,
 	}
 
-	if len(values) < 2 {
-		logrus.Warn("Less than two clock sources found")
-		return nil
+	server, err := standard_server.NewServer(&standard_server.Config{
+		Logger: logger,
+		Port:   env.Port,
+		GrpcSetup: func(grpcServer *grpc.Server) error {
+			gen.RegisterTimeServer(grpcServer, h)
+			return nil
+		},
+	})
+	if err != nil {
+		panic(err)
 	}
 
-	sort.Float64s(values)
-	min := values[0]
-	max := values[len(values)-1]
+	go synctime(env, logger, discovery)
 
-	rtcDelta := max - min
-
-	if rtcDelta > 5.0 {
-		logrus.WithField("rtcDelta", rtcDelta).Warn("Clock source (RTC) delta is too large")
-		return nil
+	err = server.Run()
+	if err != nil {
+		panic(err)
 	}
-
-	localDelta := math.Abs(now() - max)
-	if localDelta < 5.0 {
-		logrus.WithField("localDelta", localDelta).Info("Local clock is fine, not changing")
-		return nil
-	}
-
-	whole, frac := math.Modf(max)
-	tv := syscall.Timeval{
-		Sec:  int32(whole),
-		Usec: int32(frac * 1e6),
-	}
-
-	logrus.
-		WithField("localDelta", localDelta).
-		WithField("sec", tv.Sec).
-		WithField("usec", tv.Usec).
-		Info("Setting time")
-
-	if err = syscall.Settimeofday(&tv); err != nil {
-		logrus.WithError(err).Error("Error setting time")
-		return err
-	}
-
-	return nil
 }
 
 func main() {
-	r := gin.New()
+	env := &cfg{}
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"result": "ok",
-		})
-	})
+	err := envconfig.Init(env)
+	if err != nil {
+		panic(err)
+	}
 
-	r.GET("/time", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"t": now(),
-		})
-	})
-
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
-
-	go func() {
-		client := config.NewClient("127.0.0.1:8500")
-		for {
-			synctime(client)
-			time.Sleep(15 * time.Second)
-		}
-	}()
-
-	go func() {
-		r.Run(addr)
-	}()
-
-	select {}
+	run(env, discovery.MDNSDiscovery{})
 }

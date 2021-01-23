@@ -1,0 +1,17 @@
+FROM heads-build-common
+
+COPY common /build/common
+COPY logstream /build/logstream
+
+WORKDIR /build/logstream/
+
+RUN CGO_ENABLED=1 go build .
+
+WORKDIR /app
+
+RUN cp /build/logstream/logstream /app
+
+RUN mkdir -p /pkg
+
+WORKDIR /
+RUN tar -czvf /pkg/logstream.tar.gz app

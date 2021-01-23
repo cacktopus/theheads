@@ -1,15 +1,18 @@
 package head_manager
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"github.com/cacktopus/theheads/boss/config"
-	consulapi "github.com/hashicorp/consul/api"
+	"github.com/cacktopus/theheads/common/discovery"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/grandcat/zeroconf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"strings"
 	"sync"
+	"time"
 )
 
 type Result struct {
@@ -23,143 +26,145 @@ type SendItem struct {
 	result chan Result
 }
 
-type HeadQueue struct {
-	serviceName  string
-	tagName      string
-	queue        chan SendItem
-	consulClient *consulapi.Client
-	headClient   *http.Client
-}
-
-func NewHeadQueue(serviceName, tagName, consulAddr string) *HeadQueue {
-	return &HeadQueue{
-		serviceName:  serviceName,
-		tagName:      tagName,
-		queue:        make(chan SendItem, 64),
-		consulClient: config.NewClient(consulAddr),
-		headClient:   &http.Client{},
-	}
-}
-
-func (h *HeadQueue) lookupServiceURL(path string) (string, error) {
-	services, err := config.AllServiceURLs(h.consulClient,
-		h.serviceName,
-		h.tagName,
-		"http://",
-		path,
-	)
-
-	if err != nil {
-		return "", err
-	}
-
-	if len(services) != 1 {
-		return "", errors.New(fmt.Sprintf("%d services found for %s:%s",
-			len(services), h.serviceName, h.tagName))
-	}
-
-	return services[0], nil
-}
-
-func (h *HeadQueue) send(url string) Result {
-	//logrus.WithField("url", url).Debug("sending")
-	resp, err := h.headClient.Get(url)
-	if err != nil {
-		return Result{Err: err}
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return Result{Err: errors.New("received non-200 status code")}
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return Result{Err: err}
-	}
-
-	return Result{Body: body, StatusCode: resp.StatusCode}
-}
-
-func (h *HeadQueue) sendLoop() {
-loop:
-	for item := range h.queue {
-		// TODO: dedup/ratelimit
-		url, err := h.lookupServiceURL(item.path)
-		if err != nil {
-			logrus.WithError(err).Error("error looking up service")
-			if item.result != nil {
-				item.result <- Result{Err: err}
-				continue loop
-			}
-		}
-
-		result := h.send(url)
-		if result.Err != nil {
-			logrus.WithError(result.Err).WithField("url", url).Error("error sending to service")
-		}
-
-		if item.result != nil {
-			item.result <- result
-			continue loop
-		}
-	}
+type client struct {
+	client *grpc.ClientConn
+	lock   sync.Mutex
 }
 
 type HeadManager struct {
-	queues     map[string]*HeadQueue
-	lock       sync.Mutex
-	consulAddr string
+	logger *zap.Logger
+	lock   sync.Mutex
+
+	servicesLock sync.Mutex
+	services     map[string]*service
+
+	clients map[string]*client
+
+	discovery discovery.Discovery
 }
 
-func NewHeadManager(consulAddr string) *HeadManager {
-	return &HeadManager{
-		queues:     map[string]*HeadQueue{},
-		consulAddr: consulAddr,
-	}
+type service struct {
+	host string
+	port int
 }
 
-func (h *HeadManager) getQueue(serviceName, headName string) *HeadQueue {
-	key := fmt.Sprintf("%s::%s", serviceName, headName)
-
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	queue, ok := h.queues[key]
-
-	if !ok {
-		queue = NewHeadQueue(serviceName, headName, h.consulAddr)
-		h.queues[key] = queue
-		go queue.sendLoop()
+func NewHeadManager(logger *zap.Logger, discovery discovery.Discovery) *HeadManager {
+	h := &HeadManager{
+		logger:   logger,
+		services: map[string]*service{},
+		clients:  map[string]*client{},
 	}
 
-	return queue
+	ctx := context.Background()
+
+	discovery.Discover(logger, ctx, "_head._tcp", func(entry *zeroconf.ServiceEntry) {
+		var found bool
+
+		func() {
+			h.servicesLock.Lock()
+			defer h.servicesLock.Unlock()
+
+			host := strings.TrimRight(entry.HostName, ".")
+
+			_, found = h.services[entry.Instance]
+
+			h.services[entry.Instance] = &service{
+				host: host,
+				port: entry.Port,
+			}
+		}()
+	})
+
+	return h
 }
 
-func (h *HeadManager) SendWithResult(serviceName, headName, path string, unpack interface{}) Result {
-	resultChan := make(chan Result)
-
-	queue := h.getQueue(serviceName, headName)
-	queue.queue <- SendItem{path, resultChan}
-
-	result := <-resultChan
-
-	if result.Err != nil {
-		return result
+func (h *HeadManager) Position(headName string, theta float64) (*gen.HeadState, error) {
+	client, err := h.GetHeadConn(headName)
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
 	}
+	return gen.NewHeadClient(client).Rotation(context.Background(), &gen.RotationIn{
+		Theta: theta,
+	})
+}
 
-	if unpack != nil {
-		err := json.Unmarshal(result.Body, unpack)
+func (h *HeadManager) Say(headName string, sound string) {
+	conn, err := h.GetHeadConn(headName)
+	if err != nil {
+		logrus.WithError(err).Error("error fetching head connection")
+		// TODO: might need dj.Sleep()
+		time.Sleep(5 * time.Second) // Sleep for length of some typical text
+	} else {
+		client := gen.NewVoicesClient(conn)
+		_, err = client.Play(context.Background(), &gen.PlayIn{Sound: sound})
 		if err != nil {
-			return Result{Err: err}
+			logrus.WithError(err).Error("error playing sound")
+			// TODO: might need dj.Sleep()
+			time.Sleep(5 * time.Second) // Sleep for length of some typical text
 		}
 	}
-
-	return result
 }
 
-func (h *HeadManager) Send(serviceName, headName, path string) {
-	queue := h.getQueue(serviceName, headName)
-	queue.queue <- SendItem{path, nil}
+func (h *HeadManager) SayRandom(headName string) {
+	conn, err := h.GetHeadConn(headName)
+	if err != nil {
+		logrus.WithError(err).Error("error fetching head connection")
+		// TODO: might need dj.Sleep()
+		time.Sleep(5 * time.Second) // Sleep for length of some typical text
+	} else {
+		client := gen.NewVoicesClient(conn)
+		_, err = client.Random(context.Background(), &gen.Empty{})
+		if err != nil {
+			logrus.WithError(err).Error("error playing random sound")
+			// TODO: might need dj.Sleep()
+			time.Sleep(5 * time.Second) // Sleep for length of some typical text
+		}
+	}
+}
+
+func (h *HeadManager) GetHeadConn(headName string) (*grpc.ClientConn, error) {
+	var c *client
+
+	func() {
+		h.lock.Lock()
+		defer h.lock.Unlock()
+
+		var ok bool
+		c, ok = h.clients[headName]
+		if !ok {
+			c = &client{}
+			h.clients[headName] = c
+		}
+	}()
+
+	return func() (*grpc.ClientConn, error) {
+		c.lock.Lock()
+		defer c.lock.Unlock()
+
+		if c.client != nil {
+			return c.client, nil
+		}
+
+		var s *service
+		var ok bool
+		func() {
+			h.servicesLock.Lock()
+			defer h.servicesLock.Unlock()
+
+			s, ok = h.services[headName]
+		}()
+
+		if !ok {
+			return nil, errors.New("no service found for " + headName)
+		}
+
+		addr := fmt.Sprintf("%s:%d", s.host, +s.port)
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		if err != nil {
+			return nil, errors.Wrap(err, "dial")
+		}
+
+		c.client = conn
+		return c.client, nil
+	}()
 }

@@ -1,12 +1,10 @@
-package main
+package boss
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
-	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"time"
@@ -17,24 +15,23 @@ func TimeF(d float64) time.Duration {
 }
 
 func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
-	path0 := fmt.Sprintf("/rotation/%f", theta)
+	state, err := dj.headManager.Position(name, theta)
 
-	headResult := schema.HeadResult{}
-	res := dj.headManager.SendWithResult("head", name, path0, &headResult)
-	if res.Err != nil {
-		logrus.WithError(res.Err).Error("Error sending to head")
-		return 0, res.Err
+	if err != nil {
+		logrus.WithError(err).Error("Error sending to head")
+		return 0, err
 	}
-	return TimeF(headResult.Eta), nil
+
+	return TimeF(state.Eta), nil
 }
 
-func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
-	t := randomText(dj.texts)
+func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
+	t := scene.RandomText(dj.texts)
 
 	pointHeads := func(h0, h1 *scene.Head) {
 		t0 := h0.PointTo(h1.GlobalPos())
 
-		logrus.WithFields(logrus.Fields{
+		logger.WithFields(logrus.Fields{
 			"h0": h0.Name,
 			"h1": h1.Name,
 			"p0": h0.GlobalPos().AsStr(),
@@ -60,7 +57,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 
 		delay := done1.Sub(time.Now()) + TimeF(0.20)
 
-		logrus.WithFields(logrus.Fields{
+		logger.WithFields(logrus.Fields{
 			"eta0":  eta0.Seconds(),
 			"eta1":  eta1.Seconds(),
 			"delay": delay.Seconds(),
@@ -71,16 +68,18 @@ func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 		}
 	}
 
-	sayPart := func(part Content) {
-		logrus.WithField("part", part).Info("saying")
+	sayPart := func(part scene.Content) {
+		logger.WithField("part", part).Info("saying")
 
 		heads := scene.ShuffledHeads(dj.scene.Heads)
 
 		// all point forward
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(geom.NewVec(0, -10))
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.Send("head", head.Name, path)
+			_, err := dj.headManager.Position("head", theta)
+			if err != nil {
+				logger.WithError(err).Error("error positioning")
+			}
 		}
 
 		if stop := dj.Sleep(done, TimeF(1.5)); stop {
@@ -94,7 +93,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 		selected, distance := dj.grid.ClosestFocalPointTo(p)
 
 		if selected != nil && distance <= 5.0 && rand.Float64() < 0.66 {
-			logrus.WithFields(logrus.Fields{
+			logger.WithFields(logrus.Fields{
 				"h0":       h0.Name,
 				"distance": distance,
 			}).Info("talking to viewer")
@@ -105,7 +104,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 				return
 			}
 		} else {
-			logrus.WithFields(logrus.Fields{
+			logger.WithFields(logrus.Fields{
 				"distance": distance,
 				"h0":       h0.Name,
 				"h1":       h1.Name,
@@ -113,11 +112,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 			pointHeads(h0, h1)
 		}
 
-		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		result := dj.headManager.SendWithResult("voices", h0.Name, playPath, nil)
-		if result.Err != nil {
-			logrus.WithError(result.Err).Error("error playing sound")
-		}
+		dj.headManager.Say(h0.Name, part.ID)
 
 		voiceWaitTime := TimeF(0.5)
 

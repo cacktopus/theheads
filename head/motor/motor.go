@@ -1,7 +1,6 @@
 package motor
 
 // TODO:
-// - Get config from consul (or maybe not? Do we need this?)
 // - Http status page
 
 type Direction int

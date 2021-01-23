@@ -1,4 +1,4 @@
-package main
+package camera
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func raspiStill() error {
 	return nil
 }
 
-func runRaspiVid() (chan []byte, error) {
+func runRaspiVid(extraArgs ...string) (chan []byte, error) {
 	frames := make(chan []byte)
 
 	raspivid, err := exec.LookPath("raspivid")
@@ -69,14 +69,15 @@ func runRaspiVid() (chan []byte, error) {
 		"--contrast", "100",
 		"-fps", fmt.Sprintf("%d", rate),
 		"-t", "0",
-		"-w", fmt.Sprintf("%d", width),
-		"-h", fmt.Sprintf("%d", height),
+		"-w", fmt.Sprintf("%d", inputWidth),
+		"-h", fmt.Sprintf("%d", inputHeight),
 		"--raw", "-",
 		"-rf", "gray",
 		// "-hf",
-		"-vf",
+		//"-vf",
 		"-o", "/dev/null",
 	}
+	args = append(args, extraArgs...)
 
 	logrus.WithField("cmd", raspivid+" "+strings.Join(args, " ")).
 		Info("Running raspivid")
@@ -92,8 +93,8 @@ func runRaspiVid() (chan []byte, error) {
 	}
 
 	go func() {
-		frame0 := make([]byte, width*height)
-		frame1 := make([]byte, width*height)
+		frame0 := make([]byte, inputWidth*inputHeight)
+		frame1 := make([]byte, inputWidth*inputHeight)
 		for {
 			_, err := io.ReadFull(stdout, frame0)
 			if err != nil {

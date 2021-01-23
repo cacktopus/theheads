@@ -1,7 +1,6 @@
-package main
+package boss
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
@@ -9,7 +8,7 @@ import (
 	"time"
 )
 
-func InNOut(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
+func InNOut(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 	center := geom.ZeroVec()
 
 	for _, h := range dj.scene.Heads {
@@ -23,8 +22,10 @@ func InNOut(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 
 		for _, head := range dj.scene.Heads {
 			theta := head.PointAwayFrom(center)
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.Send("head", head.Name, path)
+			_, err := dj.headManager.Position("head", theta)
+			if err != nil {
+				logger.WithError(err).Error("error positioning")
+			}
 		}
 
 		select {
@@ -35,8 +36,10 @@ func InNOut(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
 
 		for _, head := range dj.scene.Heads {
 			theta := head.PointTo(center)
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.Send("head", head.Name, path)
+			_, err := dj.headManager.Position("head", theta)
+			if err != nil {
+				logger.WithError(err).Error("error positioning")
+			}
 		}
 
 		select {

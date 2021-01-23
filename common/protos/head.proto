@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
+package heads;
+
+import "common.proto";
+
+message RotationIn {
+  double theta = 1;
+  double speed = 2;
+}
+
+
+message HeadState {
+  int32 position = 1;
+  int32 target = 2;
+  double rotation = 3;
+  string controller = 4;
+  int32 steps_away = 5;
+  double eta = 6;
+}
+
+
+service head {
+  rpc rotation(RotationIn) returns (HeadState);
+  rpc status(Empty) returns (HeadState);
+  rpc find_zero(Empty) returns (Empty);
+  rpc events(Empty) returns (stream Event);
+}

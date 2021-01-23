@@ -1,14 +1,43 @@
 package motor
 
 import (
-	"github.com/cacktopus/theheads/common/schema"
-	"github.com/cacktopus/theheads/common/redis_publisher"
+	"github.com/cacktopus/theheads/common/broker"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"math"
 	"sync"
 	"time"
 )
+
+type State struct {
+	Pos       int
+	Target    int
+	Speed     int
+	Steps     int
+	ActorName string
+}
+
+func (s *State) TargetRotation() float64 {
+	return float64(s.Target) / float64(s.Steps) * 360.0
+}
+
+func (s *State) Rotation() float64 {
+	return float64(s.Pos) / float64(s.Steps) * 360.0
+}
+
+func (s *State) StepsAway() int {
+	fwd := Mod(s.Target-s.Pos, s.Steps)
+	bck := Mod(s.Pos-s.Target, s.Steps)
+
+	if bck < fwd {
+		return bck
+	}
+	return fwd
+}
+
+func (s *State) Eta() float64 {
+	return float64(s.StepsAway()) / float64(s.Speed)
+}
 
 type Actor interface {
 	Act(pos, target int) (direction Direction, done bool)
@@ -25,12 +54,18 @@ func hasStep(steps []Direction, direction Direction) bool {
 	return false
 }
 
+type Cfg struct {
+	NumSteps              int `envconfig:"default=200"`
+	StepSpeed             int `envconfig:"default=30"`
+	DirectionChangePauses int `envconfig:"default=10"`
+}
+
 type Controller struct {
 	lock   sync.Mutex
 	logger *zap.Logger
 
-	motor     Motor
-	publisher *redis_publisher.RedisPublisher
+	motor  Motor
+	Broker *broker.Broker
 
 	numSteps int
 
@@ -51,28 +86,28 @@ type Controller struct {
 func NewController(
 	logger *zap.Logger,
 	motor Motor,
-	publisher *redis_publisher.RedisPublisher,
-	numSteps, speed, directionChangePauses int,
+	broker *broker.Broker,
+	cfg *Cfg,
 	name string,
 	defaultActor Actor,
 ) *Controller {
-	if speed == 0 {
+	if cfg.StepSpeed == 0 {
 		panic("speed can't be 0")
 	}
 
 	var prevSteps []Direction
-	for i := 0; i < directionChangePauses; i++ {
+	for i := 0; i < cfg.DirectionChangePauses; i++ {
 		prevSteps = append(prevSteps, NoStep)
 	}
 
 	return &Controller{
-		logger:    logger,
-		motor:     motor,
-		publisher: publisher,
-		numSteps:  numSteps,
-		speed:     speed,
-		delay:     time.Duration(float64(time.Second) / float64(speed)),
-		name:      name,
+		logger:   logger,
+		motor:    motor,
+		Broker:   broker,
+		numSteps: cfg.NumSteps,
+		speed:    cfg.StepSpeed,
+		delay:    time.Duration(float64(time.Second) / float64(cfg.StepSpeed)),
+		name:     name,
 
 		prevSteps: prevSteps,
 
@@ -106,21 +141,11 @@ func (s *Controller) getActor() Actor {
 	return s.actor
 }
 
-func (s *Controller) ActorName() string {
-	return s.getActor().Name()
-}
-
 func (s *Controller) Speed() int {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	return s.speed
-}
-
-func (s *Controller) TargetRotation() float64 {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	return float64(s.target) / float64(s.numSteps) * 360.0
 }
 
 func (s *Controller) SetTargetRotation(target float64) {
@@ -131,11 +156,21 @@ func (s *Controller) SetTargetRotation(target float64) {
 	s.target = int(math.Round(frac * float64(s.numSteps)))
 }
 
-func (s *Controller) State() (int, float64) {
+func (s *Controller) GetState() *State {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	result := float64(s.pos) / float64(s.numSteps) * 360.0
-	return s.pos, result
+
+	return s.state()
+}
+
+func (s *Controller) state() *State {
+	return &State{
+		Pos:       s.pos,
+		Target:    s.target,
+		Speed:     s.speed,
+		Steps:     s.numSteps,
+		ActorName: s.actor.Name(),
+	}
 }
 
 func Mod(x, y int) int {
@@ -156,21 +191,22 @@ func (s *Controller) Control() (direction Direction, done bool) {
 }
 
 func (s *Controller) publish() {
-	msgType := "head-positioned"
-	pos, rot := s.State()
-	msg := &schema.HeadPositioned{
-		MessageHeader: schema.MessageHeader{Type: msgType},
-		Data: schema.HeadPositionedData{
-			HeadName:     s.name,
-			StepPosition: pos,
-			Rotation:     rot,
-		},
+	//msgType := "head-positioned"
+	state := s.GetState()
+	msg := &broker.HeadPositioned{
+		HeadName:     s.name,
+		StepPosition: float32(state.Steps),
+		Rotation:     float32(state.Rotation()),
 	}
 
-	err := s.publisher.SendMsg(msg)
-	if err != nil {
-		s.logger.Error("error publishing", zap.String("type", msgType), zap.Error(err))
-	}
+	//MessageHeader: schema.MessageHeader{Type: msgType},
+	//Data: schema.HeadPositionedData{
+	//	HeadName:     s.name,
+	//	StepPosition: pos,
+	//	Rotation:     rot,
+	//},
+
+	s.Broker.Publish(msg)
 }
 
 func (s *Controller) Run() {

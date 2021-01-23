@@ -1,0 +1,7 @@
+scenes:
+#- conversation
+#- find_zeros
+- follow_evade
+#- idle
+
+startup_scenes: [find_zeros]

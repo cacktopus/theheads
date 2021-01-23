@@ -1,7 +1,6 @@
-package main
+package boss
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
@@ -35,7 +34,7 @@ func (p FpHeadPairs) Swap(i, j int) {
 }
 
 type FollowConvo struct {
-	texts        []*Text
+	texts        []*scene.Text
 	textPosition int
 }
 
@@ -102,11 +101,8 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry
 			"part": part.ID,
 			"head": h0.Name,
 		}).Debug("saying")
-		playPath := fmt.Sprintf("/play?sound=%s", part.ID)
-		result := dj.headManager.SendWithResult("voices", h0.Name, playPath, nil)
-		if result.Err != nil {
-			logrus.WithError(result.Err).Error("error playing sound")
-		}
+
+		dj.headManager.Say(h0.Name, part.ID)
 
 		delay := (300 + time.Duration(rand.Intn(400))) * time.Millisecond
 		dj.Sleep(done, delay)

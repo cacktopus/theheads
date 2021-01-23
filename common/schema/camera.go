@@ -6,14 +6,13 @@ type MessageHeader struct {
 	Type string `json:"type"`
 }
 
-type MotionDetectedData struct {
+type MotionDetected struct {
 	CameraName string  `json:"cameraName"`
 	Position   float64 `json:"position"`
 }
 
-type MotionDetected struct {
-	MessageHeader
-	MotionDetectedData `json:"data"`
+func (MotionDetected) Name() string {
+	return "motion-detected"
 }
 
 type PingData struct {
