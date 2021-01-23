@@ -1,8 +1,8 @@
-package main
+package boss
 
 import (
 	"encoding/json"
-	"github.com/cacktopus/theheads/boss/broker"
+	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/gorilla/websocket"
 )

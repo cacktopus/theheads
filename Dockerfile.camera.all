@@ -1,4 +1,4 @@
-FROM golang:1.14-buster
+FROM golang:1.15-buster@sha256:29452ef08bd0535f550c47b6034522c82ac10517b49c5f3b7a00035ecee0089e
 
 WORKDIR /pkg
 
@@ -20,23 +20,10 @@ RUN go mod download
 COPY camera /build/camera
 COPY common /build/common
 
-RUN CGO_ENABLED=1 go build .
+RUN CGO_ENABLED=1 go build ./cmd/camera
 
 WORKDIR /app
 RUN cp /build/camera/camera /build/camera/index.html .
 RUN cp -r /build/camera/js js
-
-ARG VERSION
-WORKDIR /
-RUN mkdir -p /packages
-RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
-    tar -cjvf /packages/camera_${VERSION}_${arch}.tar.bz2 app
-
-RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
-    curl -XPUT \
-    http://raftsync.service.consul:9000/theheads/build/camera/camera_${VERSION}_${arch}.tar.bz2 \
-    --data-binary @/packages/camera_${VERSION}_${arch}.tar.bz2
-
-WORKDIR /app
 
 CMD ["./camera"]

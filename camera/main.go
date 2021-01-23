@@ -1,15 +1,18 @@
-package main
+package camera
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/cacktopus/theheads/common/redis_publisher"
+	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/common/schema"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
+	"github.com/soheilhy/cmux"
 	"github.com/vrischmann/envconfig"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
+	"net"
 	"time"
 )
 
@@ -19,9 +22,13 @@ TODO:
 */
 
 const (
+	inputWidth  = 320
+	inputHeight = 240
+
 	width  = 320
 	height = 240
-	rate   = 24
+
+	rate = 24
 
 	scale = 64.33 / 2
 
@@ -50,8 +57,17 @@ func fromWebCam() frameGrabber {
 func fromRaspi(frames chan []byte) frameGrabber {
 	return func(dst *gocv.Mat) bool {
 		frame := <-frames
-		res, err := gocv.NewMatFromBytes(height, width, gocv.MatTypeCV8U, frame)
-		*dst = res
+		var input gocv.Mat
+		var err error
+		t("new-mat", func() {
+			input, err = gocv.NewMatFromBytes(inputHeight, inputWidth, gocv.MatTypeCV8U, frame)
+		})
+
+		t("resize", func() {
+			gocv.Resize(input, &input, image.Pt(width, height), 0, 0, gocv.InterpolationNearestNeighbor)
+		})
+
+		*dst = input
 		if err != nil {
 			panic(err)
 		}
@@ -62,16 +78,27 @@ func fromRaspi(frames chan []byte) frameGrabber {
 type Cfg struct {
 	Instance string
 
-	RedisAddr string `envconfig:"default=127.0.0.1:6379"`
-	Filename  string `envconfig:"optional"`
+	Filename string `envconfig:"optional"`
 
 	Port int `envconfig:"default=5000"`
+
+	CenterLine bool `envconfig:"optional"`
+	Hflip      bool `envconfig:"default=true"`
+	Vflip      bool `envconfig:"default=true"`
 }
 
-func main() {
-	envCfg := &Cfg{}
+type Buffer struct {
+	data []byte
+}
 
-	err := envconfig.Init(envCfg)
+func (f *Buffer) Name() string {
+	return "buffer"
+}
+
+func Run() {
+	env := &Cfg{}
+
+	err := envconfig.Init(env)
 	if err != nil {
 		panic(err)
 	}
@@ -81,23 +108,59 @@ func main() {
 		log.WithError(err).Info("Error running raspistill")
 	}
 
-	go serve(envCfg.Port)
+	wsBroker := broker.NewBroker()
+	go wsBroker.Start()
 
-	redisPublish := redis_publisher.NewRedisPublisher(envCfg.RedisAddr, envCfg.Instance)
-	defer redisPublish.Stop()
-	go redisPublish.Run()
+	promauto.NewCounterFunc(prometheus.CounterOpts{
+		Name: "heads_camera_ffmpeg_subscriptions",
+	}, func() float64 {
+		return float64(wsBroker.SubCount())
+	})
+
+	b := broker.NewBroker()
+	go b.Start()
+
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", env.Port))
+	if err != nil {
+		panic(err)
+	}
+	log.WithField("port", env.Port).Info("listening")
+
+	mux := cmux.New(listener)
+	httpListener := mux.Match(cmux.HTTP1Fast())
+	grpcListener := mux.Match(cmux.Any())
+	mux.HandleError(func(err error) bool {
+		panic(err)
+	})
+
+	go serveGRPC(grpcListener, b)
+	go serveHTTP(wsBroker, httpListener, fmt.Sprintf("%d", env.Port))
+
+	go func() {
+		err := mux.Serve()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	var grabber frameGrabber
 
-	if envCfg.Filename != "" {
-		fmt.Println("Streaming from file: ", envCfg.Filename)
-		frames, err := runFileStreamer(envCfg.Filename)
+	if env.Filename != "" {
+		fmt.Println("Streaming from file: ", env.Filename)
+		frames, err := runFileStreamer(env.Filename)
 		if err != nil {
 			panic(err)
 		}
 		grabber = fromRaspi(frames)
 	} else {
-		frames, err := runRaspiVid()
+		var extraArgs []string
+		if env.Hflip {
+			extraArgs = append(extraArgs, "-hf")
+		}
+		if env.Vflip {
+			extraArgs = append(extraArgs, "-vf")
+		}
+		frames, err := runRaspiVid(extraArgs...)
 		if err == nil {
 			fmt.Println("Using raspiVid")
 			grabber = fromRaspi(frames)
@@ -116,7 +179,7 @@ func main() {
 
 	var frameTimes []time.Time
 
-	ffmpegFeeder := runFfmpeg()
+	ffmpegFeeder := runFfmpeg(wsBroker)
 	go sendToStepper()
 
 	for frameNo := 0; frameNo < warmupFrames; frameNo++ {
@@ -182,16 +245,18 @@ func main() {
 			}
 
 			t("copy", func() {
-				sz := orig.Size()
-				x := sz[1]
-				y := sz[0]
-				gocv.Line(
-					&orig,
-					image.Point{X: x/2 - 1, Y: 0},
-					image.Point{X: x/2 - 1, Y: y},
-					color.RGBA{B: 128, G: 128, R: 128, A: 128},
-					2,
-				)
+				if env.CenterLine {
+					sz := orig.Size()
+					x := sz[1]
+					y := sz[0]
+					gocv.Line(
+						&orig,
+						image.Point{X: x/2 - 1, Y: 0},
+						image.Point{X: x/2 - 1, Y: y},
+						color.RGBA{B: 128, G: 128, R: 128, A: 128},
+						2,
+					)
+				}
 				orig.CopyTo(&ffmpegBuf)
 			})
 
@@ -211,27 +276,15 @@ func main() {
 				// fmt.Println("pos", pos, "t", t, "pos2", pos2)
 
 				msg := schema.MotionDetected{
-					schema.MessageHeader{
-						Type: "motion-detected",
-					},
-					schema.MotionDetectedData{
-						Position:   float64(pos2),
-						CameraName: envCfg.Instance,
-					},
+					Position:   float64(pos2),
+					CameraName: env.Instance,
 				}
 
-				payload, err := json.Marshal(msg)
-				if err != nil {
-					panic(err)
-				}
-				err = redisPublish.Send(payload)
-				if err != nil {
-					log.WithError(err).Println("Unable to publish to redis")
-				}
+				b.Publish(msg)
 			}
 
 			t("ffmpeg", func() {
-				if numConnectedWebsockets() == 0 {
+				if wsBroker.SubCount() == 0 {
 					return
 				}
 
@@ -240,7 +293,7 @@ func main() {
 					gocv.PutText(
 						&ffmpegBuf,
 						currentTime,
-						image.Point{X: 11, Y: 21},
+						image.Point{X: 13, Y: 23},
 						gocv.FontHersheySimplex,
 						0.5,
 						color.RGBA{R: 32, G: 32, B: 32, A: 255},
@@ -253,7 +306,7 @@ func main() {
 						image.Point{X: 10, Y: 20},
 						gocv.FontHersheySimplex,
 						0.5,
-						color.RGBA{R: 255, G: 255, B: 255, A: 255},
+						color.RGBA{R: 160, G: 160, B: 160, A: 255},
 						2,
 					)
 				})

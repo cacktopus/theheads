@@ -1,74 +1,29 @@
-package main
+package camera
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/theheads/camera/cpumon"
+	"github.com/cacktopus/theheads/common/broker"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"html/template"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 )
 
-var clients = make(map[*websocket.Conn]bool) // connected clients
-var clientsLock sync.RWMutex
-
 var upgrader = websocket.Upgrader{}
-
-var broadcast = make(chan []byte)
-
-var (
-	wsConnected = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "heads_camera_websocket_connected",
-	})
-
-	wsDisconnected = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "heads_camera_websocket_disconnected",
-	})
-)
-
-func numConnectedWebsockets() int {
-	clientsLock.RLock()
-	defer clientsLock.RUnlock()
-	return len(clients)
-}
-
-func broadcaster() {
-	for {
-		var deadClients []*websocket.Conn
-		body := <-broadcast
-		func() {
-			clientsLock.RLock()
-			defer clientsLock.RUnlock()
-			for client := range clients {
-				// TODO: seems that a slow client could block other clients with this approach
-				//fmt.Println("Write: ", len(body), client.RemoteAddr())
-				err := client.WriteMessage(websocket.BinaryMessage, body)
-				if err != nil {
-					fmt.Println("Write error ", client.RemoteAddr())
-					deadClients = append(deadClients, client)
-				}
-			}
-		}()
-		if len(deadClients) > 0 {
-			func() {
-				clientsLock.Lock()
-				defer clientsLock.Unlock()
-				for _, client := range deadClients {
-					client.Close() // check error?
-					delete(clients, client)
-					wsDisconnected.Inc()
-				}
-			}()
-		}
-	}
-}
 
 func init() {
 	mypid := os.Getpid()
@@ -95,9 +50,7 @@ func init() {
 	}
 }
 
-func serve(port int) {
-	go broadcaster()
-
+func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
 	http.HandleFunc("/jsmpeg.min.js", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "js/jsmpeg.min.js")
 	})
@@ -107,8 +60,19 @@ func serve(port int) {
 		if err != nil {
 			panic(err)
 		}
-		wsConnected.Inc()
-		clients[ws] = true
+		defer ws.Close()
+
+		messages := frameBroker.Subscribe()
+		defer frameBroker.Unsubscribe(messages)
+
+		for m := range messages {
+			msg := m.(*Buffer)
+			err := ws.WriteMessage(websocket.BinaryMessage, msg.data)
+			if err != nil {
+				logrus.WithError(err).Error("ws write")
+				return
+			}
+		}
 	})
 
 	http.Handle("/metrics", promhttp.Handler())
@@ -136,8 +100,61 @@ func serve(port int) {
 		}()
 	})
 
-	fmt.Println("Listening on port", port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err := http.Serve(listener, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	logrus.Info("Serving http")
+}
+
+type handler struct {
+	broker *broker.Broker
+}
+
+func (h *handler) Restart(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		os.Exit(0)
+	}()
+
+	return &gen.Empty{}, nil
+}
+
+func (h *handler) Events(empty *gen.Empty, server gen.Camera_EventsServer) error {
+	messages := h.broker.Subscribe()
+	defer h.broker.Unsubscribe(messages)
+
+	for m := range messages {
+		data, err := json.Marshal(m)
+		if err != nil {
+			panic(err)
+		}
+
+		err = server.Send(&gen.Event{
+			Type: m.Name(),
+			Data: data,
+		})
+
+		if err != nil {
+			break
+		}
+	}
+
+	logrus.Info("Events() handler finished")
+	return nil
+}
+
+func serveGRPC(listener net.Listener, broker *broker.Broker) {
+	h := &handler{
+		broker: broker,
+	}
+
+	s := grpc.NewServer()
+	gen.RegisterCameraServer(s, h)
+	reflection.Register(s)
+
+	err := s.Serve(listener)
 	if err != nil {
 		panic(err)
 	}

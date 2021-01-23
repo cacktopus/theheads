@@ -2,10 +2,9 @@ import asyncio
 import math
 import os
 import yaml
-from subprocess import check_output
-
 from const import DEFAULT_CONSUL_ENDPOINT
 from consul_config import ConsulBackend
+from subprocess import check_output
 from transformations import Vec, Mat
 
 INSTALLATION = "dev"
@@ -106,17 +105,19 @@ async def main(inst_name: str):
         for i, name in enumerate(names):
             fixed_name = name.replace("-", "")
 
-            fixed_name = dict(head43="host.docker.internal").get(fixed_name, fixed_name)
-
-            address = f"{fixed_name}:8080"
-            print(address)
+            # NOTE: service address shouldn't contain a port
+            service_address = dict(
+                head43="host.docker.internal",
+                head42="head42",
+            ).get(fixed_name, None)
+            print(service_address)
 
             await consul_backend.register_service_with_agent(
                 "head",
                 8080,
                 ID=name,
                 tags=[name, "frontend"],
-                address=address,
+                service_address=service_address,
             )
             await consul_backend.register_service_with_agent(
                 "voices", 3030 + i,
@@ -125,7 +126,7 @@ async def main(inst_name: str):
             )
 
         # redis
-        await consul_backend.register_service_with_agent("redis", 6379, address="host.docker.internal:6379")
+        await consul_backend.register_service_with_agent("redis", 6379, service_address="host.docker.internal")
 
         # boss
         await consul_backend.register_service_with_agent("boss", 8081, ID="boss-01", tags=["boss-01", "frontend"])

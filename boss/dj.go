@@ -1,4 +1,4 @@
-package main
+package boss
 
 import (
 	"github.com/cacktopus/theheads/boss/grid"
@@ -27,14 +27,13 @@ var currentSceneMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 
 func init() {
 	prometheus.MustRegister(currentSceneMetric)
-	prometheus.MustRegister(redisEventReceived)
 }
 
 type DJ struct {
 	grid        *grid.Grid
 	scene       *scene.Scene
 	headManager *head_manager.HeadManager
-	texts       []*Text
+	texts       []*scene.Text
 }
 
 func (dj *DJ) RunScenes() {

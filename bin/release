@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+import glob
+import hashlib
+import os
+import shutil
+import sys
+from dataclasses import dataclass
+
+ARCH = "armhf"
+
+
+@dataclass
+class Package:
+    name: str
+    arch: str
+    major: int
+    minor: int
+    patch: int
+
+    @property
+    def version(self) -> tuple[int, int, int]:
+        return self.major, self.minor, self.patch
+
+
+def parse(f: str):
+    parts = os.path.basename(f).split(".")
+
+    gz = parts.pop()
+    assert gz == "gz"
+
+    tar = parts.pop()
+    assert tar == "tar"
+
+    b = ".".join(parts)
+
+    name, version, arch = b.split("_")
+    assert arch == ARCH
+
+    ma, mi, pa = [int(p) for p in version.split(".")]
+    return Package(name=name, arch=arch, major=ma, minor=mi, patch=pa)
+
+
+def main():
+    fn = sys.argv[1]
+    if not os.path.exists(fn):
+        raise Exception(f"{fn} not found")
+
+    base, _, _ = fn.split(".")
+
+    files = glob.glob(f"builds/{base}_*")
+
+    if len(files) == 0:
+        bumped = Package(
+            name=base,
+            arch=ARCH,
+            major=1,
+            minor=0,
+            patch=0,
+        )
+
+    else:
+        existing = [parse(f) for f in files]
+        latest = max(existing, key=lambda x: x.version)
+        bumped = Package(
+            name=latest.name,
+            arch=latest.arch,
+            major=latest.major,
+            minor=latest.minor + 1,
+            patch=0,
+        )
+
+    rel_fn = f"{bumped.name}_{bumped.major}.{bumped.minor}.{bumped.patch}_{bumped.arch}.tar.gz"
+    shutil.copyfile(fn, f"builds/{rel_fn}")
+
+    digest = hashlib.sha256(open(fn, "rb").read()).hexdigest()
+    print(rel_fn)
+    print(digest)
+
+
+if __name__ == '__main__':
+    main()

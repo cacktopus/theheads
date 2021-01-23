@@ -1,7 +1,6 @@
-package main
+package boss
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/sirupsen/logrus"
 	"math/rand"
@@ -13,25 +12,28 @@ const (
 	speakChance = 0.0005
 )
 
-func Random(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
+func Random(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 	for {
 		select {
 		case <-time.After(trackingPeriod):
 			for _, head := range dj.scene.HeadList {
 				if rand.Float64() < moveChance {
 					theta := rand.Float64() * 360.0
-					path := fmt.Sprintf("/rotation/%f", theta)
-					dj.headManager.Send("head", head.Name, path)
-					logrus.WithFields(logrus.Fields{
+					_, err := dj.headManager.Position("head", theta)
+					if err != nil {
+						logger.WithError(err).Error("error positioning")
+					}
+					logger.WithFields(logrus.Fields{
 						"head":  head.Name,
 						"theta": theta,
 					}).Info("moving")
 				}
 
 				if rand.Float64() < speakChance {
-					playPath := fmt.Sprintf("/random")
-					dj.headManager.Send("voices", head.Name, playPath)
-					logrus.WithFields(logrus.Fields{
+					go func() {
+						dj.headManager.SayRandom(head.Name)
+					}()
+					logger.WithFields(logrus.Fields{
 						"head": head.Name,
 					}).Info("Saying")
 				}

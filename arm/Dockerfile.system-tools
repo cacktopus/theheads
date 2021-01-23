@@ -1,0 +1,17 @@
+FROM heads-build-common
+
+COPY common /build/common
+COPY system-tools /build/system-tools
+
+WORKDIR /build/system-tools/
+
+RUN CGO_ENABLED=1 go build .
+
+WORKDIR /app
+
+RUN cp /build/system-tools/system-tools /app
+
+RUN mkdir -p /pkg
+
+WORKDIR /
+RUN tar -czvf /pkg/system-tools.tar.gz app

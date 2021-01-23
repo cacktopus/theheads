@@ -1,0 +1,18 @@
+FROM heads-build-common
+
+COPY camera /build/camera
+COPY common /build/common
+
+WORKDIR /build/camera/
+
+RUN CGO_ENABLED=1 go build ./cmd/camera
+
+WORKDIR /app
+
+RUN cp /build/camera/camera /build/camera/index.html /app
+RUN cp -r /build/camera/js /app/js
+
+RUN mkdir -p /pkg
+
+WORKDIR /
+RUN tar -czvf /pkg/camera.tar.gz app

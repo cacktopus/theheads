@@ -1,39 +1,49 @@
-package main
+package boss
 
 import (
+	"context"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
-	"github.com/cacktopus/theheads/common/schema"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
 func pollHead(dj *DJ, done util.BroadcastCloser, ws *sync.WaitGroup, h *scene.Head) {
-	log := logrus.WithField("head", h.Name)
+	defer ws.Done()
+	logger := logrus.WithField("head", h.Name)
 
-	dj.headManager.SendWithResult("head", h.Name, "/find_zero", nil)
+	conn, err := dj.headManager.GetHeadConn(h.Name)
+	if err != nil {
+		logger.WithError(err).Error("error getting head client")
+		return
+	}
+	client := gen.NewHeadClient(conn)
+
+	_, err = client.FindZero(context.Background(), &gen.Empty{})
+	if err != nil {
+		logger.WithError(err).Error("error getting head client")
+		return
+	}
 
 	ticker := time.NewTicker(1 * time.Second)
 
 	for {
 		select {
 		case <-ticker.C:
-			headResult := schema.HeadResult{}
-			result := dj.headManager.SendWithResult("head", h.Name, "/status", &headResult)
-			if result.Err != nil {
-				log.WithError(result.Err).Error("Error polling head status")
+			status, err := client.Status(context.Background(), &gen.Empty{})
+			if err != nil {
+				logger.WithError(err).Error("Error polling head status")
 				continue
 			}
+			logger.WithField("controller", status.Controller).Info("polled status")
 
-			log.WithField("controller", headResult.Controller).Info("polled status")
-			if headResult.Controller != "" && headResult.Controller != "ZeroDetector" {
-				ws.Done()
+			if status.Controller != "" && status.Controller != "ZeroDetector" {
 				return
 			}
 		case <-done.Chan():
-			ws.Done()
 			return
 		}
 	}

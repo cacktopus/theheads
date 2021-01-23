@@ -1,4 +1,4 @@
-package main
+package boss
 
 import (
 	"github.com/cacktopus/theheads/boss/util"

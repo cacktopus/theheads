@@ -1,4 +1,4 @@
-FROM golang:1.14-buster
+FROM golang:1.14-buster as build
 
 WORKDIR /build
 COPY head/go.* /build/head/

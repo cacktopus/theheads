@@ -1,19 +1,19 @@
-package main
+package boss
 
 import (
 	"fmt"
-	"github.com/cacktopus/theheads/boss/broker"
-	"github.com/cacktopus/theheads/boss/config"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/watchdog"
+	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/discovery"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
+	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,7 +21,7 @@ import (
 )
 
 type Cfg struct {
-	ConsulAddr string `envconfig:"default=127.0.0.1:8500"`
+	ScenePath string
 }
 
 var upgrader = websocket.Upgrader{}
@@ -54,10 +54,8 @@ func (f *JournaldFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return append([]byte(level), result...), nil
 }
 
-func main() {
-	cfg := &Cfg{}
-
-	err := envconfig.Init(cfg)
+func Run(env *Cfg, discovery discovery.Discovery) {
+	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
@@ -72,8 +70,7 @@ func main() {
 	broker := broker.NewBroker()
 	go broker.Start()
 
-	consulClient := config.NewClient(cfg.ConsulAddr)
-	theScene, err := scene.BuildInstallation(consulClient)
+	theScene, err := scene.BuildInstallation(env.ScenePath)
 	if err != nil {
 		panic(err)
 	}
@@ -86,18 +83,12 @@ func main() {
 	)
 	go grid.Start()
 
-	redisServers, err := config.AllServiceURLs(consulClient, "redis", "", "", "")
-	if err != nil {
-		panic(err)
-	}
-
-	if len(redisServers) == 0 {
-		panic("Need at least one redis server, for now")
-	}
-
-	for _, redis := range redisServers {
-		go runRedis(broker, redis)
-	}
+	stream(logger, discovery, "head", func(addr string) {
+		streamHead(broker, addr)
+	})
+	stream(logger, discovery, "camera", func(addr string) {
+		streamCamera(broker, addr)
+	})
 
 	go ManageFocalPoints(theScene, broker, grid)
 
@@ -158,15 +149,13 @@ func main() {
 		r.Run(addr)
 	}()
 
-	headManager := head_manager.NewHeadManager(cfg.ConsulAddr)
-
-	texts := LoadTexts(consulClient)
+	headManager := head_manager.NewHeadManager(logger, discovery)
 
 	dj := &DJ{
 		grid:        grid,
 		scene:       theScene,
 		headManager: headManager,
-		texts:       texts,
+		texts:       theScene.Texts, //TODO: already passing theScene
 	}
 
 	dj.RunScenes()

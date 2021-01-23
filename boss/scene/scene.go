@@ -1,14 +1,14 @@
 package scene
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"math"
 	"math/rand"
+	"path"
 
-	"github.com/cacktopus/theheads/boss/config"
 	"github.com/cacktopus/theheads/boss/geom"
-	consulApi "github.com/hashicorp/consul/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -32,6 +32,8 @@ type Scene struct {
 
 	// TODO: don't hang these config values off of here
 	CameraSensitivity float64 `json:"camera_sensitivity" yaml:"camera_sensitivity"`
+
+	Texts []*Text
 }
 
 type Pos struct {
@@ -127,20 +129,60 @@ func (h *Head) PointTo(p geom.Vec) float64 {
 	return math.Mod(theta+360.0, 360)
 }
 
-func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
+func mustGetYAML(path string, result interface{}) {
+	content, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		panic(errors.Wrap(err, path+" not found"))
+	}
+
+	err = yaml.Unmarshal(content, result)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getPrefix(prefix string) (map[string][]byte, error) {
+	dir, err := ioutil.ReadDir(prefix)
+	if err != nil {
+		return nil, errors.Wrap(err, "readdir "+prefix)
+	}
+
+	result := map[string][]byte{}
+	for _, info := range dir {
+		filename := path.Join(prefix, info.Name())
+
+		ext := path.Ext(filename)
+		if ext != ".yaml" && ext != ".yml" && ext != ".json" {
+			continue
+		}
+
+		content, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return nil, errors.Wrap(err, "readdir "+info.Name())
+		}
+
+		result[info.Name()] = content
+	}
+
+	return result, nil
+}
+
+func BuildInstallation(scenePath string) (*Scene, error) {
 	scene := &Scene{
 		Cameras: map[string]*Camera{},
 		Heads:   map[string]*Head{},
 	}
 
-	config.MustGetYAML(consulClient, "/the-heads/scene.yaml", scene)
+	mustGetYAML(path.Join(scenePath, "scene.yaml"), scene)
 
 	// heads and cameras don't "exist" until they are added to a stand
 	definedHeads := map[string]*Head{}
 	definedCameras := map[string]*Camera{}
 
 	// CameraMap
-	cameraYAML, err := config.GetPrefix(consulClient, "/the-heads/cameras")
+
+	cameraYAML, err := getPrefix(path.Join(scenePath, "cameras"))
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +199,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	}
 
 	// HeadMap
-	headYAML, err := config.GetPrefix(consulClient, "/the-heads/heads")
+	headYAML, err := getPrefix(path.Join(scenePath, "heads"))
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +215,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	}
 
 	// Stands
-	standYAML, err := config.GetPrefix(consulClient, "/the-heads/stands")
+	standYAML, err := getPrefix(path.Join(scenePath, "stands"))
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +265,7 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 	}
 
 	// Anchors
-	anchorYAML, err := config.GetPrefix(consulClient, "/the-heads/anchors")
+	anchorYAML, err := getPrefix(path.Join(scenePath, "anchors"))
 	if err != nil {
 		return nil, err
 	}
@@ -241,6 +283,9 @@ func BuildInstallation(consulClient *consulApi.Client) (*Scene, error) {
 		scene.CameraSensitivity = defaultCameraSensitivity
 
 	}
+
+	// Texts
+	scene.Texts = LoadTexts(scenePath)
 
 	return scene, nil
 }

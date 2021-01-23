@@ -4,6 +4,7 @@ services:
     image: 'consul:1.8'
     ports:
       - '8500:8500'
+      - '8600:8600/udp'
 
   redis:
     image: 'redis:5-alpine'
@@ -29,6 +30,7 @@ services:
       CONSUL_ADDR: 'consul:8500'
       REDIS_ADDR: 'redis:6379'
       INSTANCE: head-42
+      FAKE_STEPPER: "1"
 
   head43:
     image: 'head'
@@ -38,24 +40,28 @@ services:
       CONSUL_ADDR: 'consul:8500'
       REDIS_ADDR: 'redis:6379'
       INSTANCE: head-43
+      FAKE_STEPPER: "1"
 
-  camera42:
+  camera01:
     image: camera
     environment:
-      REDIS_ADDR: 'redis:6379'
-      INSTANCE: camera-42
+      INSTANCE: camera-01
       FILENAME: /d/pi42.raw
     volumes:
       - ./dev:/d:ro
+    ports:
+      - 5010:5000
 
-  camera43:
+  camera02:
     image: camera
     environment:
-      REDIS_ADDR: 'redis:6379'
-      INSTANCE: camera-43
+      INSTANCE: camera-02
       FILENAME: /d/pi43.raw
     volumes:
       - ./dev:/d:ro
+    ports:
+      - 5011:5000
+
 
 
 

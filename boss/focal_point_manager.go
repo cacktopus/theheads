@@ -1,10 +1,10 @@
-package main
+package boss
 
 import (
-	"github.com/cacktopus/theheads/boss/broker"
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/scene"
+	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/sirupsen/logrus"
 )

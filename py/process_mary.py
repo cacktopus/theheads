@@ -3,11 +3,8 @@ import os
 import wave
 from typing import Dict
 
-import requests
-
 import hashicorp_vault
-from const import DEFAULT_CONSUL_ENDPOINT
-from consul_config import ConsulBackend
+import requests
 from voice import Rms, all_parts, Voice, Sentence
 
 
@@ -75,20 +72,25 @@ def main():
     voice = Rms()
 
     vault_client = hashicorp_vault.Client()
-    consul = ConsulBackend()
 
     secret = vault_client.get("texts")
+
+    outdir = os.path.expanduser("~/shared/theheads/scenes/hb2021/texts")
 
     for title, content in secret.items():
         title, result = process_script(voice, title, content)
         body = json.dumps(result, indent=4)
         print(body)
 
-        endpoint = DEFAULT_CONSUL_ENDPOINT
-        requests.put(
-            url=f"{endpoint}/v1/kv/the-heads/texts/{title}",
-            data=body.encode(),
+        title = title.replace(" ", "_")
+
+        fn = os.path.join(
+            outdir,
+            title + ".json",
         )
+
+        with open(fn, "w") as fp:
+            fp.write(body)
 
     print("*** Don't forget to rsync ***")
 

@@ -1,10 +1,11 @@
-package main
+package boss
 
 import (
-	"fmt"
+	"context"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -19,6 +20,9 @@ func FollowClosestFocalPoint(
 	head *scene.Head,
 	evadeDistance float64,
 ) {
+	logger := logrus.WithField("head", head.Name)
+
+loop:
 	for {
 		select {
 		case <-time.After(trackingPeriod):
@@ -36,10 +40,20 @@ func FollowClosestFocalPoint(
 				theta = head.PointTo(selected.Pos)
 			}
 
-			path := fmt.Sprintf("/rotation/%f", theta)
-			dj.headManager.Send("head", head.Name, path)
+			conn, err := dj.headManager.GetHeadConn(head.Name)
+			if err != nil {
+				logger.WithError(err).Error("error getting head conn")
+				continue loop
+			}
+
+			if _, err = gen.NewHeadClient(conn).Rotation(context.Background(), &gen.RotationIn{
+				Theta: theta,
+			}); err != nil {
+				logger.WithError(err).Error("error setting rotation")
+				continue loop
+			}
 		case <-done.Chan():
-			logrus.WithField("head", head.Name).Info("Finishing FollowClosestFocalPoint")
+			logger.Info("Finishing FollowClosestFocalPoint")
 			return
 		}
 	}

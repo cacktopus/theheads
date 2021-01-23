@@ -74,9 +74,9 @@ class ConsulBackend:
         url = self._consul_endpoint + "/v1/kv{}".format(key.decode())
         return await put(url, value)
 
-    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None, meta=None, address=""):
+    async def register_service_with_agent(self, name: str, port: int, ID=None, tags=None, meta=None, service_address=""):
         url = self._consul_endpoint + "/v1/agent/service/register"
-        payload = {"Name": name, "Port": port, "Address": address}
+        payload = {"Name": name, "Port": port, "Address": service_address}
 
         if ID is not None:
             payload["ID"] = ID

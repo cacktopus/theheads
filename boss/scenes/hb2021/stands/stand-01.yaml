@@ -1,0 +1,5 @@
+cameras: [camera-01]
+heads: [head-01]
+name: stand-01
+pos: {x: -1.25, y: -0.65}
+rot: -90
