@@ -14,9 +14,10 @@
 <body>
     <div class="jsmpeg"></div>
 	<script type="text/javascript">
-		var host = window.location.hostname;
+		var hostname = window.location.hostname;
 		var port = window.location.port;
-		var url = 'ws://' + host + ':' + port + '/ws';
+		var pathname = window.location.pathname;
+		var url = 'ws://' + hostname + ':' + port + pathname + 'ws';
 		var elem = document.getElementsByClassName("jsmpeg")[0];
 		elem.setAttribute("data-url", url);
 	</script>

@@ -1,4 +1,4 @@
-package camera
+package ffmpeg
 
 import (
 	"fmt"
@@ -6,15 +6,17 @@ import (
 	"github.com/cacktopus/theheads/common/broker"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/zap"
 	"gocv.io/x/gocv"
 	"io"
 	"io/ioutil"
 	"os/exec"
 	"runtime"
+	"sync"
 	"time"
 )
 
-func spawnFfmpeg() (
+func spawnFfmpeg(width, height int, bitrate int, framerate int) (
 	io.Writer, // TODO: WriteCloser
 	io.Reader, // TODO: ReadCloser
 ) {
@@ -30,10 +32,10 @@ func spawnFfmpeg() (
 		//"-pix_fmt", "bgr24",
 		"-pix_fmt", "gray",
 		"-s", fmt.Sprintf("%dx%d", width, height),
-		"-r", fmt.Sprintf("%d", rate),
+		"-r", fmt.Sprintf("%d", framerate),
 		"-i", "-",
 		"-f", "mpegts",
-		"-b:v", "400k",
+		"-b:v", fmt.Sprintf("%dk", bitrate),
 		"-codec:v", "mpeg1video",
 		"-",
 	)
@@ -87,29 +89,43 @@ func spawnFfmpeg() (
 	return stdin, stdout
 }
 
-func runFfmpeg(b *broker.Broker) chan gocv.Mat {
+func runFfmpeg(logger *zap.Logger, b *broker.Broker, bitrate, framerate int) chan gocv.Mat {
 	ffmpegFeeder := make(chan gocv.Mat)
-	ffStdin, ffStdout := spawnFfmpeg()
-	go func() {
-		for {
-			mat := <-ffmpegFeeder
-			ffStdin.Write((mat.ToBytes()))
-		}
-	}()
 
-	go func() {
+	publisher := func(ffStdout io.Reader) {
 		buf := make([]byte, 1024*64)
 		for {
 			nread, err := ffStdout.Read(buf)
 
 			b.Publish(&Buffer{
-				data: buf[:nread],
+				Data: buf[:nread],
 			})
 
 			if err != nil {
 				time.Sleep(1 * time.Second)
 				panic(err)
 			}
+		}
+	}
+
+	go func() {
+		var once sync.Once
+		var ffStdin io.Writer
+		var ffStdout io.Reader
+
+		for {
+			mat := <-ffmpegFeeder
+
+			once.Do(func() {
+				size := mat.Size()
+				height := size[0]
+				width := size[1]
+				logger.Info("spawning ffmpeg", zap.Int("width", width), zap.Int("height", height))
+				ffStdin, ffStdout = spawnFfmpeg(width, height, bitrate, framerate)
+				go publisher(ffStdout)
+			})
+
+			ffStdin.Write((mat.ToBytes())) // TODO: handle error
 		}
 	}()
 

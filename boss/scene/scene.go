@@ -89,6 +89,14 @@ func ShuffledHeads(heads map[string]*Head) (result []*Head) {
 	return
 }
 
+func (s *Scene) HeadNames() []string {
+	var result []string
+	for _, head := range s.HeadList {
+		result = append(result, head.Name)
+	}
+	return result
+}
+
 type Stand struct {
 	CameraNames []string `json:"-" yaml:"cameras"`
 	HeadNames   []string `json:"-" yaml:"heads"`

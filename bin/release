@@ -6,8 +6,6 @@ import shutil
 import sys
 from dataclasses import dataclass
 
-ARCH = "armhf"
-
 
 @dataclass
 class Package:
@@ -34,7 +32,6 @@ def parse(f: str):
     b = ".".join(parts)
 
     name, version, arch = b.split("_")
-    assert arch == ARCH
 
     ma, mi, pa = [int(p) for p in version.split(".")]
     return Package(name=name, arch=arch, major=ma, minor=mi, patch=pa)
@@ -45,14 +42,14 @@ def main():
     if not os.path.exists(fn):
         raise Exception(f"{fn} not found")
 
-    base, _, _ = fn.split(".")
+    current = parse(fn)
 
-    files = glob.glob(f"builds/{base}_*")
+    files = glob.glob(f"builds/{current.name}_*")
 
     if len(files) == 0:
         bumped = Package(
-            name=base,
-            arch=ARCH,
+            name=current.name,
+            arch=current.arch,
             major=1,
             minor=0,
             patch=0,
@@ -62,12 +59,14 @@ def main():
         existing = [parse(f) for f in files]
         latest = max(existing, key=lambda x: x.version)
         bumped = Package(
-            name=latest.name,
-            arch=latest.arch,
+            name=current.name,
+            arch=current.arch,
             major=latest.major,
             minor=latest.minor + 1,
             patch=0,
         )
+
+    assert bumped.arch == current.arch
 
     rel_fn = f"{bumped.name}_{bumped.major}.{bumped.minor}.{bumped.patch}_{bumped.arch}.tar.gz"
     shutil.copyfile(fn, f"builds/{rel_fn}")

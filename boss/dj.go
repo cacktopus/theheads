@@ -6,11 +6,11 @@ import (
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"time"
 )
 
-type SceneRunner func(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry)
+type SceneRunner func(dj *DJ, done util.BroadcastCloser, logger *zap.Logger)
 
 type SceneConfig struct {
 	Runner           SceneRunner
@@ -30,19 +30,23 @@ func init() {
 }
 
 type DJ struct {
+	logger      *zap.Logger
 	grid        *grid.Grid
 	scene       *scene.Scene
-	headManager *head_manager.HeadManager
 	texts       []*scene.Text
+	headManager *head_manager.HeadManager
 }
 
 func (dj *DJ) RunScenes() {
 	sceneNumber := 1
 	for ; ; sceneNumber++ {
 		for _, sceneName := range dj.scene.Scenes {
-			logger := logrus.WithField("scene", sceneName).WithField("number", sceneNumber)
+			logger := dj.logger.With(zap.String("scene", sceneName), zap.Int("number", sceneNumber))
 			logger.Info("Running Scene")
 			done := util.NewBroadcastCloser()
+
+			dj.headManager.CheckIn(dj.scene.HeadNames())
+
 			sc := AllScenes[sceneName]
 			go func(sceneName string) {
 				currentSceneMetric.WithLabelValues(sceneName).Inc()
@@ -52,6 +56,7 @@ func (dj *DJ) RunScenes() {
 			maxLength := time.Duration(sc.MaxLengthSeconds) * time.Second
 			dj.Sleep(done, maxLength)
 			done.Close()
+			dj.headManager.Close()
 		}
 	}
 }

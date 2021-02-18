@@ -1,4 +1,4 @@
-FROM heads-build-common
+FROM heads-build-arm64
 
 COPY common /build/common
 COPY system-tools /build/system-tools
@@ -14,4 +14,4 @@ RUN cp /build/system-tools/system-tools /app
 RUN mkdir -p /pkg
 
 WORKDIR /
-RUN tar -czvf /pkg/system-tools.tar.gz app
+RUN tar -czvf "/pkg/system-tools_0.0.0_arm64.tar.gz" app

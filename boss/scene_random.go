@@ -2,7 +2,7 @@ package boss
 
 import (
 	"github.com/cacktopus/theheads/boss/util"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"math/rand"
 	"time"
 )
@@ -12,7 +12,7 @@ const (
 	speakChance = 0.0005
 )
 
-func Random(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
+func Random(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	for {
 		select {
 		case <-time.After(trackingPeriod):
@@ -21,21 +21,16 @@ func Random(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 					theta := rand.Float64() * 360.0
 					_, err := dj.headManager.Position("head", theta)
 					if err != nil {
-						logger.WithError(err).Error("error positioning")
+						logger.Error("error positioning", zap.Error(err))
 					}
-					logger.WithFields(logrus.Fields{
-						"head":  head.Name,
-						"theta": theta,
-					}).Info("moving")
+					logger.Info("moving", zap.String("head", head.Name), zap.Float64("theta", theta))
 				}
 
 				if rand.Float64() < speakChance {
 					go func() {
 						dj.headManager.SayRandom(head.Name)
 					}()
-					logger.WithFields(logrus.Fields{
-						"head": head.Name,
-					}).Info("Saying")
+					logger.Info("saying", zap.String("head", head.Name))
 				}
 			}
 		case <-done.Chan():

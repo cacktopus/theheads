@@ -17,9 +17,11 @@ if (
     defaultWebsocketUrl = "ws://localhost:8081/ws";
     defaultSceneUrl = "json/temp.json";
 } else {
-    defaultWebsocketUrl =
-        "ws://" + window.location.hostname + ":" + window.location.port + "/ws";
-    defaultSceneUrl = "/installation/dev/scene.json";
+    let hostname = window.location.hostname;
+    let port = window.location.port;
+    let pathname = window.location.pathname;
+    defaultWebsocketUrl = 'ws://' + hostname + ':' + port + pathname + 'ws';
+    defaultSceneUrl = "installation/dev/scene.json";
 }
 
 export default class Menu extends React.Component {
@@ -123,7 +125,7 @@ export default class Menu extends React.Component {
 
     loadRegSceneJson() {
         this.setState({
-            sceneUrl: "/installation/dev/scene.json"
+            sceneUrl: "installation/dev/scene.json"
         });
     }
 

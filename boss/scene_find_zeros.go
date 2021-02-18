@@ -7,6 +7,7 @@ import (
 	"github.com/cacktopus/theheads/boss/watchdog"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -52,7 +53,7 @@ func pollHead(dj *DJ, done util.BroadcastCloser, ws *sync.WaitGroup, h *scene.He
 func FindZeros(
 	dj *DJ,
 	done util.BroadcastCloser,
-	entry *logrus.Entry,
+	logger *zap.Logger,
 ) {
 	ws := &sync.WaitGroup{}
 
@@ -67,6 +68,6 @@ func FindZeros(
 	}()
 
 	<-done.Chan()
-	entry.Info("Exiting FindZeros")
+	logger.Info("Exiting FindZeros")
 	watchdog.Feed()
 }

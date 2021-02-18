@@ -8,4 +8,6 @@ import "common.proto";
 service camera {
   rpc events(Empty) returns (stream Event);
   rpc restart(Empty) returns (Empty);
+  rpc start_recording(Empty) returns (Empty);
+  rpc stop_recording(Empty) returns (Empty);
 }

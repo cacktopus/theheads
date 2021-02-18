@@ -85,8 +85,6 @@ func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, e
 }
 
 func (h *Handler) Status(ctx context.Context, empty *gen.Empty) (*gen.HeadState, error) {
-	h.logger.Info("status called")
-
 	return h.headState(), nil
 }
 

@@ -1,0 +1,7 @@
+tunnels:
+  - name: ssh
+    listen: 127.0.0.1:2222
+    gateway: somehost.com:22
+    dial: localhost:5000
+    keyfile: id_rsa
+    healthcheck: ssh

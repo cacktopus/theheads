@@ -2,17 +2,20 @@ package camera
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/cacktopus/theheads/camera/recorder"
+	"go.uber.org/zap"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
-func raspiStill() error {
+func raspiStill(logger *zap.Logger) error {
 	usr, err := user.Current()
 	if err != nil {
 		return err
@@ -31,18 +34,14 @@ func raspiStill() error {
 	}
 
 	args := []string{
+		raspivid,
 		"-vf",
 		"-o", out,
 	}
 
-	logrus.WithField("cmd", raspivid+" "+strings.Join(args, " ")).
-		Info("Running raspistill")
+	logger.Info("running raspistill", zap.String("cmd", strings.Join(args, " ")))
 
-	cmd := exec.Command(
-		raspivid,
-		args...,
-	)
-
+	cmd := exec.Command(args[0], args[1:]...)
 	err = cmd.Start()
 	if err != nil {
 		return err
@@ -56,7 +55,12 @@ func raspiStill() error {
 	return nil
 }
 
-func runRaspiVid(extraArgs ...string) (chan []byte, error) {
+func runRaspiVid(
+	logger *zap.Logger,
+	rec *recorder.Recorder,
+	width, height, framerate int,
+	extraArgs ...string,
+) (chan []byte, error) {
 	frames := make(chan []byte)
 
 	raspivid, err := exec.LookPath("raspivid")
@@ -64,28 +68,46 @@ func runRaspiVid(extraArgs ...string) (chan []byte, error) {
 		return nil, err
 	}
 
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(err)
+	}
+
+	fifo := filepath.Join(dir, "fifo")
+
+	err = syscall.Mkfifo(fifo, 0o600)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		file, err := os.OpenFile(fifo, os.O_RDONLY, 0o600)
+		if err != nil {
+			panic(err)
+		}
+
+		if err := rec.Run(file); err != nil {
+			logger.Error("h264 splitter exited")
+			panic(err)
+		}
+	}()
+
 	args := []string{
+		raspivid,
 		"-n",
-		"--contrast", "100",
-		"-fps", fmt.Sprintf("%d", rate),
+		"-fps", fmt.Sprintf("%d", framerate),
 		"-t", "0",
-		"-w", fmt.Sprintf("%d", inputWidth),
-		"-h", fmt.Sprintf("%d", inputHeight),
+		"-w", fmt.Sprintf("%d", width),
+		"-h", fmt.Sprintf("%d", height),
 		"--raw", "-",
 		"-rf", "gray",
-		// "-hf",
-		//"-vf",
-		"-o", "/dev/null",
+		"-o", fifo,
 	}
 	args = append(args, extraArgs...)
 
-	logrus.WithField("cmd", raspivid+" "+strings.Join(args, " ")).
-		Info("Running raspivid")
+	logger.Info("running raspivid", zap.String("cmd", strings.Join(args, " ")))
 
-	cmd := exec.Command(
-		raspivid,
-		args...,
-	)
+	cmd := exec.Command(args[0], args[1:]...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -93,8 +115,8 @@ func runRaspiVid(extraArgs ...string) (chan []byte, error) {
 	}
 
 	go func() {
-		frame0 := make([]byte, inputWidth*inputHeight)
-		frame1 := make([]byte, inputWidth*inputHeight)
+		frame0 := make([]byte, width*height)
+		frame1 := make([]byte, width*height)
 		for {
 			_, err := io.ReadFull(stdout, frame0)
 			if err != nil {

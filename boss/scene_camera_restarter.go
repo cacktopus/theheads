@@ -6,10 +6,11 @@ import (
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"time"
 )
 
-func CameraRestarter(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
+func CameraRestarter(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	rate_limiter.Limit("camera.restart", 10*time.Minute, func() {
 		if len(dj.grid.GetFocalPoints()) == 0 {
 			return

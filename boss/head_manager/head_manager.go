@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+var (
+	ErrNoServiceFound = errors.New("no service found")
+)
+
 type Result struct {
 	Err        error
 	Body       []byte
@@ -26,56 +30,117 @@ type SendItem struct {
 	result chan Result
 }
 
-type client struct {
-	client *grpc.ClientConn
-	lock   sync.Mutex
-}
-
 type HeadManager struct {
-	logger *zap.Logger
-	lock   sync.Mutex
-
-	servicesLock sync.Mutex
-	services     map[string]*service
-
-	clients map[string]*client
-
+	logger    *zap.Logger
+	lock      sync.Mutex
+	clients   map[string]*grpc.ClientConn
 	discovery discovery.Discovery
-}
-
-type service struct {
-	host string
-	port int
 }
 
 func NewHeadManager(logger *zap.Logger, discovery discovery.Discovery) *HeadManager {
 	h := &HeadManager{
-		logger:   logger,
-		services: map[string]*service{},
-		clients:  map[string]*client{},
+		logger:    logger,
+		clients:   map[string]*grpc.ClientConn{},
+		discovery: discovery,
+	}
+	return h
+}
+
+func (h *HeadManager) CheckIn(heads []string) {
+	h.logger.Info("checkin")
+	t0 := time.Now()
+	defer func() {
+		h.logger.Info("checkin completed", zap.Duration("duration", time.Now().Sub(t0)))
+	}()
+
+	remaining := map[string]bool{}
+	for _, head := range heads {
+		remaining[head] = true
 	}
 
-	ctx := context.Background()
+	type headConn struct {
+		name string
+		conn *grpc.ClientConn
+	}
 
-	discovery.Discover(logger, ctx, "_head._tcp", func(entry *zeroconf.ServiceEntry) {
-		var found bool
+	found := make(chan *headConn)
 
-		func() {
-			h.servicesLock.Lock()
-			defer h.servicesLock.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 
-			host := strings.TrimRight(entry.HostName, ".")
+	callback := func(entry *zeroconf.ServiceEntry) {
+		host := strings.TrimRight(entry.HostName, ".")
+		addr := fmt.Sprintf("%s:%d", host, entry.Port)
+		instance := entry.Instance
 
-			_, found = h.services[entry.Instance]
+		h.logger.Info("checkin found head", zap.String("instance", instance))
 
-			h.services[entry.Instance] = &service{
-				host: host,
-				port: entry.Port,
+		// TODO: retries
+		// TODO: actually call "ping" method
+		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
+		if err != nil {
+			h.logger.Error("connecting", zap.String("instance", instance))
+			return
+		}
+
+		found <- &headConn{
+			name: instance,
+			conn: conn,
+		}
+	}
+
+	h.discovery.Discover(h.logger, ctx, "_head._tcp", callback)
+
+	newClients := map[string]*grpc.ClientConn{}
+
+	func() {
+		for {
+			select {
+
+			case <-ctx.Done():
+				return
+
+			case head := <-found:
+				if _, ok := newClients[head.name]; ok {
+					h.logger.Warn("found extra connection", zap.String("name", head.name))
+					head.conn.Close()
+					break
+				}
+
+				if _, ok := remaining[head.name]; !ok {
+					h.logger.Warn("found unexpected connection", zap.String("name", head.name))
+					head.conn.Close()
+					break
+				}
+
+				delete(remaining, head.name)
+				newClients[head.name] = head.conn
+
+				if len(remaining) == 0 {
+					cancel()
+				}
 			}
-		}()
-	})
+		}
+	}()
 
-	return h
+	go func() {
+		// Connections may be found after ctx is canceled, let's spend some time closing them
+		timeout := time.After(time.Minute)
+		for {
+			select {
+			case <-timeout:
+				close(found)
+				return
+			case c := <-found:
+				c.conn.Close()
+			}
+		}
+	}()
+
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	h.clients = newClients
 }
 
 func (h *HeadManager) Position(headName string, theta float64) (*gen.HeadState, error) {
@@ -123,48 +188,24 @@ func (h *HeadManager) SayRandom(headName string) {
 }
 
 func (h *HeadManager) GetHeadConn(headName string) (*grpc.ClientConn, error) {
-	var c *client
+	h.lock.Lock()
+	defer h.lock.Unlock()
 
-	func() {
-		h.lock.Lock()
-		defer h.lock.Unlock()
+	conn, ok := h.clients[headName]
+	if !ok {
+		return nil, ErrNoServiceFound
+	}
 
-		var ok bool
-		c, ok = h.clients[headName]
-		if !ok {
-			c = &client{}
-			h.clients[headName] = c
-		}
-	}()
+	return conn, nil
+}
 
-	return func() (*grpc.ClientConn, error) {
-		c.lock.Lock()
-		defer c.lock.Unlock()
+func (h *HeadManager) Close() {
+	h.lock.Lock()
+	defer h.lock.Unlock()
 
-		if c.client != nil {
-			return c.client, nil
-		}
+	for _, conn := range h.clients {
+		conn.Close() // TODO: handle error, log, etc.
+	}
 
-		var s *service
-		var ok bool
-		func() {
-			h.servicesLock.Lock()
-			defer h.servicesLock.Unlock()
-
-			s, ok = h.services[headName]
-		}()
-
-		if !ok {
-			return nil, errors.New("no service found for " + headName)
-		}
-
-		addr := fmt.Sprintf("%s:%d", s.host, +s.port)
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
-		if err != nil {
-			return nil, errors.Wrap(err, "dial")
-		}
-
-		c.client = conn
-		return c.client, nil
-	}()
+	h.clients = map[string]*grpc.ClientConn{}
 }

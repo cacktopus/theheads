@@ -6,6 +6,7 @@ import (
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"math/rand"
 	"time"
 )
@@ -25,19 +26,19 @@ func PositionHead(dj *DJ, name string, theta float64) (time.Duration, error) {
 	return TimeF(state.Eta), nil
 }
 
-func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
+func Conversation(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	t := scene.RandomText(dj.texts)
 
 	pointHeads := func(h0, h1 *scene.Head) {
 		t0 := h0.PointTo(h1.GlobalPos())
 
-		logger.WithFields(logrus.Fields{
-			"h0": h0.Name,
-			"h1": h1.Name,
-			"p0": h0.GlobalPos().AsStr(),
-			"p1": h1.GlobalPos().AsStr(),
-			"t0": t0,
-		}).Info("selected head")
+		logger.Info("selected head",
+			zap.String("h0", h0.Name),
+			zap.String("h1", h1.Name),
+			zap.String("p0", h0.GlobalPos().AsStr()),
+			zap.String("h1", h1.Name),
+			zap.Float64("t0", t0),
+		)
 
 		eta0, _ := PositionHead(dj, h0.Name, t0)
 		done0 := time.Now().Add(eta0)
@@ -57,11 +58,11 @@ func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 
 		delay := done1.Sub(time.Now()) + TimeF(0.20)
 
-		logger.WithFields(logrus.Fields{
-			"eta0":  eta0.Seconds(),
-			"eta1":  eta1.Seconds(),
-			"delay": delay.Seconds(),
-		}).Info("etas")
+		logger.Info("etas",
+			zap.Float64("eta0", eta0.Seconds()),
+			zap.Float64("eta1", eta1.Seconds()),
+			zap.Float64("delay", delay.Seconds()),
+		)
 
 		if stop := dj.Sleep(done, delay); stop {
 			return
@@ -69,7 +70,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 	}
 
 	sayPart := func(part scene.Content) {
-		logger.WithField("part", part).Info("saying")
+		logger.Info("saying", zap.String("part", part.ID))
 
 		heads := scene.ShuffledHeads(dj.scene.Heads)
 
@@ -78,7 +79,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 			theta := head.PointTo(geom.NewVec(0, -10))
 			_, err := dj.headManager.Position("head", theta)
 			if err != nil {
-				logger.WithError(err).Error("error positioning")
+				logger.Error("error positioning", zap.Error(err))
 			}
 		}
 
@@ -93,10 +94,7 @@ func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 		selected, distance := dj.grid.ClosestFocalPointTo(p)
 
 		if selected != nil && distance <= 5.0 && rand.Float64() < 0.66 {
-			logger.WithFields(logrus.Fields{
-				"h0":       h0.Name,
-				"distance": distance,
-			}).Info("talking to viewer")
+			logger.Info("talking to viewer", zap.String("h0", h0.Name), zap.Float64("distance", distance))
 			done2 := util.NewBroadcastCloser()
 			go FollowClosestFocalPoint(dj, done2, h0, -1)
 			defer done2.Close()
@@ -104,11 +102,12 @@ func Conversation(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 				return
 			}
 		} else {
-			logger.WithFields(logrus.Fields{
-				"distance": distance,
-				"h0":       h0.Name,
-				"h1":       h1.Name,
-			}).Info("talking to another head")
+			logger.Info(
+				"talking to another head",
+				zap.String("h0", h0.Name),
+				zap.String("h1", h1.Name),
+				zap.Float64("distance", distance),
+			)
 			pointHeads(h0, h1)
 		}
 
