@@ -37,7 +37,7 @@ func synctime(env *cfg, logger *zap.Logger, discovery discovery.Discovery) {
 	var lock sync.Mutex
 	addrs := map[string]bool{}
 
-	discovery.Discover(context.Background(), "_timesync._tcp", func(entry *zeroconf.ServiceEntry) {
+	discovery.Discover(logger, context.Background(), "_timesync._tcp", func(entry *zeroconf.ServiceEntry) {
 		lock.Lock()
 		defer lock.Unlock()
 

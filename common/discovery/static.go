@@ -7,18 +7,8 @@ import (
 	"sync"
 )
 
-var entries chan *zeroconf.ServiceEntry
-var registrations []*registration
+var entries []*zeroconf.ServiceEntry
 var lock sync.Mutex
-
-func init() {
-	entries = make(chan *zeroconf.ServiceEntry, 64)
-}
-
-type registration struct {
-	service  string
-	callback func(entry *zeroconf.ServiceEntry)
-}
 
 type StaticDiscovery struct {
 }
@@ -34,13 +24,7 @@ func (s *StaticDiscovery) Discover(
 	serviceName string,
 	callback func(*zeroconf.ServiceEntry),
 ) {
-	lock.Lock()
-	defer lock.Unlock()
-
-	registrations = append(registrations, &registration{
-		service:  serviceName,
-		callback: callback,
-	})
+	go s.run(serviceName, callback)
 }
 
 func (s *StaticDiscovery) Register(
@@ -48,7 +32,10 @@ func (s *StaticDiscovery) Register(
 	instance string,
 	port int,
 ) {
-	entries <- &zeroconf.ServiceEntry{
+	lock.Lock()
+	defer lock.Unlock()
+
+	entries = append(entries, &zeroconf.ServiceEntry{
 		ServiceRecord: zeroconf.ServiceRecord{
 			Instance: instance,
 			Service:  service,
@@ -58,20 +45,16 @@ func (s *StaticDiscovery) Register(
 		Port:     port,
 		AddrIPv4: nil,
 		AddrIPv6: nil,
-	}
+	})
 }
 
-func (s *StaticDiscovery) Run() {
-	for e := range entries {
-		func() {
-			lock.Lock()
-			defer lock.Unlock()
+func (s *StaticDiscovery) run(serviceName string, callback func(entry *zeroconf.ServiceEntry)) {
+	lock.Lock()
+	defer lock.Unlock()
 
-			for _, r := range registrations {
-				if e.Service == r.service {
-					go r.callback(e)
-				}
-			}
-		}()
+	for _, e := range entries {
+		if e.Service == serviceName {
+			go callback(e)
+		}
 	}
 }

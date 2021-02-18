@@ -47,6 +47,9 @@ services:
     environment:
       INSTANCE: camera-01
       FILENAME: /d/pi42.raw
+      DRAW_FRAME: resized
+      MOTION_DETECT_WIDTH: 320
+      MOTION_THRESHOLD: 4
     volumes:
       - ./dev:/d:ro
     ports:

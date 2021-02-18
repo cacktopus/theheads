@@ -7,6 +7,7 @@ import (
 	"github.com/cacktopus/theheads/boss/watchdog"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -59,7 +60,7 @@ loop:
 	}
 }
 
-func FollowEvade(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
+func FollowEvade(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	for _, head := range dj.scene.Heads {
 		go FollowClosestFocalPoint(dj, done, head, -1.0)
 	}

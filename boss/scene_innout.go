@@ -4,11 +4,11 @@ import (
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"time"
 )
 
-func InNOut(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
+func InNOut(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	center := geom.ZeroVec()
 
 	for _, h := range dj.scene.Heads {
@@ -24,7 +24,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 			theta := head.PointAwayFrom(center)
 			_, err := dj.headManager.Position("head", theta)
 			if err != nil {
-				logger.WithError(err).Error("error positioning")
+				logger.Error("error positioning", zap.Error(err))
 			}
 		}
 
@@ -38,7 +38,7 @@ func InNOut(dj *DJ, done util.BroadcastCloser, logger *logrus.Entry) {
 			theta := head.PointTo(center)
 			_, err := dj.headManager.Position("head", theta)
 			if err != nil {
-				logger.WithError(err).Error("error positioning")
+				logger.Error("error positioning", zap.Error(err))
 			}
 		}
 

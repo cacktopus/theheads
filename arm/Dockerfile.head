@@ -1,4 +1,4 @@
-FROM heads-build-common
+FROM heads-build-arm
 
 COPY common /build/common
 COPY head /build/head

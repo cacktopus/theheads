@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/theheads/camera/cpumon"
+	"github.com/cacktopus/theheads/camera/ffmpeg"
+	"github.com/cacktopus/theheads/camera/recorder"
 	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/gorilla/websocket"
@@ -66,8 +68,8 @@ func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
 		defer frameBroker.Unsubscribe(messages)
 
 		for m := range messages {
-			msg := m.(*Buffer)
-			err := ws.WriteMessage(websocket.BinaryMessage, msg.data)
+			msg := m.(*ffmpeg.Buffer)
+			err := ws.WriteMessage(websocket.BinaryMessage, msg.Data)
 			if err != nil {
 				logrus.WithError(err).Error("ws write")
 				return
@@ -110,6 +112,17 @@ func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
 
 type handler struct {
 	broker *broker.Broker
+	rec    *recorder.Recorder
+}
+
+func (h *handler) StartRecording(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+	h.rec.Record()
+	return &gen.Empty{}, nil
+}
+
+func (h *handler) StopRecording(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+	h.rec.Stop()
+	return &gen.Empty{}, nil
 }
 
 func (h *handler) Restart(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
@@ -145,9 +158,10 @@ func (h *handler) Events(empty *gen.Empty, server gen.Camera_EventsServer) error
 	return nil
 }
 
-func serveGRPC(listener net.Listener, broker *broker.Broker) {
+func serveGRPC(listener net.Listener, broker *broker.Broker, rec *recorder.Recorder) {
 	h := &handler{
 		broker: broker,
+		rec:    rec,
 	}
 
 	s := grpc.NewServer()

@@ -1,4 +1,4 @@
-package camera
+package util
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func t(section string, f func()) {
+func T(section string, f func()) {
 	if _, ok := times[section]; !ok {
 		times[section] = 0
 	}
@@ -23,7 +23,7 @@ func t(section string, f func()) {
 var times = make(map[string]time.Duration)
 
 var (
-	frameProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	FrameProcessed = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "heads_camera_frame_processed",
 	})
 

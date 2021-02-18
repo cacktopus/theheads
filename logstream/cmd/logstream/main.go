@@ -48,19 +48,15 @@ func (l *Log) Name() string {
 	panic("log")
 }
 
-var levels = map[string]string{
-	"0": "emerg",
-	"1": "alert",
-	"2": "crit",
-	"3": "err",
-	"4": "warning",
-	"5": "notice",
-	"6": "info",
-	"7": "debug",
-}
-
 type logSchema struct {
 	Priority string `json:"PRIORITY"`
+	Message  string `json:"MESSAGE"`
+}
+
+type messageSchema struct {
+	Msg     string `json:"msg"`
+	Message string `json:"message"`
+	Level   string `json:"level"`
 }
 
 func main() {
@@ -77,20 +73,29 @@ func main() {
 		scanner := bufio.NewScanner(pipe)
 		for scanner.Scan() {
 			line := scanner.Bytes()
+			b.Publish(&Log{Log: string(line)})
+
 			log := &logSchema{}
 			err := json.Unmarshal(line, log)
 			if err != nil {
-				logCounts.With(prometheus.Labels{"level": "badjson"}).Inc()
+				logCounts.WithLabelValues("not_json").Inc()
 				continue
 			}
 
-			level, ok := levels[log.Priority]
-			if !ok {
-				level = "unknown"
+			msg := &messageSchema{}
+			err = json.Unmarshal([]byte(log.Message), msg)
+			if err != nil {
+				logCounts.WithLabelValues("no_message").Inc()
+				continue
 			}
 
-			logCounts.With(prometheus.Labels{"level": level}).Inc()
-			b.Publish(&Log{Log: string(line)})
+			if msg.Level == "" {
+				logCounts.WithLabelValues("missing").Inc()
+				continue
+			}
+
+			// TODO: filter acceptable levels
+			logCounts.WithLabelValues(msg.Level).Inc()
 		}
 	}()
 

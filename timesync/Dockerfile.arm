@@ -1,0 +1,12 @@
+FROM heads-build-arm
+
+WORKDIR /build
+
+COPY common ./common
+COPY timesync ./timesync
+
+RUN cd timesync && CGO_ENABLED=1 go build .
+
+RUN mkdir app
+RUN cp timesync/timesync app
+RUN tar -czvf "timesync_0.0.0_armhf.tar.gz" app

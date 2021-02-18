@@ -20,13 +20,13 @@ VOLTAGE = prometheus_client.Gauge(
 
 CURRENT = prometheus_client.Gauge(
     "power_monitor_current",
-    "Current (mA)",
+    "Current (A)",
     ["address"],
 )
 
 POWER = prometheus_client.Gauge(
     "power_monitor_power",
-    "Power (mW)",
+    "Power (W)",
     ["address"],
 )
 

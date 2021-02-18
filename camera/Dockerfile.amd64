@@ -1,0 +1,15 @@
+FROM heads-build-amd64
+
+WORKDIR /build
+
+COPY camera /build/camera
+COPY common /build/common
+
+RUN cd camera && CGO_ENABLED=1 go build ./cmd/camera
+
+RUN mkdir app
+RUN cp camera/camera camera/index.html app
+RUN cp -r camera/js app
+
+RUN tar -czvf "camera_0.0.0_amd64.tar.gz" app
+

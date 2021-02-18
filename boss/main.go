@@ -1,7 +1,6 @@
 package boss
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
@@ -26,34 +25,6 @@ type Cfg struct {
 
 var upgrader = websocket.Upgrader{}
 
-type JournaldFormatter struct {
-}
-
-var formatter = logrus.JSONFormatter{}
-
-func (f *JournaldFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	result, err := formatter.Format(entry)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal fields to JSON, %s", err.Error())
-	}
-
-	var level string
-	switch entry.Level {
-	case logrus.ErrorLevel:
-		level = "<3>"
-	case logrus.WarnLevel:
-		level = "<4>"
-	case logrus.InfoLevel:
-		level = "<5>"
-	case logrus.DebugLevel:
-		level = "<7>"
-	default:
-		level = "<1>"
-	}
-
-	return append([]byte(level), result...), nil
-}
-
 func Run(env *Cfg, discovery discovery.Discovery) {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -61,7 +32,7 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 	}
 
 	logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetFormatter(new(JournaldFormatter))
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -109,14 +80,14 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.StaticFile("/", "./boss.html")
-
-	r.GET("/installation/:installation/scene.json", func(c *gin.Context) {
+	r.GET("/installation/dev/scene.json", func(c *gin.Context) {
 		c.JSON(200, theScene)
 	})
 
-	r.Static("/build", "./boss-ui/build")
+	r.StaticFile("/", "./boss-ui/build/index.html")
+	r.StaticFile("/manifest.json", "./boss-ui/build/manifest.json")
 	r.Static("/static", "./boss-ui/build/static")
+	r.Static("/media", "./boss-ui/build/media")
 
 	r.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -149,13 +120,12 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 		r.Run(addr)
 	}()
 
-	headManager := head_manager.NewHeadManager(logger, discovery)
-
 	dj := &DJ{
+		logger:      logger,
 		grid:        grid,
 		scene:       theScene,
-		headManager: headManager,
 		texts:       theScene.Texts, //TODO: already passing theScene
+		headManager: head_manager.NewHeadManager(logger, discovery),
 	}
 
 	dj.RunScenes()

@@ -1,0 +1,12 @@
+FROM heads-build-arm
+
+WORKDIR /build
+
+COPY common ./common
+COPY home ./home
+
+RUN cd home && CGO_ENABLED=1 go build .
+
+RUN mkdir app
+RUN cp home/home app
+RUN tar -czvf "home_0.0.0_armhf.tar.gz" app

@@ -7,9 +7,11 @@ dump.rdb
 *.wav
 *.mp3
 *.raw
+*.tar.gz
 gridbuf
 camera/camera
 boss/boss
 trace.so
 head/voices/cmd/voices/voices
 builds
+common/gen/go/heads/*.pb.go

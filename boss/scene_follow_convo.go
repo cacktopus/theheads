@@ -6,6 +6,7 @@ import (
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"math/rand"
 	"sort"
 	"time"
@@ -38,7 +39,7 @@ type FollowConvo struct {
 	textPosition int
 }
 
-func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, entry *logrus.Entry) {
+func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
 	// initialize texts if first run
 	if f.texts == nil {
 		// copy texts

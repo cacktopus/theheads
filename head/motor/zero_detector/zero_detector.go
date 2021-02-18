@@ -78,6 +78,7 @@ func (d *Detector) stepUntil(
 	for count < stepCount {
 		value, err := d.sensor.Read()
 		if err != nil {
+			d.logger.Error("error reading sensor", zap.Error(err))
 			return true // TODO: make this an actual error
 		}
 

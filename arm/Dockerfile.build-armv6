@@ -1,0 +1,33 @@
+FROM golang:1.15-buster@sha256:de109084fc947e3d6df63198ef8ef4858d2252be12ed335850d4c50fb4c4e2ea
+
+WORKDIR /pkg
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
+
+#RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
+#    wget https://theheads.sfo2.digitaloceanspaces.com/build/opencv_4.4.0-2_${arch}.deb
+#
+#RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.4.0-2_*.deb
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+
+COPY common/go.* /build/common/
+#COPY camera/go.* /build/camera/
+COPY boss/go.* /build/boss/
+COPY head/go.* /build/head/
+COPY system-tools/go.* /build/system-tools/
+
+WORKDIR /build/common/
+RUN go mod download
+
+#WORKDIR /build/camera/
+#RUN go mod download
+
+WORKDIR /build/boss/
+RUN go mod download
+
+WORKDIR /build/head/
+RUN go mod download
+
+WORKDIR /build/system-tools/
+RUN go mod download

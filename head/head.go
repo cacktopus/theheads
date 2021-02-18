@@ -77,7 +77,12 @@ func Run(env *cfg.Cfg) {
 	if env.FakeStepper {
 		sensor = null_sensor.Sensor{}
 	} else {
-		sensor = gpio_sensor.New(env.SensorPin)
+		s := gpio_sensor.New(env.SensorPin)
+		err := gpio_sensor.Initialize(s)
+		if err != nil {
+			logger.Error("error initializing sensor", zap.Error(err))
+		}
+		sensor = s
 	}
 
 	controller := motor.NewController(

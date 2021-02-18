@@ -1,0 +1,12 @@
+FROM heads-build-arm
+
+WORKDIR /build
+
+COPY common ./common
+COPY logstream ./logstream
+
+RUN cd logstream && CGO_ENABLED=1 go build ./cmd/logstream
+
+RUN mkdir app
+RUN cp logstream/logstream  app
+RUN tar -czvf "logstream_0.0.0_armhf.tar.gz" app
