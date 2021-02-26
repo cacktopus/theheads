@@ -1,7 +1,7 @@
 Adafruit-GPIO==1.0.3
 Adafruit-MotorHAT==1.4.0
 Adafruit-PureIO==0.2.3
-aiohttp==3.4.4
+aiohttp==3.7.4
 async-timeout==3.0.1
 asyncio-redis==0.15.1
 attrs==18.2.0
