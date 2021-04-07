@@ -1,7 +1,7 @@
 Adafruit-GPIO==1.0.3
 Adafruit-MotorHAT==1.4.0
 Adafruit-PureIO==0.2.3
-bottle==0.12.13
+bottle==0.12.19
 certifi==2018.10.15
 chardet==3.0.4
 Click==7.0
