@@ -10,17 +10,17 @@ import (
 func Test_sync(t *testing.T) {
 	services := discovery.NewStaticDiscovery()
 
-	c1 := &cfg{
+	c1 := &Config{
 		Port:     util.RandomPort(),
 		RTC:      true,
 		Interval: 5 * time.Second,
 	}
-	c2 := &cfg{
+	c2 := &Config{
 		Port:     util.RandomPort(),
 		RTC:      true,
 		Interval: 6 * time.Second,
 	}
-	c3 := &cfg{
+	c3 := &Config{
 		Port:     util.RandomPort(),
 		RTC:      false,
 		Interval: 7 * time.Second,

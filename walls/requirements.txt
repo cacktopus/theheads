@@ -1,0 +1,7 @@
+bridson==0.1.0
+noise==1.2.2
+numpy==1.22.0
+Polygon3==3.0.9.1
+pyhull==2015.2.1
+svgwrite==1.4.1
+triangle==20200424

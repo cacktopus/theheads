@@ -2,8 +2,8 @@ FROM heads-build-arm
 
 WORKDIR /build
 
-COPY camera /build/camera
 COPY common /build/common
+COPY camera /build/camera
 
 RUN cd camera && CGO_ENABLED=1 go build ./cmd/camera
 

@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+import glob
+import hashlib
+import os
+import shutil
+
+import sys
+
+from packages import Package
+
+
+def main():
+    fn = sys.argv[1]
+    if not os.path.exists(fn):
+        raise Exception(f"{fn} not found")
+
+    current = Package.parse(fn)
+
+    files = glob.glob(f"builds/*/{current.name}_*")
+
+    if len(files) == 0:
+        bumped = Package(
+            name=current.name,
+            arch=current.arch,
+            major=1,
+            minor=0,
+            patch=0,
+        )
+
+    else:
+        existing = [Package.parse(f) for f in files]
+        latest = max(existing, key=lambda x: x.version)
+        bumped = Package(
+            name=current.name,
+            arch=current.arch,
+            major=latest.major,
+            minor=latest.minor + 1,
+            patch=0,
+        )
+
+    assert bumped.arch == current.arch
+
+    shutil.copyfile(fn, f"builds/{bumped.arch}/{bumped.filename}")
+    digest = hashlib.sha256(open(fn, "rb").read()).hexdigest()
+    print(f"{digest}  {bumped.arch}/{bumped.filename}")
+
+
+if __name__ == '__main__':
+    main()

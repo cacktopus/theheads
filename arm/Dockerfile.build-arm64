@@ -1,19 +1,40 @@
-FROM golang:1.15-buster@sha256:83b4fd9355ba9ff2d0c78cdf6fc485f739a2834c27e3160a5026faf66f4f5913
+# Stage 0 : Build the C library
+FROM debian@sha256:87eefc7c15610cca61db5c0fd280911c6a737c0680d807432c0bd80cd0cca39b AS lib_builder
+
+WORKDIR /foundry
+
+RUN apt-get update -y && apt-get install -y build-essential cmake git
+
+RUN git clone https://github.com/jgarff/rpi_ws281x.git \
+  && cd rpi_ws281x \
+  && mkdir build \
+  && cd build \
+  && cmake -D BUILD_SHARED=OFF -D BUILD_TEST=OFF .. \
+  && cmake --build . \
+  && make install
+
+FROM golang:1.17-bullseye@sha256:97f84ead923abac2291c7e885a919fc2f0cd4fe5ac1700f1f7acd5a64c6f200f
+
+COPY --from=lib_builder /usr/local/lib/libws2811.a /usr/local/lib/
+COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
 
 WORKDIR /pkg
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
 
-COPY common/go.* /build/common/
-COPY boss/go.* /build/boss/
-COPY system-tools/go.* /build/system-tools/
+WORKDIR /build
 
-WORKDIR /build/common/
+COPY go.mod go.sum .
 RUN go mod download
 
-WORKDIR /build/boss/
-RUN go mod download
+COPY Makefile .
+COPY common common
 
-WORKDIR /build/system-tools/
-RUN go mod download
+COPY camera camera
+# COPY cmd/camera ./cmd/camera
+# RUN make bin/camera
+
+COPY leds leds
+COPY cmd/leds ./cmd/leds
+RUN make bin/leds

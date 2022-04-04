@@ -1,4 +1,4 @@
-package main
+package leds
 
 import (
 	"math"
@@ -102,7 +102,7 @@ type Simulation struct {
 	G      float64
 }
 
-func (sim *Simulation) Tick(strip *Strip, _, dt float64) {
+func (sim *Simulation) Tick(env *config, strip *Strip, _, dt float64) {
 	dt *= 0.5
 
 	da := -sim.G * dt

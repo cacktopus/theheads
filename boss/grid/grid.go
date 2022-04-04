@@ -49,24 +49,31 @@ type Grid struct {
 
 	_focalPoints *focalPoints
 
-	scene  *scene.Scene
-	broker *broker.Broker
+	scene       *scene.Scene
+	broker      *broker.Broker
+	spawnPeriod time.Duration
 }
 
 func NewGrid(
+	spawnPeriod time.Duration,
 	minX, minY, maxX, maxY float64,
 	imgsizeX, imgsizeY int,
 	scene *scene.Scene,
 	broker *broker.Broker,
 ) *Grid {
 	g := &Grid{
-		minX: minX, minY: minY, maxX: maxX, maxY: maxY,
-		imgsizeX: imgsizeX, imgsizeY: imgsizeY,
-		scene:  scene,
-		scaleX: float64(imgsizeX) / (maxX - minX),
-		scaleY: float64(imgsizeY) / (maxY - minY),
-		layers: map[string]*mat.Dense{},
-		broker: broker,
+		spawnPeriod: spawnPeriod,
+		minX:        minX,
+		minY:        minY,
+		maxX:        maxX,
+		maxY:        maxY,
+		imgsizeX:    imgsizeX,
+		imgsizeY:    imgsizeY,
+		scene:       scene,
+		scaleX:      float64(imgsizeX) / (maxX - minX),
+		scaleY:      float64(imgsizeY) / (maxY - minY),
+		layers:      map[string]*mat.Dense{},
+		broker:      broker,
 		_focalPoints: &focalPoints{
 			focalPoints: map[string]*focalPoint{},
 			broker:      broker,
@@ -166,7 +173,7 @@ func (g *Grid) traceSteps(layer *mat.Dense, posX, posY, dX, dY float64, steps in
 func (g *Grid) Start() {
 	time.Sleep(1000 * time.Millisecond)
 	for {
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(g.spawnPeriod)
 		g.withLock(func() {
 			g.maybeSpawnFocalPoint()
 		})

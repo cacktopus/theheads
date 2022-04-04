@@ -1,22 +1,22 @@
-package main
+package leds
 
-func lowred(strip *Strip, t, dt float64) {
+func lowred(env *config, strip *Strip, t, dt float64) {
 	strip.Each(func(_ int, led *Led) {
-		led.r = 0.10
+		led.r = env.Range.R * env.Lowred
 		led.g = 0
 		led.b = 0
 	})
 }
 
-func white(strip *Strip, t, dt float64) {
+func white(env *config, strip *Strip, t, dt float64) {
 	strip.Each(func(_ int, led *Led) {
-		led.r = maxBrightness
-		led.g = maxBrightness
-		led.b = maxBrightness
+		led.r = env.Range.R
+		led.g = env.Range.G
+		led.b = env.Range.B
 	})
 }
 
-func decay(strip *Strip, t, dt float64) {
+func decay(env *config, strip *Strip, t, dt float64) {
 	decayConstant := 0.99
 
 	if t < 30 {

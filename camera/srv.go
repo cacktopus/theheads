@@ -9,15 +9,12 @@ import (
 	"github.com/cacktopus/theheads/camera/recorder"
 	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"html/template"
-	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -52,12 +49,10 @@ func init() {
 	}
 }
 
-func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
-	http.HandleFunc("/jsmpeg.min.js", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "js/jsmpeg.min.js")
-	})
+func setupRoutes(frameBroker *broker.Broker, router *gin.Engine, port int) {
+	router.Static("/js", "./js")
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	router.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, http.Header{"Sec-WebSocket-Protocol": {"null"}})
 		if err != nil {
 			panic(err)
@@ -75,11 +70,9 @@ func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
 				return
 			}
 		}
-	})
+	}))
 
-	http.Handle("/metrics", promhttp.Handler())
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	router.GET("/", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.ParseFiles("index.html")
 		if err != nil {
 			panic(err)
@@ -88,26 +81,17 @@ func serveHTTP(frameBroker *broker.Broker, listener net.Listener, port string) {
 		if err != nil {
 			panic(err)
 		}
-	})
+	}))
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK\n"))
-	})
-
-	http.HandleFunc("/restart", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK\n"))
+	router.GET("/restart", func(c *gin.Context) {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			os.Exit(0)
 		}()
+		c.JSON(200, gin.H{
+			"result": "ok",
+		})
 	})
-
-	err := http.Serve(listener, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	logrus.Info("Serving http")
 }
 
 type handler struct {
@@ -156,20 +140,4 @@ func (h *handler) Events(empty *gen.Empty, server gen.Camera_EventsServer) error
 
 	logrus.Info("Events() handler finished")
 	return nil
-}
-
-func serveGRPC(listener net.Listener, broker *broker.Broker, rec *recorder.Recorder) {
-	h := &handler{
-		broker: broker,
-		rec:    rec,
-	}
-
-	s := grpc.NewServer()
-	gen.RegisterCameraServer(s, h)
-	reflection.Register(s)
-
-	err := s.Serve(listener)
-	if err != nil {
-		panic(err)
-	}
 }

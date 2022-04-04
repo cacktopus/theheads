@@ -1,13 +1,4 @@
-boss-ui/node_modules/
-walls/
-py/env/
-dev/
-head/head
-boss/boss
-camera/camera
-sounds/
-builds/
-env/
-vids/
-**/*.h264
-**/*.mp4
+/walls
+/builds
+/bin
+/packages

@@ -1,9 +1,0 @@
-FROM heads-build-amd64
-
-WORKDIR /build
-
-COPY scripts/classifier /build/classifier
-
-RUN cd classifier && CGO_ENABLED=1 go build .
-
-CMD /build/classifier

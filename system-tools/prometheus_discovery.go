@@ -2,11 +2,10 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cacktopus/theheads/common/discovery"
-	"github.com/grandcat/zeroconf"
+	"github.com/hashicorp/serf/client"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
@@ -18,7 +17,6 @@ import (
 
 type Cfg struct {
 	OutputDir string `envconfig:"optional"`
-	UseIPS    bool   `envconfig:"optional"`
 }
 
 type scrapeConfig struct {
@@ -37,67 +35,126 @@ func discoverPrometheus(logger *zap.Logger, env *Cfg) {
 	ticker := time.NewTicker(time.Minute)
 
 	for {
-		discoverLoop(logger, env)
+		err := discoverLoop(logger, env)
+		if err != nil {
+			logger.Error("error running discovery loop", zap.Error(err))
+		}
 
 		<-ticker.C
 	}
 
 }
 
-func discoverLoop(logger *zap.Logger, env *Cfg) {
+func discoverLoop(logger *zap.Logger, env *Cfg) error {
 	logger.Debug("running discovery loop")
 
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
+	serfClient, err := client.NewRPCClient("127.0.0.1:7373")
+	if err != nil {
+		return errors.Wrap(err, "connect")
+	}
+	defer serfClient.Close()
 
-	discovery.MDNSDiscovery{}.Discover(logger, ctx, "_services._dns-sd._udp", func(nameEntry *zeroconf.ServiceEntry) {
-		svc := strings.TrimSuffix(nameEntry.Instance, ".local")
-		discovery.MDNSDiscovery{}.Discover(logger, ctx, svc, func(entry *zeroconf.ServiceEntry) {
-			tags := map[string]string{}
-			for _, t := range entry.Text {
-				if !strings.Contains(t, "=") {
-					continue
-				}
-				parts := strings.SplitN(t, "=", 2)
-				key, val := parts[0], parts[1]
-				tags[key] = val
-			}
-			strPort, ok := tags["prometheus_metrics_port"]
-			if ok {
-				buildPromFile(logger, env, entry, strPort)
-			}
-		})
-	})
+	members, err := serfClient.Members()
+	if err != nil {
+		return errors.Wrap(err, "members")
+	}
 
-	<-ctx.Done()
-	logger.Debug("finished discovery loop")
+	for _, m := range members {
+		for k, v := range m.Tags {
+			if !strings.HasPrefix(k, "s:") {
+				continue
+			}
+
+			srv, err := parseSerfService(logger, k, v)
+			if err != nil {
+				logger.Warn("error parsing service", zap.Error(err))
+				continue
+			}
+
+			if srv.ServicePort == 0 {
+				continue
+			}
+
+			buildPromFile(logger, env, &prometheusService{
+				Hostname:    m.Name,
+				ServiceName: srv.Name,
+				Port:        srv.ServicePort,
+			})
+		}
+	}
+
+	return nil
 }
 
-func buildPromFile(logger *zap.Logger, env *Cfg, entry *zeroconf.ServiceEntry, strPort string) {
-	instance := strings.Replace(entry.Instance, `\ `, " ", -1)
+type serfService struct {
+	Name        string
+	ServicePort int
+}
 
+func parseSerfService(logger *zap.Logger, k string, v string) (*serfService, error) {
+	result := &serfService{}
+
+	{
+		parts := strings.Split(k, ":")
+		if len(parts) != 2 {
+			return nil, errors.New("invalid service name")
+		}
+		if parts[0] != "s" {
+			return nil, errors.New("invalid service name")
+		}
+
+		result.Name = parts[1]
+	}
+
+	{
+		v = strings.TrimSpace(v)
+		if len(v) == 0 {
+			return result, nil
+		}
+		pairs := strings.Split(v, " ")
+		for _, pair := range pairs {
+			parts := strings.Split(pair, ":")
+			if len(parts) < 2 {
+				return nil, errors.New("invalid pair")
+			}
+			rest := strings.Join(parts[1:], ":")
+			tagname := parts[0]
+			switch tagname {
+			case "sp":
+				sp, err := strconv.Atoi(rest)
+				if err != nil {
+					return nil, errors.Wrap(err, "invalid port")
+				}
+				result.ServicePort = sp
+			default:
+				logger.Warn("unknown service tag", zap.String("tag", tagname))
+			}
+		}
+	}
+
+	return result, nil
+}
+
+type prometheusService struct {
+	Hostname    string
+	ServiceName string
+	Port        int
+}
+
+func buildPromFile(logger *zap.Logger, env *Cfg, entry *prometheusService) {
 	logger = logger.With(
-		zap.String("service", entry.Service),
-		zap.String("instance", instance),
-		zap.String("hostname", entry.HostName),
+		zap.String("service", entry.ServiceName),
+		zap.String("hostname", entry.Hostname),
 	)
 
-	port, err := strconv.Atoi(strPort)
-	if err != nil {
-		logger.Error("invalid port")
+	job := serviceName(entry.ServiceName)
+
+	if entry.Hostname == "raspberrypi" {
+		// TODO: log
+		return // silently ignore
 	}
 
-	job := serviceName(entry.Service)
-
-	host := strings.TrimSuffix(entry.HostName, ".")
-
-	var target string
-	if env.UseIPS {
-		target = fmt.Sprintf("%s:%s", entry.AddrIPv4[0].String(), strPort)
-	} else {
-		target = fmt.Sprintf("%s:%s", host, strPort)
-	}
+	target := fmt.Sprintf("%s:%d", entry.Hostname, entry.Port)
 
 	cfg := scrapeConfig{
 		Targets: []string{
@@ -105,11 +162,11 @@ func buildPromFile(logger *zap.Logger, env *Cfg, entry *zeroconf.ServiceEntry, s
 		},
 		Labels: map[string]string{
 			"job":  job,
-			"host": host,
+			"host": entry.Hostname,
 		},
 	}
 
-	filename := strings.Replace(fmt.Sprintf("%s-%s", job, host), ".", "_", -1) + ".yml"
+	filename := strings.Replace(fmt.Sprintf("%s-%s", job, entry.Hostname), ".", "_", -1) + ".yml"
 	fn := path.Join(env.OutputDir, filename)
 
 	configs := []*scrapeConfig{&cfg}
@@ -118,7 +175,7 @@ func buildPromFile(logger *zap.Logger, env *Cfg, entry *zeroconf.ServiceEntry, s
 	existing := []byte("")
 
 	logger = logger.With(
-		zap.Int("prometheus_port", port),
+		zap.Int("prometheus_port", entry.Port),
 		zap.String("filename", filename),
 	)
 

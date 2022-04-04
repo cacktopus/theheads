@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-type motionDetector struct {
-	// TODO: have a separate Cfg for motionDetector so we don't have to import this
+type MotionDetector struct {
+	// TODO: have a separate Cfg for MotionDetector so we don't have to import this
 	env *cfg.Cfg
 
 	avg        gocv.Mat
@@ -29,8 +29,8 @@ type motionDetector struct {
 	frames map[string]*gocv.Mat
 }
 
-func NewMotionDetector(env *cfg.Cfg) *motionDetector {
-	md := &motionDetector{
+func NewMotionDetector(env *cfg.Cfg) *MotionDetector {
+	md := &MotionDetector{
 		env:        env,
 		avg:        gocv.NewMat(),
 		frameDelta: gocv.NewMat(),
@@ -73,12 +73,13 @@ func NewMotionDetector(env *cfg.Cfg) *motionDetector {
 }
 
 type MotionRecord struct {
-	Bounds image.Rectangle
-	X      int
-	Area   float64
+	Bounds     image.Rectangle
+	X          int
+	Area       float64
+	FrameWidth int // width of original full frame used to perform motion detection
 }
 
-func (md *motionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
+func (md *MotionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
 	util.T("copy", func() {
 		m.CopyTo(&md.orig)
 	})
@@ -96,7 +97,6 @@ func (md *motionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
 	})
 
 	util.T("roi", func() {
-		// TODO: not sure if ROI will mess up motion line (angle) calculations
 		sz := md.resized.Size()
 		width, height := sz[1], sz[0]
 
@@ -138,17 +138,31 @@ func (md *motionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
 	var records []*MotionRecord
 	for _, c := range contours {
 		bounds := gocv.BoundingRect(c)
+
+		// add the "clipped" sections that were "removed" when doing ROI so
+		// that we are working in full frame coordinates.
+		bounds.Min.X += md.roiP0.X
+		bounds.Min.Y += md.roiP0.Y
+		bounds.Max.X += md.roiP0.X
+		bounds.Max.Y += md.roiP0.Y
+
+		x := bounds.Min.X + bounds.Dx()/2 // middle of the bounding box
+
+		sz := md.resized.Size()
+		frameWidth := sz[1]
+
 		records = append(records, &MotionRecord{
-			Bounds: bounds,
-			X:      bounds.Min.X + bounds.Dx()/2,
-			Area:   gocv.ContourArea(c),
+			Bounds:     bounds,
+			X:          x,
+			Area:       gocv.ContourArea(c),
+			FrameWidth: frameWidth,
 		})
 	}
 
 	return records
 }
 
-func (md *motionDetector) GetFrame(name string) (*gocv.Mat, bool) {
+func (md *MotionDetector) GetFrame(name string) (*gocv.Mat, bool) {
 	m, ok := md.frames[name]
 	return m, ok
 }

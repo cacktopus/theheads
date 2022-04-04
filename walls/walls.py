@@ -6,19 +6,18 @@ from typing import List, Tuple
 import Polygon
 import Polygon.IO
 import noise
+import svgwrite
 from bridson import poisson_disc_samples
 from pyhull.delaunay import DelaunayTri
 
 import geom
 from config import Config
 from geom import tess, centroid, make_stl, circle_points
-from transformations import Vec
-import svgwrite
-
 # Ideas
 # Cull small or narrow cells
 # Leave some cells filled in
 from inset import inset, make_convex
+from transformations import Vec
 
 inner = Config(
     r=13.5,
@@ -32,14 +31,14 @@ inner = Config(
 )
 
 outer = Config(
-    r=6,
-    line_width=1.175,
+    r=11,
+    line_width=2.0,
     pad_x=8,
     pad_y=4,
 
     width=146,
     height=79,
-    depth=1.75,
+    depth=2,
 )
 
 cfg = outer
@@ -149,7 +148,7 @@ class Wall:
         for i in range(len(self.result)):
             cont = self.result[i]
             contours.append(
-                list(reversed(cont)))  # Not sure why I need to reverse here, but we have the wrong orientation
+                list(cont))
             print(self.result.orientation(i), self.result.isHole(i), cont)
 
             if self.result.isHole(i):
@@ -158,7 +157,7 @@ class Wall:
                     holes.append(h)
 
         B, A = tess(contours, holes)
-        make_stl(self.name, contours, B, A, 1.75)
+        make_stl(self.name, contours, B, A, self.cfg.depth)
 
     def to_svg(self, svg):
         svg = svg or svgwrite.Drawing(f'{self.name}.svg', profile='tiny')
@@ -324,7 +323,7 @@ def main():
     prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
     for i in range(1):
-        wall = Wall(f"wall{i}", inner, x_offset=i * (146 + 10))
+        wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
         wall.make_stl()

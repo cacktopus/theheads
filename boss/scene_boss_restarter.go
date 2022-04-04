@@ -9,7 +9,7 @@ import (
 )
 
 func BossRestarter(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
-	rate_limiter.Limit("boss.restart", time.Hour, func() {
+	rate_limiter.LimitTrailing("boss.restart", time.Hour, func() {
 		os.Exit(0)
 	})
 

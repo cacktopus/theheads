@@ -1,4 +1,4 @@
-package main
+package leds
 
 import (
 	"math/rand"
@@ -7,7 +7,7 @@ import (
 func cycle(callbacks ...callback) callback {
 	count := rand.Int()
 
-	return func(strip *Strip, t, dt float64) {
+	return func(env *config, strip *Strip, t, dt float64) {
 		if rand.Float64() < 0.0005 {
 			count++
 		}
@@ -15,6 +15,6 @@ func cycle(callbacks ...callback) callback {
 		i := count % len(callbacks)
 		cb := callbacks[i]
 
-		cb(strip, t, dt)
+		cb(env, strip, t, dt)
 	}
 }
