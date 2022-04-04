@@ -1,6 +1,7 @@
 package standard_server
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -8,7 +9,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"io"
 	"net"
+	"os"
 )
 
 type Server struct {
@@ -46,8 +49,22 @@ func NewServer(cfg *Config) (*Server, error) {
 
 	reflection.Register(s.grpcServer)
 
+	rp, wp := io.Pipe()
+	go func() {
+		scanner := bufio.NewScanner(rp)
+		for scanner.Scan() {
+			line := scanner.Text()
+			cfg.Logger.Info("gin logged", zap.String("line", line))
+		}
+	}()
+
+	if _, present := os.LookupEnv("GIN_MODE"); !present {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	s.router = gin.New()
 	s.router.Use(gin.Recovery())
+	skipLogging := []string{"/metrics", "/health"}
+	s.router.Use(gin.LoggerWithWriter(wp, skipLogging...))
 
 	if cfg.HttpSetup != nil {
 		err = cfg.HttpSetup(s.router)

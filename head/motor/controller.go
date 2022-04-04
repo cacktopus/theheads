@@ -55,6 +55,7 @@ func hasStep(steps []Direction, direction Direction) bool {
 }
 
 type Cfg struct {
+	MotorID               int `envconfig:"default=0"`
 	NumSteps              int `envconfig:"default=200"`
 	StepSpeed             int `envconfig:"default=30"`
 	DirectionChangePauses int `envconfig:"default=10"`
@@ -243,4 +244,12 @@ func (s *Controller) SetCurrentPositionAsZero() {
 
 	s.pos = 0
 	s.target = 0
+}
+
+func (s *Controller) TurnOffMotor() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.motor.Off()
+	return errors.Wrap(err, "motor off")
 }

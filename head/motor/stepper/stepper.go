@@ -16,26 +16,29 @@ var stepMap = map[motor.Direction]i2c.AdafruitDirection{
 type Motor struct {
 	logger *zap.Logger
 	driver *i2c.AdafruitMotorHatDriver
+
+	motorID int
 }
 
 func (s *Motor) Start() error {
 	return s.driver.Start()
 }
 
-func New(logger *zap.Logger) (*Motor, error) {
+func New(logger *zap.Logger, motorID int) (*Motor, error) {
 	r := raspi.NewAdaptor()
 	driver := i2c.NewAdafruitMotorHatDriver(r)
 
 	// Set to a large value; we want to set a really small delay
-	// so that we can control the steps and delays ourself
-	err := driver.SetStepperMotorSpeed(0, 1_000_000)
+	// so that we can control the steps and delays ourselves
+	err := driver.SetStepperMotorSpeed(motorID, 1_000_000)
 	if err != nil {
 		return nil, errors.Wrap(err, "set motor speed")
 	}
 
 	return &Motor{
-		logger: logger,
-		driver: driver,
+		logger:  logger,
+		driver:  driver,
+		motorID: motorID,
 	}, nil
 }
 
@@ -44,6 +47,11 @@ func (s *Motor) Step(direction motor.Direction) error {
 		return nil
 	}
 	dir := stepMap[direction]
-	err := s.driver.Step(0, 1, dir, i2c.AdafruitSingle)
+	err := s.driver.Step(s.motorID, 1, dir, i2c.AdafruitSingle)
 	return errors.Wrap(err, "step")
+}
+
+func (s *Motor) Off() error {
+	err := s.driver.RunDCMotor(s.motorID, i2c.AdafruitRelease)
+	return errors.Wrap(err, "release")
 }

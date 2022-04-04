@@ -16,14 +16,14 @@ from transformations import Vec
 from walls import Wall
 
 circles_cfg = Config(
-    r=6.5,
+    r=13,
     line_width=2,
     pad_x=8,
     pad_y=4,
 
     width=146,
     height=79,
-    depth=1.75,
+    depth=2,
 )
 
 
@@ -50,14 +50,14 @@ def fun_circles(cfg, seed: int):
     random.seed(seed)
     wall = Wall(f"fun-circles-{seed}", cfg)
 
-    points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.80)
+    points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.70)
 
     radii = {}
     for i in range(len(points)):
         radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
 
     for i, point in enumerate(points):
-        r = radii[i] * 0.95
+        r = radii[i] * 1.05
         center = Vec(*point)
         points = circle_points(center, r, 20)
 
@@ -153,8 +153,9 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
 
 def main():
     # fun_circles(circles_cfg)
-    for i in range(8):
-        fun_circles(circles_cfg, i)
+    # for i in range(1):
+    #     fun_circles(circles_cfg, i)
+    mitchell(circles_cfg, 1)
 
 
 if __name__ == '__main__':

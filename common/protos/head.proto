@@ -20,10 +20,25 @@ message HeadState {
   double eta = 6;
 }
 
+message ReadHallEffectSensorOut {
+  bool active = 1;
+}
+
+message ReadMagnetSensorOut {
+  double bx = 1;
+  double by = 2;
+  double bz = 3;
+  double b = 4;
+  double temperature = 5;
+}
+
 
 service head {
   rpc rotation(RotationIn) returns (HeadState);
   rpc status(Empty) returns (HeadState);
   rpc find_zero(Empty) returns (Empty);
   rpc events(Empty) returns (stream Event);
+  rpc read_hall_effect_sensor(Empty) returns (ReadHallEffectSensorOut);
+  rpc read_magnet_sensor(Empty) returns (ReadMagnetSensorOut);
+  rpc motor_off(Empty) returns (Empty);
 }

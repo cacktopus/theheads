@@ -64,18 +64,6 @@ func main() {
 			panic(err)
 		}
 
-		//fmt.Println("")
-		//fmt.Println("")
-		//fmt.Println(s)
-		//fmt.Println("")
-		//fmt.Println(log)
-		//fmt.Println("")
-
-		// TODO!!
-		if log.SystemdUnit == "syncthing.service" {
-			continue
-		}
-
 		fmt.Println(log.Hostname, log.Unit, log.SyslogIdentifier, log.SystemdUnit)
 		fmt.Println(log.Message)
 		fmt.Println("")

@@ -16,11 +16,14 @@ import (
 	"github.com/cacktopus/theheads/head/motor/stepper"
 	"github.com/cacktopus/theheads/head/sensor"
 	"github.com/cacktopus/theheads/head/sensor/gpio_sensor"
+	"github.com/cacktopus/theheads/head/sensor/magnetometer"
 	"github.com/cacktopus/theheads/head/sensor/null_sensor"
 	"github.com/cacktopus/theheads/head/voices"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"math"
 	"time"
 )
 
@@ -57,7 +60,7 @@ func Run(env *cfg.Cfg) {
 	if env.FakeStepper {
 		driver = fake_stepper.NewMotor()
 	} else {
-		driver, err = stepper.New(logger)
+		driver, err = stepper.New(logger, env.Motor.MotorID)
 		if err != nil {
 			panic(err)
 		}
@@ -85,6 +88,11 @@ func Run(env *cfg.Cfg) {
 		sensor = s
 	}
 
+	mm, err := magnetometer.Setup(logger, env.EnableMagnetSensor, env.MagnetSensorAddrs)
+	if err != nil {
+		panic(err)
+	}
+
 	controller := motor.NewController(
 		logger,
 		driver,
@@ -104,6 +112,7 @@ func Run(env *cfg.Cfg) {
 		logger,
 		seeker,
 		sensor,
+		mm,
 		&env.Motor,
 	)
 
@@ -131,8 +140,42 @@ func Run(env *cfg.Cfg) {
 		panic(err)
 	}
 
+	setupMetrics(mm)
+
 	err = s.Run()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func setupMetrics(mm magnetometer.Sensor) {
+	prometheus.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "heads",
+		Subsystem: "magnet_sensor",
+		Name:      "magnetic_field",
+	}, func() float64 {
+		if !mm.HasHardware() {
+			return math.NaN()
+		}
+		read, err := mm.Read()
+		if err != nil {
+			return math.NaN()
+		}
+		return read.B
+	}))
+
+	prometheus.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "heads",
+		Subsystem: "magnet_sensor",
+		Name:      "temperature",
+	}, func() float64 {
+		if !mm.HasHardware() {
+			return math.NaN()
+		}
+		read, err := mm.Read()
+		if err != nil {
+			return math.NaN()
+		}
+		return read.Temperature
+	}))
 }

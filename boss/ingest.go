@@ -10,12 +10,11 @@ import (
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/grandcat/zeroconf"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"strings"
 	"sync"
-	time "time"
+	"time"
 )
 
 func init() {
@@ -35,18 +34,18 @@ func stream(logger *zap.Logger, discovery discovery.Discovery, serviceName strin
 	allAddr := map[string]bool{}
 	var lock sync.Mutex
 
+	logger = logger.With(zap.String("service", serviceName))
+
 	ctx := context.Background()
 
 	discovery.Discover(logger, ctx, fmt.Sprintf("_%s._tcp", serviceName),
 		func(entry *zeroconf.ServiceEntry) {
 			host := strings.TrimRight(entry.HostName, ".")
 			addr := fmt.Sprintf("%s:%d", host, entry.Port)
-			logrus.
-				WithField("instance", entry.Instance).
-				WithField("addr", addr).
-				WithField("service", serviceName).
-				Info("found service")
-
+			logger.Info("found service",
+				zap.String("instance", entry.Instance),
+				zap.String("addr", addr),
+			)
 			lock.Lock()
 			defer lock.Unlock()
 			_, found := allAddr[addr]
@@ -58,8 +57,10 @@ func stream(logger *zap.Logger, discovery discovery.Discovery, serviceName strin
 	)
 }
 
-func streamHead(b *broker.Broker, addr string) {
+func streamHead(logger *zap.Logger, b *broker.Broker, addr string) {
 	//TODO: DRY with streamCamera
+
+	logger = logger.With(zap.String("service", "head"), zap.String("address", addr))
 
 	for {
 		err := func() error {
@@ -89,13 +90,15 @@ func streamHead(b *broker.Broker, addr string) {
 			}
 		}()
 
-		logrus.WithError(err).Warn("streaming error") // TODO: more fields
-		time.Sleep(5 * time.Second)                   // TODO: exponential backoff
-		logrus.Info("retrying stream")                // TODO: more fields
+		logger.Error("streaming error", zap.Error(err))
+		time.Sleep(5 * time.Second) // TODO: exponential backoff
+		logger.Info("retrying stream")
 	}
 }
 
-func streamCamera(b *broker.Broker, addr string) {
+func streamCamera(logger *zap.Logger, b *broker.Broker, addr string) {
+	logger = logger.With(zap.String("service", "head"), zap.String("address", addr))
+
 	for {
 		err := func() error {
 			conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -124,9 +127,9 @@ func streamCamera(b *broker.Broker, addr string) {
 			}
 		}()
 
-		logrus.WithError(err).Warn("streaming error") // TODO: more fields
-		time.Sleep(5 * time.Second)                   // TODO: exponential backoff
-		logrus.Info("retrying stream")                // TODO: more fields
+		logger.Error("streaming error", zap.Error(err))
+		time.Sleep(5 * time.Second) // TODO: exponential backoff
+		logger.Info("retrying stream")
 	}
 }
 

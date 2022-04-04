@@ -9,7 +9,10 @@ import (
 	"github.com/cacktopus/theheads/head/motor"
 	"github.com/cacktopus/theheads/head/motor/zero_detector"
 	"github.com/cacktopus/theheads/head/sensor"
+	"github.com/cacktopus/theheads/head/sensor/magnetometer"
+	zero_detector2 "github.com/cacktopus/theheads/head/sensor/magnetometer/zero_detector"
 	"github.com/cacktopus/theheads/head/voices"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -25,7 +28,16 @@ type Handler struct {
 	seeker motor.Actor
 	sensor sensor.Sensor
 
-	motorCfg *motor.Cfg
+	motorCfg     *motor.Cfg
+	magnetometer magnetometer.Sensor
+}
+
+func (h *Handler) MotorOff(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+	err := h.controller.TurnOffMotor()
+	if err != nil {
+		return nil, errors.Wrap(err, "turn off motor")
+	}
+	return &gen.Empty{}, nil
 }
 
 func NewHandler(
@@ -34,15 +46,17 @@ func NewHandler(
 	logger *zap.Logger,
 	seeker motor.Actor,
 	sensor sensor.Sensor,
+	magnetometer magnetometer.Sensor,
 	motorCfg *motor.Cfg,
 ) *Handler {
 	return &Handler{
-		controller: controller,
-		limiter:    limiter,
-		logger:     logger,
-		seeker:     seeker,
-		sensor:     sensor,
-		motorCfg:   motorCfg,
+		controller:   controller,
+		limiter:      limiter,
+		logger:       logger,
+		seeker:       seeker,
+		sensor:       sensor,
+		motorCfg:     motorCfg,
+		magnetometer: magnetometer,
 	}
 }
 
@@ -73,12 +87,23 @@ func (h *Handler) Events(empty *gen.Empty, server gen.Head_EventsServer) error {
 func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
 	h.logger.Info("find_zero called")
 
-	detector := zero_detector.NewDetector(
-		h.logger,
-		h.sensor,
-		h.motorCfg.NumSteps,
-		h.motorCfg.DirectionChangePauses,
-	)
+	var detector motor.Actor
+	if h.magnetometer.HasHardware() {
+		detector = zero_detector2.NewZeroDetector(
+			h.logger,
+			h.magnetometer,
+			h.motorCfg.NumSteps,
+			h.motorCfg.DirectionChangePauses,
+		)
+	} else {
+		detector = zero_detector.NewDetector(
+			h.logger,
+			h.sensor,
+			h.motorCfg.NumSteps,
+			h.motorCfg.DirectionChangePauses,
+		)
+	}
+
 	h.controller.SetActor(detector)
 
 	return &gen.Empty{}, nil
@@ -110,6 +135,29 @@ func (h *Handler) Rotation(ctx context.Context, in *gen.RotationIn) (*gen.HeadSt
 	h.controller.SetTargetRotation(in.Theta)
 
 	return h.headState(), nil
+}
+
+func (h *Handler) ReadHallEffectSensor(ctx context.Context, empty *gen.Empty) (*gen.ReadHallEffectSensorOut, error) {
+	active, err := h.sensor.Read()
+	if err != nil {
+		return nil, errors.Wrap(err, "read sensor")
+	}
+
+	return &gen.ReadHallEffectSensorOut{Active: active}, nil
+}
+
+func (h *Handler) ReadMagnetSensor(ctx context.Context, empty *gen.Empty) (*gen.ReadMagnetSensorOut, error) {
+	read, err := h.magnetometer.Read()
+	if err != nil {
+		return nil, errors.Wrap(err, "read")
+	}
+	return &gen.ReadMagnetSensorOut{
+		Bx:          read.Bx,
+		By:          read.By,
+		Bz:          read.Bz,
+		B:           read.B,
+		Temperature: read.Temperature,
+	}, nil
 }
 
 func Serve(

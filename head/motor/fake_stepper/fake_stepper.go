@@ -18,3 +18,7 @@ func (m *Motor) Step(direction motor.Direction) error {
 func (m *Motor) Start() error {
 	return nil
 }
+
+func (m *Motor) Off() error {
+	return nil
+}

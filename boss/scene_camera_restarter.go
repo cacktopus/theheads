@@ -11,7 +11,7 @@ import (
 )
 
 func CameraRestarter(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
-	rate_limiter.Limit("camera.restart", 10*time.Minute, func() {
+	rate_limiter.LimitTrailing("camera.restart", 10*time.Minute, func() {
 		if len(dj.grid.GetFocalPoints()) == 0 {
 			return
 		}

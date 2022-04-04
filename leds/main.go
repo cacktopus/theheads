@@ -1,72 +1,104 @@
-package main
+package leds
 
 import (
-	"fmt"
+	"context"
+	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/common/standard_server"
 	"github.com/gin-gonic/gin"
-	"github.com/gvalkov/golang-evdev"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
 
-const (
-	defaultNumLeds    = 74
-	defaultStartIndex = 10
+type config struct {
+	NumLeds    int     `envconfig:"default=74"`
+	StartIndex int     `envconfig:"default=10"`
+	Length     float64 `envconfig:"default=2.466"` // 5.0*74.0/150.0
 
-	updatePeriod = 40 * time.Millisecond
-	enableIR     = false
-)
+	Animation string `envconfig:"default=rainbow"`
 
-func setup() *Strip {
-	strNumLeds, ok := os.LookupEnv("NUM_LEDS")
-	numLeds := defaultNumLeds
+	UpdatePeriod time.Duration `envconfig:"default=40ms"`
+	EnableIR     bool          `envconfig:"default=false"`
 
-	if ok {
-		var err error
-		numLeds, err = strconv.Atoi(strNumLeds)
-		if err != nil {
-			panic(err)
-		}
+	Scale float64 `envconfig:"default=1.0"`
+
+	Lowred float64 `envconfig:"default=0.5"`
+
+	Range struct {
+		R float64 `envconfig:"default=0.5"`
+		G float64 `envconfig:"default=0.75"`
+		B float64 `envconfig:"default=0.75"`
 	}
 
-	strStartIndex, ok := os.LookupEnv("START_INDEX")
-	startIndex := defaultStartIndex
-	if ok {
-		var err error
-		startIndex, err = strconv.Atoi(strStartIndex)
-		if err != nil {
-			panic(err)
-		}
-	}
+	Debug bool `envconfig:"default=false"`
+}
 
-	conn := SetupSPI()
-	strip := NewStrip(numLeds, startIndex, 5.0*74.0/150.0, conn) // TODO: length is all wrong here; not general
+func setup(env *config) *Strip {
+	strip, err := NewStrip(env)
+	if err != nil {
+		panic(err)
+	}
 
 	// reset
-	strip.send()
+	err = strip.send2()
+	if err != nil {
+		panic(err)
+	}
 
 	return strip
 }
 
-func runLeds(strip *Strip, animations map[string]callback, ch <-chan callback, done <-chan bool) {
+func runLeds(
+	logger *zap.Logger,
+	env *config,
+	strip *Strip,
+	animations map[string]callback,
+	ch <-chan callback,
+	done <-chan bool,
+) error {
+	cb := animations[env.Animation]
+
+	err := mainloop(env, strip, cb, ch, done)
+	if err != nil {
+		return errors.Wrap(err, "mainloop")
+	}
+
+	logger.Info("shutting down leds")
+
+	// cleanup: set to low red
+	strip.Each(func(_ int, led *Led) {
+		led.r = env.Range.R * env.Lowred
+		led.g = 0
+		led.b = 0
+	})
+
+	err = strip.send2()
+	if err != nil {
+		return errors.Wrap(err, "send2")
+	}
+
+	strip.Fini()
+
+	return nil
+}
+
+func mainloop(
+	env *config,
+	strip *Strip,
+	cb callback,
+	ch <-chan callback,
+	done <-chan bool,
+) error {
 	startTime := time.Now()
 	t0 := startTime
 
-	var animation = "rainbow"
+	ticker := time.NewTicker(env.UpdatePeriod)
 
-	if a, ok := os.LookupEnv("ANIMATION"); ok {
-		animation = a
-	}
-
-	cb := animations[animation]
-
-	ticker := time.NewTicker(updatePeriod)
-
-loop:
 	for {
 		select {
 		case new_cb := <-ch:
@@ -77,30 +109,45 @@ loop:
 			t := now.Sub(startTime).Seconds()
 			dt := now.Sub(t0).Seconds()
 
-			if dt > 2*updatePeriod.Seconds() {
-				dt = 2 * updatePeriod.Seconds()
+			if dt > 2*env.UpdatePeriod.Seconds() {
+				dt = 2 * env.UpdatePeriod.Seconds()
 			}
 
-			cb(strip, t, dt)
+			cb(env, strip, t, dt)
 			t0 = now
-			strip.send()
+			err := strip.send2()
+			if err != nil {
+				return errors.Wrap(err, "send2")
+			}
 		case <-done:
-			break loop
+			return nil
 		}
 	}
-
-	// cleanup: set to low red
-	strip.Each(func(_ int, led *Led) {
-		led.r = 0.10
-		led.g = 0
-		led.b = 0
-	})
-
-	strip.send()
 }
 
-func main() {
-	strip := setup()
+type Handler struct {
+	ch         chan (callback)
+	animations map[string]callback
+}
+
+func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
+	fn, ok := h.animations[in.Name]
+	if !ok {
+		return nil, errors.New("unknown animation")
+	}
+
+	h.ch <- fn
+	return &gen.Empty{}, nil
+}
+
+func Run(logger *zap.Logger) error {
+	env := &config{}
+	err := envconfig.Init(env)
+	if err != nil {
+		panic(err)
+	}
+
+	strip := setup(env)
 
 	var animations = map[string]callback{
 		"rainbow": rainbow(strip),
@@ -114,76 +161,55 @@ func main() {
 		),
 	}
 
-	addr := ":8082"
 	ch := make(chan callback)
 
-	r := gin.New()
-	r.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/metrics", "/health"),
-		gin.Recovery(),
-	)
+	h := &Handler{
+		ch:         ch,
+		animations: animations,
+	}
 
-	r.GET("/health", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.JSON(200, gin.H{
-			"result": "ok",
-		})
+	server, err := standard_server.NewServer(&standard_server.Config{
+		Logger: logger,
+		Port:   8082,
+		GrpcSetup: func(grpcServer *grpc.Server) error {
+			gen.RegisterLedsServer(grpcServer, h)
+			return nil
+		},
+		HttpSetup: func(r *gin.Engine) error {
+			r.GET("/run/:name", func(c *gin.Context) {
+				name := c.Param("name")
+				fn, ok := animations[name]
+				if ok {
+					ch <- fn
+					c.Header("Access-Control-Allow-Origin", "*")
+					c.JSON(200, gin.H{"result": "ok"})
+				}
+			})
+			return nil
+		},
 	})
 
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
-
-	r.GET("/run/:name", func(c *gin.Context) {
-		name := c.Param("name")
-		fn, ok := animations[name]
-		if ok {
-			ch <- fn
-			c.Header("Access-Control-Allow-Origin", "*")
-			c.JSON(200, gin.H{"result": "ok"})
-		}
-	})
+	if err != nil {
+		panic(err)
+	}
 
 	go func() {
-		r.Run(addr)
+		panic(server.Run())
 	}()
 
-	if enableIR {
-		device, err := evdev.Open("/dev/input/event0")
-		if err != nil {
-			panic(err)
-		}
-
-		go func() {
-			for {
-				event, err := device.ReadOne()
-				if err != nil {
-					panic(err)
-				}
-				fmt.Println(event)
-				if event.Code == 4 && event.Type == 4 {
-					log.Println("code", event.Code)
-					switch event.Value {
-					case 48912: // 1
-						ch <- animations["bounce"]
-					case 48913: // 2
-						ch <- animations["rainbow"]
-					case 48896: // vol-
-						strip.ScaleDown()
-					case 48898: // vol+
-						strip.ScaleUp()
-					}
-				}
-			}
-		}()
+	if env.EnableIR {
+		runIR(ch, animations, strip)
 	}
 
 	signals := make(chan os.Signal, 1)
 	done := make(chan bool)
-	signal.Notify(signals, syscall.SIGTERM)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
 		<-signals
 		done <- true
 	}()
 
-	runLeds(strip, animations, ch, done)
+	err = runLeds(logger, env, strip, animations, ch, done)
+	return errors.Wrap(err, "run leds")
 }

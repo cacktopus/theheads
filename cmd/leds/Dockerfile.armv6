@@ -1,0 +1,14 @@
+FROM heads-build-armv6
+
+WORKDIR /build
+
+COPY common ./common
+COPY leds ./leds
+COPY cmd/leds ./cmd/leds
+
+RUN make bin/leds
+
+RUN mkdir app
+RUN cp bin/leds app
+
+RUN tar -czvf "leds_0.0.0_armv6.tar.gz" app

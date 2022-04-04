@@ -15,16 +15,17 @@ func rn2(a, b float64) float64 {
 }
 
 const (
-	xPad   = 10.0
-	yPad   = 8.0
-	width  = 146.0
-	height = 79.0
+	xPad    = 10.0
+	yPad    = 8.0
+	width   = 146.0
+	height  = 79.0
 	yOffset = 100.0
 
-	numCircles    = 2500
-	numCandidates = 1000
+	numCircles    = 2500 / 2
+	numCandidates = 1000 / 2
 
-	maxR        = 5.5
+	maxR        = 9
+	minR        = 1
 	minDistance = 1.0
 )
 
@@ -64,7 +65,12 @@ func addCircle(circles []*circle) ([]*circle, bool) {
 		return circles, false
 	}
 
-	bestCandidate.R = math.Min(bestCandidate.R, maxR - minDistance)
+	bestCandidate.R = math.Min(bestCandidate.R, maxR-minDistance)
+
+	if bestCandidate.R < minR {
+		return circles, false
+	}
+
 	circles = append(circles, bestCandidate)
 
 	return circles, true
@@ -94,14 +100,12 @@ func main() {
 		}
 	}
 
-	count := 0
 	var result []*circle
 	for _, c := range circles {
 		r := c.R
-		if r < 0.5 {
+		if r < minR {
 			continue
 		}
-		count += 1
 		canvas.Circle(c.X, c.Y, r, "fill:white;stroke:white")
 		result = append(result, &circle{c.X, c.Y, r})
 	}

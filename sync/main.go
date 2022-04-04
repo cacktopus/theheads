@@ -30,7 +30,7 @@ func sync(dir, host string) {
 		"--bwlimit", "1000k",
 		"-av",
 		dir + "/",
-		fmt.Sprintf("syncthing@%s:", host),
+		fmt.Sprintf("static@%s:", host),
 	}
 
 	r, w, err := os.Pipe()

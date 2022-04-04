@@ -1,4 +1,4 @@
-package main
+package leds
 
 type Vec2 struct {
 	x, y float64

@@ -1,4 +1,4 @@
-package main
+package leds
 
 import (
 	"github.com/larspensjo/Go-simplex-noise/simplexnoise"
@@ -24,24 +24,24 @@ func rainbow(strip *Strip) callback {
 		positions[i] = u
 	})
 
-	return func(strip *Strip, t, dt float64) {
+	return func(env *config, strip *Strip, t, dt float64) {
 		timeScale := 0.3
 
 		strip.Each(func(i int, led *Led) {
 			pos := positions[i]
-			led.r = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			led.r = env.Range.R * (0.5 + 0.5*simplexnoise.Noise3(
 				pos.x+000,
 				pos.y+000,
 				t*timeScale,
 			))
 
-			led.g = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			led.g = env.Range.G * (0.5 + 0.5*simplexnoise.Noise3(
 				pos.x+100,
 				pos.y+100,
 				t*timeScale,
 			))
 
-			led.b = maxBrightness * (0.5 + 0.5*simplexnoise.Noise3(
+			led.b = env.Range.B * (0.5 + 0.5*simplexnoise.Noise3(
 				pos.x+200,
 				pos.y+200,
 				t*timeScale,

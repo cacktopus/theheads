@@ -2,8 +2,19 @@ package cfg
 
 import "time"
 
+type Floodlight struct {
+	Pin int `envconfig:"default=17"`
+
+	MinBrightness float64 `envconfig:"default=20"`
+	MaxBrightness float64 `envconfig:"default=60"`
+
+	FrameBuffer int `envconfig:"default=60"`
+}
+
 type Cfg struct {
 	Instance string
+
+	Floodlight Floodlight
 
 	Filename string `envconfig:"optional"`
 
@@ -38,4 +49,7 @@ type Cfg struct {
 
 	RecorderBufsize    int           `envconfig:"default=5"`
 	MotionShutoffDelay time.Duration `envconfig:"default=5s"`
+	RecorderMaxSize    int64         `envconfig:"default=16000000000"`
+
+	RaspividExtraArgs []string `envconfig:"optional"`
 }

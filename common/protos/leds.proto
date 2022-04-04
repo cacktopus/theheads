@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
+package heads;
+
+import "common.proto";
+
+message RunIn {
+    string name = 1;
+}
+
+service leds {
+  rpc run(RunIn) returns (Empty);
+}

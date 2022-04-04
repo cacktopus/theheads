@@ -7,7 +7,6 @@ import (
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/grandcat/zeroconf"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"strings"
@@ -115,6 +114,7 @@ func (h *HeadManager) CheckIn(heads []string) {
 
 				delete(remaining, head.name)
 				newClients[head.name] = head.conn
+				h.logger.Info("connected to head", zap.String("name", head.name))
 
 				if len(remaining) == 0 {
 					cancel()
@@ -156,14 +156,14 @@ func (h *HeadManager) Position(headName string, theta float64) (*gen.HeadState, 
 func (h *HeadManager) Say(headName string, sound string) {
 	conn, err := h.GetHeadConn(headName)
 	if err != nil {
-		logrus.WithError(err).Error("error fetching head connection")
+		h.logger.Error("error fetching head connection", zap.Error(err))
 		// TODO: might need dj.Sleep()
 		time.Sleep(5 * time.Second) // Sleep for length of some typical text
 	} else {
 		client := gen.NewVoicesClient(conn)
 		_, err = client.Play(context.Background(), &gen.PlayIn{Sound: sound})
 		if err != nil {
-			logrus.WithError(err).Error("error playing sound")
+			h.logger.Error("error playing sound", zap.Error(err), zap.String("sound", sound))
 			// TODO: might need dj.Sleep()
 			time.Sleep(5 * time.Second) // Sleep for length of some typical text
 		}
@@ -173,14 +173,14 @@ func (h *HeadManager) Say(headName string, sound string) {
 func (h *HeadManager) SayRandom(headName string) {
 	conn, err := h.GetHeadConn(headName)
 	if err != nil {
-		logrus.WithError(err).Error("error fetching head connection")
+		h.logger.Error("error fetching head connection", zap.Error(err))
 		// TODO: might need dj.Sleep()
 		time.Sleep(5 * time.Second) // Sleep for length of some typical text
 	} else {
 		client := gen.NewVoicesClient(conn)
 		_, err = client.Random(context.Background(), &gen.Empty{})
 		if err != nil {
-			logrus.WithError(err).Error("error playing random sound")
+			h.logger.Error("error playing random sound", zap.Error(err))
 			// TODO: might need dj.Sleep()
 			time.Sleep(5 * time.Second) // Sleep for length of some typical text
 		}

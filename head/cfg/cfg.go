@@ -11,6 +11,9 @@ type Cfg struct {
 	FakeStepper bool `envconfig:"optional"`
 	SensorPin   int  `envconfig:"default=21"`
 
+	EnableMagnetSensor bool     `envconfig:"default=true"`
+	MagnetSensorAddrs  []string `envconfig:"default=1f;5e"` // note semicolon to separate default values
+
 	Motor  motor.Cfg
 	Voices voices.Cfg
 }

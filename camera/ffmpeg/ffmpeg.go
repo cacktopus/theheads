@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"fmt"
 	"github.com/cacktopus/theheads/camera/cfg"
 	"github.com/cacktopus/theheads/camera/motion_detector"
 	"github.com/cacktopus/theheads/camera/util"
@@ -9,7 +10,6 @@ import (
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
-	"time"
 )
 
 type Buffer struct {
@@ -20,15 +20,15 @@ func (f *Buffer) Name() string {
 	return "buffer"
 }
 
-type ffmpeg struct {
+type Ffmpeg struct {
 	buf    gocv.Mat
 	env    *cfg.Cfg // TODO: separate cfg
 	feeder chan gocv.Mat
 	broker *broker.Broker
 }
 
-func NewFfmpeg(env *cfg.Cfg, logger *zap.Logger, broker *broker.Broker) *ffmpeg {
-	return &ffmpeg{
+func NewFfmpeg(env *cfg.Cfg, logger *zap.Logger, broker *broker.Broker) *Ffmpeg {
+	return &Ffmpeg{
 		buf:    gocv.NewMat(),
 		env:    env,
 		broker: broker,
@@ -36,9 +36,11 @@ func NewFfmpeg(env *cfg.Cfg, logger *zap.Logger, broker *broker.Broker) *ffmpeg 
 	}
 }
 
-func (ff *ffmpeg) Ffmpeg(
+func (ff *Ffmpeg) Ffmpeg(
 	src *gocv.Mat,
 	maxRecord *motion_detector.MotionRecord,
+	isRecording bool,
+	hasMotion bool,
 ) {
 	if ff.broker.SubCount() == 0 {
 		return
@@ -73,10 +75,23 @@ func (ff *ffmpeg) Ffmpeg(
 	}
 
 	util.T("put-text", func() {
-		currentTime := time.Now().Format("2006-01-02 15:04:05")
+		//currentTime := time.Now().Format("2006-01-02 15:04:05")
+
+		recording := " "
+		if isRecording {
+			recording = "R"
+		}
+
+		motion := " "
+		if hasMotion {
+			motion = "M"
+		}
+
+		status := fmt.Sprintf("[%s%s]", recording, motion)
+
 		gocv.PutText(
 			&ff.buf,
-			currentTime,
+			status,
 			image.Point{X: 13, Y: 23},
 			gocv.FontHersheySimplex,
 			0.5,
@@ -86,7 +101,7 @@ func (ff *ffmpeg) Ffmpeg(
 
 		gocv.PutText(
 			&ff.buf,
-			currentTime,
+			status,
 			image.Point{X: 10, Y: 20},
 			gocv.FontHersheySimplex,
 			0.5,

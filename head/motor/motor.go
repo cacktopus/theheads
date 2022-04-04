@@ -27,4 +27,5 @@ func OppositeDirection(d Direction) Direction {
 type Motor interface {
 	Step(direction Direction) error
 	Start() error
+	Off() error
 }

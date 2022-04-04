@@ -23,7 +23,7 @@ func (MDNSDiscovery) Discover(
 	serviceName string,
 	callback func(*zeroconf.ServiceEntry),
 ) {
-	resolver, err := zeroconf.NewResolver(nil)
+	resolver, err := zeroconf.NewResolver(zeroconf.SelectIPTraffic(zeroconf.IPv4))
 	if err != nil {
 		logger.Fatal("failed to initialize resolver", zap.Error(err))
 	}

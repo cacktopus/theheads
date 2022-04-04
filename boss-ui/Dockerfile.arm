@@ -1,0 +1,13 @@
+FROM heads-build-arm
+
+WORKDIR /build
+COPY boss-ui/package.json boss-ui/package-lock.json ./
+RUN npm install
+
+COPY boss-ui/ .
+RUN npm run build
+
+RUN mkdir app
+RUN mv build app
+
+RUN tar -czvf boss-ui_0.0.0_armhf.tar.gz app

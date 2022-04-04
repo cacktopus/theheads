@@ -1,4 +1,21 @@
-FROM golang:1.15-buster@sha256:de109084fc947e3d6df63198ef8ef4858d2252be12ed335850d4c50fb4c4e2ea
+FROM debian@sha256:87eefc7c15610cca61db5c0fd280911c6a737c0680d807432c0bd80cd0cca39b AS lib_builder
+
+WORKDIR /foundry
+
+RUN apt-get update -y && apt-get install -y build-essential cmake git
+
+RUN git clone https://github.com/jgarff/rpi_ws281x.git \
+  && cd rpi_ws281x \
+  && mkdir build \
+  && cd build \
+  && cmake -D BUILD_SHARED=OFF -D BUILD_TEST=OFF .. \
+  && cmake --build . \
+  && make install
+
+FROM golang:1.17-bullseye@sha256:97f84ead923abac2291c7e885a919fc2f0cd4fe5ac1700f1f7acd5a64c6f200f
+
+COPY --from=lib_builder /usr/local/lib/libws2811.a /usr/local/lib/
+COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
 
 WORKDIR /pkg
 
@@ -12,22 +29,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
 
 COPY common/go.* /build/common/
-#COPY camera/go.* /build/camera/
-COPY boss/go.* /build/boss/
-COPY head/go.* /build/head/
-COPY system-tools/go.* /build/system-tools/
 
 WORKDIR /build/common/
-RUN go mod download
-
-#WORKDIR /build/camera/
-#RUN go mod download
-
-WORKDIR /build/boss/
-RUN go mod download
-
-WORKDIR /build/head/
-RUN go mod download
-
-WORKDIR /build/system-tools/
 RUN go mod download

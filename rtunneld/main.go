@@ -1,4 +1,4 @@
-package main
+package rtunneld
 
 import (
 	"fmt"
@@ -231,7 +231,7 @@ func loadConfig(cfgFile string) (*config.Config, error) {
 	return cfg, nil
 }
 
-func main() {
+func Run() {
 	env := &config.Env{}
 
 	err := envconfig.Init(env)

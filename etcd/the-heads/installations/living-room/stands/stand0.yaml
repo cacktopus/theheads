@@ -1,9 +1,0 @@
-name: stand0
-pos:
-  x: -0.75
-  y: 0
-rot: -90
-cameras:
-- camera0
-heads:
-- head0
