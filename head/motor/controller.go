@@ -2,6 +2,7 @@ package motor
 
 import (
 	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/schema"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"math"
@@ -192,20 +193,12 @@ func (s *Controller) Control() (direction Direction, done bool) {
 }
 
 func (s *Controller) publish() {
-	//msgType := "head-positioned"
 	state := s.GetState()
-	msg := &broker.HeadPositioned{
+	msg := &schema.HeadPositioned{
 		HeadName:     s.name,
 		StepPosition: float32(state.Steps),
 		Rotation:     float32(state.Rotation()),
 	}
-
-	//MessageHeader: schema.MessageHeader{Type: msgType},
-	//Data: schema.HeadPositionedData{
-	//	HeadName:     s.name,
-	//	StepPosition: pos,
-	//	Rotation:     rot,
-	//},
 
 	s.Broker.Publish(msg)
 }

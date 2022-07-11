@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>{{.title}}</title>
+</head>
+<body>
+<div>{{.serfError}}</div>
+
+{{range .services}}
+<div>
+    {{.Name}}
+    {{range .Hosts}}
+    <span><a href="http://{{.Hostname}}:{{.Port}}{{.Path}}">{{.Hostname}}</a></span>
+    {{end}}
+</div>
+{{end}}
+
+</body>
+</html>

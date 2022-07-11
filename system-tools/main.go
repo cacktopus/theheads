@@ -1,4 +1,4 @@
-package main
+package system_tools
 
 import (
 	"github.com/vrischmann/envconfig"
@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func main() {
+func Run() {
 	env := &Cfg{}
 
 	logger, err := zap.NewProduction()

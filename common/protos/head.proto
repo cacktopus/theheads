@@ -5,11 +5,14 @@ package heads;
 
 import "common.proto";
 
-message RotationIn {
+message SetTargetIn {
   double theta = 1;
   double speed = 2;
 }
 
+message SetActorIn {
+  string actor = 1;
+}
 
 message HeadState {
   int32 position = 1;
@@ -34,7 +37,8 @@ message ReadMagnetSensorOut {
 
 
 service head {
-  rpc rotation(RotationIn) returns (HeadState);
+  rpc set_target(SetTargetIn) returns (HeadState);
+  rpc set_actor(SetActorIn) returns (HeadState);
   rpc status(Empty) returns (HeadState);
   rpc find_zero(Empty) returns (Empty);
   rpc events(Empty) returns (stream Event);

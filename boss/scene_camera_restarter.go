@@ -1,26 +1,35 @@
 package boss
 
 import (
+	"context"
 	"github.com/cacktopus/theheads/boss/rate_limiter"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"time"
 )
 
-func CameraRestarter(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
+func CameraRestarter(
+	ctx context.Context,
+	dj *DJ,
+	done util.BroadcastCloser,
+	logger *zap.Logger,
+) {
 	rate_limiter.LimitTrailing("camera.restart", 10*time.Minute, func() {
-		if len(dj.grid.GetFocalPoints()) == 0 {
+		if len(dj.grid.GetFocalPoints().FocalPoints) == 0 {
 			return
 		}
 		for _, c := range dj.scene.Cameras {
 			go func(camera *scene.Camera) {
-				logrus.WithField("camera", camera.Name).Info("Restarting camera")
+				logger.Info("restarting camera", zap.String("camera", camera.Name))
 
 				// TODO: need a way to find the camera instance
-				logrus.WithError(errors.New("not implemented")).Error("error restarting camera")
+				logger.Error(
+					"error restarting camera",
+					zap.String("camera", camera.Name),
+					zap.Error(errors.New("not implemented")),
+				)
 			}(c)
 		}
 	})

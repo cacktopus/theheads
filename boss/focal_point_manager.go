@@ -21,7 +21,7 @@ func ManageFocalPoints(
 
 	for i := range msgs {
 		switch msg := i.(type) {
-		case broker.MotionDetected:
+		case *schema.MotionDetected:
 			cam, ok := theScene.Cameras[msg.CameraName]
 			if !ok {
 				rate_limiter.Debounce(
@@ -43,12 +43,6 @@ func ManageFocalPoints(
 
 			p0 = m.MulVec(p0)
 			p1 = m.MulVec(p1)
-
-			ml := schema.MotionLine{
-				P0: [2]float64{p0.X(), p0.Y()},
-				P1: [2]float64{p1.X(), p1.Y()},
-			}
-			msgBroker.Publish(ml)
 
 			grid.Trace(msg.CameraName, p0, p1)
 		}

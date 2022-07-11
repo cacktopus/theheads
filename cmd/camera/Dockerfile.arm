@@ -1,0 +1,14 @@
+FROM heads-build-arm
+
+WORKDIR /build
+
+COPY common /build/common
+COPY camera /build/camera
+COPY cmd/camera ./cmd/camera
+COPY Makefile .
+
+RUN make bin/camera
+RUN mkdir app
+RUN cp bin/camera app
+
+RUN tar -czvf "camera_0.0.0_armhf.tar.gz" app

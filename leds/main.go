@@ -2,47 +2,37 @@ package leds
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/standard_server"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vrischmann/envconfig"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
-type config struct {
-	NumLeds    int     `envconfig:"default=74"`
-	StartIndex int     `envconfig:"default=10"`
-	Length     float64 `envconfig:"default=2.466"` // 5.0*74.0/150.0
-
-	Animation string `envconfig:"default=rainbow"`
-
-	UpdatePeriod time.Duration `envconfig:"default=40ms"`
-	EnableIR     bool          `envconfig:"default=false"`
-
-	Scale float64 `envconfig:"default=1.0"`
-
-	Lowred float64 `envconfig:"default=0.5"`
-
-	Range struct {
-		R float64 `envconfig:"default=0.5"`
-		G float64 `envconfig:"default=0.75"`
-		B float64 `envconfig:"default=0.75"`
-	}
-
-	Debug bool `envconfig:"default=false"`
-}
-
-func setup(env *config) *Strip {
-	strip, err := NewStrip(env)
+func setup(env *config, msgBroker *broker.Broker) *Strip {
+	strip, err := NewStrip(env, msgBroker)
 	if err != nil {
 		panic(err)
 	}
+
+	prometheus.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "heads",
+		Subsystem: "leds",
+		Name:      "scale",
+	}, func() float64 {
+		return strip.GetScale()
+	}))
 
 	// reset
 	err = strip.send2()
@@ -126,8 +116,38 @@ func mainloop(
 }
 
 type Handler struct {
-	ch         chan (callback)
+	ch         chan callback
 	animations map[string]callback
+	broker     *broker.Broker
+	strip      *Strip
+}
+
+func (h *Handler) SetScale(ctx context.Context, in *gen.SetScaleIn) (*gen.Empty, error) {
+	h.strip.SetScale(in.Scale)
+	return &gen.Empty{}, nil
+}
+
+func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
+	messages := h.broker.Subscribe()
+	defer h.broker.Unsubscribe(messages)
+
+	for m := range messages {
+		data, err := json.Marshal(m)
+		if err != nil {
+			return errors.Wrap(err, "marshal json")
+		}
+
+		err = server.Send(&gen.Event{
+			Type: m.Name(),
+			Data: string(data),
+		})
+
+		if err != nil {
+			break
+		}
+	}
+
+	return nil
 }
 
 func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
@@ -140,6 +160,19 @@ func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
 	return &gen.Empty{}, nil
 }
 
+func setupKeytable(logger *zap.Logger, attempt int) {
+	cmd := exec.Command("/usr/bin/ir-keytable", "-c", "-p", "nec")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Warn(
+			"ir-keytable failed",
+			zap.Int("attempt", attempt),
+			zap.Error(err),
+			zap.String("output", string(output)),
+		)
+	}
+}
+
 func Run(logger *zap.Logger) error {
 	env := &config{}
 	err := envconfig.Init(env)
@@ -147,7 +180,18 @@ func Run(logger *zap.Logger) error {
 		panic(err)
 	}
 
-	strip := setup(env)
+	go func() {
+		for i := 1; i <= 60; i++ {
+			// there's some startup race condition, so keep running this for some time
+			setupKeytable(logger, i)
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	msgBroker := broker.NewBroker()
+	go msgBroker.Start()
+
+	strip := setup(env, msgBroker)
 
 	var animations = map[string]callback{
 		"rainbow": rainbow(strip),
@@ -166,6 +210,8 @@ func Run(logger *zap.Logger) error {
 	h := &Handler{
 		ch:         ch,
 		animations: animations,
+		broker:     msgBroker,
+		strip:      strip,
 	}
 
 	server, err := standard_server.NewServer(&standard_server.Config{
@@ -176,6 +222,8 @@ func Run(logger *zap.Logger) error {
 			return nil
 		},
 		HttpSetup: func(r *gin.Engine) error {
+			pprof.Register(r)
+
 			r.GET("/run/:name", func(c *gin.Context) {
 				name := c.Param("name")
 				fn, ok := animations[name]
@@ -198,7 +246,7 @@ func Run(logger *zap.Logger) error {
 	}()
 
 	if env.EnableIR {
-		runIR(ch, animations, strip)
+		runIR(ch, msgBroker, animations, strip)
 	}
 
 	signals := make(chan os.Signal, 1)

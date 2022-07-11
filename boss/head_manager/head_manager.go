@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"github.com/cacktopus/theheads/common/discovery"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
-	"github.com/grandcat/zeroconf"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"strings"
 	"sync"
 	"time"
 )
@@ -45,7 +43,7 @@ func NewHeadManager(logger *zap.Logger, discovery discovery.Discovery) *HeadMana
 	return h
 }
 
-func (h *HeadManager) CheckIn(heads []string) {
+func (h *HeadManager) CheckIn(ctx context.Context, heads []string) {
 	h.logger.Info("checkin")
 	t0 := time.Now()
 	defer func() {
@@ -64,31 +62,44 @@ func (h *HeadManager) CheckIn(heads []string) {
 
 	found := make(chan *headConn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	callback := func(entry *zeroconf.ServiceEntry) {
-		host := strings.TrimRight(entry.HostName, ".")
-		addr := fmt.Sprintf("%s:%d", host, entry.Port)
-		instance := entry.Instance
-
-		h.logger.Info("checkin found head", zap.String("instance", instance))
-
-		// TODO: retries
-		// TODO: actually call "ping" method
-		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
-		if err != nil {
-			h.logger.Error("connecting", zap.String("instance", instance))
-			return
-		}
-
-		found <- &headConn{
-			name: instance,
-			conn: conn,
-		}
+	services, err := h.discovery.Discover(h.logger)
+	if err != nil {
+		h.logger.Error("error discovering services", zap.Error(err))
+		return
 	}
 
-	h.discovery.Discover(h.logger, ctx, "_head._tcp", callback)
+	for _, entry := range services {
+		if entry.Service != "head" {
+			continue
+		}
+
+		go func(entry *discovery.Entry) {
+			addr := fmt.Sprintf("%s:%d", entry.Hostname, entry.Port)
+			instance := entry.Instance
+
+			h.logger.Info(
+				"checkin found head",
+				zap.String("instance", instance),
+				zap.String("addr", addr),
+			)
+
+			// TODO: retries
+			// TODO: actually call "ping" method
+			conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
+			if err != nil {
+				h.logger.Error("connecting", zap.String("instance", instance))
+				return
+			}
+
+			found <- &headConn{
+				name: instance,
+				conn: conn,
+			}
+		}(entry)
+	}
 
 	newClients := map[string]*grpc.ClientConn{}
 
@@ -143,17 +154,39 @@ func (h *HeadManager) CheckIn(heads []string) {
 	h.clients = newClients
 }
 
-func (h *HeadManager) Position(headName string, theta float64) (*gen.HeadState, error) {
+func (h *HeadManager) SetTarget(
+	ctx context.Context,
+	headName string,
+	theta float64,
+) (*gen.HeadState, error) {
 	client, err := h.GetHeadConn(headName)
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-	return gen.NewHeadClient(client).Rotation(context.Background(), &gen.RotationIn{
+	return gen.NewHeadClient(client).SetTarget(ctx, &gen.SetTargetIn{
 		Theta: theta,
 	})
 }
 
-func (h *HeadManager) Say(headName string, sound string) {
+func (h *HeadManager) SetActor(
+	ctx context.Context,
+	headName string,
+	actor string,
+) (*gen.HeadState, error) {
+	client, err := h.GetHeadConn(headName)
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+	return gen.NewHeadClient(client).SetActor(ctx, &gen.SetActorIn{
+		Actor: actor,
+	})
+}
+
+func (h *HeadManager) Say(
+	ctx context.Context,
+	headName string,
+	sound string,
+) {
 	conn, err := h.GetHeadConn(headName)
 	if err != nil {
 		h.logger.Error("error fetching head connection", zap.Error(err))
@@ -161,7 +194,7 @@ func (h *HeadManager) Say(headName string, sound string) {
 		time.Sleep(5 * time.Second) // Sleep for length of some typical text
 	} else {
 		client := gen.NewVoicesClient(conn)
-		_, err = client.Play(context.Background(), &gen.PlayIn{Sound: sound})
+		_, err = client.Play(ctx, &gen.PlayIn{Sound: sound})
 		if err != nil {
 			h.logger.Error("error playing sound", zap.Error(err), zap.String("sound", sound))
 			// TODO: might need dj.Sleep()
@@ -170,7 +203,10 @@ func (h *HeadManager) Say(headName string, sound string) {
 	}
 }
 
-func (h *HeadManager) SayRandom(headName string) {
+func (h *HeadManager) SayRandom(
+	ctx context.Context,
+	headName string,
+) {
 	conn, err := h.GetHeadConn(headName)
 	if err != nil {
 		h.logger.Error("error fetching head connection", zap.Error(err))
@@ -178,7 +214,7 @@ func (h *HeadManager) SayRandom(headName string) {
 		time.Sleep(5 * time.Second) // Sleep for length of some typical text
 	} else {
 		client := gen.NewVoicesClient(conn)
-		_, err = client.Random(context.Background(), &gen.Empty{})
+		_, err = client.Random(ctx, &gen.Empty{})
 		if err != nil {
 			h.logger.Error("error playing random sound", zap.Error(err))
 			// TODO: might need dj.Sleep()

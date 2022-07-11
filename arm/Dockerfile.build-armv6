@@ -1,4 +1,4 @@
-FROM debian@sha256:87eefc7c15610cca61db5c0fd280911c6a737c0680d807432c0bd80cd0cca39b AS lib_builder
+FROM debian:buster@sha256:9740683722a2a8aa497a5b23e4bc229fcf8b8991e26d3935540c7704ff24012e AS lib_builder
 
 WORKDIR /foundry
 
@@ -12,23 +12,22 @@ RUN git clone https://github.com/jgarff/rpi_ws281x.git \
   && cmake --build . \
   && make install
 
-FROM golang:1.17-bullseye@sha256:97f84ead923abac2291c7e885a919fc2f0cd4fe5ac1700f1f7acd5a64c6f200f
+FROM golang:1.17-buster@sha256:906bbd99aa4b9349744f7b24057b196370f2daf3b048cad8ea4f7a8084ace2a5
 
 COPY --from=lib_builder /usr/local/lib/libws2811.a /usr/local/lib/
 COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
 
-WORKDIR /pkg
+WORKDIR /build
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
-
-#RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
-#    wget https://theheads.sfo2.digitaloceanspaces.com/build/opencv_4.4.0-2_${arch}.deb
-#
-#RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.4.0-2_*.deb
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
-
-COPY common/go.* /build/common/
-
-WORKDIR /build/common/
+COPY go.mod go.sum .
 RUN go mod download
+
+COPY Makefile .
+COPY common common
+
+COPY leds leds
+COPY cmd/leds ./cmd/leds
+RUN make bin/leds
+
+COPY cmd/lowred ./cmd/lowred
+RUN make bin/lowred

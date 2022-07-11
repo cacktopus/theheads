@@ -1,7 +1,6 @@
 package recorder
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io/fs"
@@ -39,7 +38,6 @@ func (c *cleaner) clean() error {
 	for _, f := range files {
 		totalSize += f.size
 	}
-	fmt.Println(totalSize)
 
 	if c.maxSize == 0 {
 		// don't clean if max size unspecified
@@ -53,10 +51,10 @@ func (c *cleaner) clean() error {
 	}
 
 	deficit := -freeSpace
-	c.logger.Info("free space deficit for video files detected", zap.Int64("deficit", deficit))
+	c.logger.Debug("free space deficit for video files detected", zap.Int64("deficit", deficit))
 
 	for _, f := range files {
-		c.logger.Info(
+		c.logger.Debug(
 			"removing video file to reclaim space",
 			zap.String("path", f.path),
 			zap.Int64("size", f.size),

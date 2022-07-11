@@ -1,4 +1,4 @@
-package main
+package heads_cli
 
 import (
 	"crypto/sha256"

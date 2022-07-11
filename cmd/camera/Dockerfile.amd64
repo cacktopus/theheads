@@ -1,0 +1,15 @@
+FROM heads-build-amd64
+
+WORKDIR /build
+
+COPY common /build/common
+COPY camera /build/camera
+COPY cmd/camera ./cmd/camera
+COPY Makefile .
+
+RUN make bin/camera
+RUN mkdir app
+RUN cp bin/camera app
+
+RUN tar -czvf "camera_0.0.0_amd64.tar.gz" app
+

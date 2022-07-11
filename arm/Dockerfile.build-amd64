@@ -1,5 +1,4 @@
-FROM golang:1.15-buster@sha256:83b4fd9355ba9ff2d0c78cdf6fc485f739a2834c27e3160a5026faf66f4f5913
-FROM golang:1.15-buster
+FROM golang:1.17-buster@sha256:74ba26bff6b9335172e4a84c6bb69a6fd3876c9d06ce7839ff7cc14637893f9d
 
 WORKDIR /pkg
 
@@ -12,15 +11,15 @@ RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.4.0-2_*.deb
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
 
-COPY common/go.* /build/common/
-COPY boss/go.* /build/boss/
-COPY system-tools/go.* /build/system-tools/
+WORKDIR /build
 
-WORKDIR /build/common/
+COPY go.mod go.sum ./
 RUN go mod download
 
-WORKDIR /build/boss/
-RUN go mod download
+COPY Makefile ./
+COPY common common
 
-WORKDIR /build/system-tools/
-RUN go mod download
+COPY camera camera
+COPY cmd/camera ./cmd/camera
+RUN make bin/camera
+

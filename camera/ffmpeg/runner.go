@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func spawnFfmpeg(width, height int, bitrate int, framerate int) (
+func spawnFfmpeg(logger *zap.Logger, width, height int, bitrate int, framerate int) (
 	io.Writer, // TODO: WriteCloser
 	io.Reader, // TODO: ReadCloser
 ) {
@@ -60,7 +60,7 @@ func spawnFfmpeg(width, height int, bitrate int, framerate int) (
 	}
 
 	go func() {
-		fmt.Println("Running")
+		logger.Info("running ffmpeg")
 		err := cmd.Start()
 		if err != nil {
 			panic(err)
@@ -83,7 +83,7 @@ func spawnFfmpeg(width, height int, bitrate int, framerate int) (
 		}
 
 		cmd.Wait()
-		fmt.Println("Exited")
+		logger.Info("exited ffmpeg")
 	}()
 
 	return stdin, stdout
@@ -121,7 +121,7 @@ func runFfmpeg(logger *zap.Logger, b *broker.Broker, bitrate, framerate int) cha
 				height := size[0]
 				width := size[1]
 				logger.Info("spawning ffmpeg", zap.Int("width", width), zap.Int("height", height))
-				ffStdin, ffStdout = spawnFfmpeg(width, height, bitrate, framerate)
+				ffStdin, ffStdout = spawnFfmpeg(logger, width, height, bitrate, framerate)
 				go publisher(ffStdout)
 			})
 

@@ -124,6 +124,12 @@ class Wall:
 
         self.x0, self.y0 = x0, y0
         self.x1, self.y1 = x1, y1
+
+        self.center = (
+            (x1 + x0) / 2,
+            (y1 + y0) / 2,
+        )
+
         self.name = name
 
         self.wall = Polygon.Polygon([
@@ -223,7 +229,7 @@ class Wall:
             t = cx / (wx1 - wx0)
             s = cy / (wy1 - wy0)
 
-            v = 0.73 * (
+            v = 0.4 * (
                     0.5
                     + noise.snoise2(0.5 * s, 0.25 * t)
                     + 0.5 * noise.snoise2(1 * s, 0.5 * t + 100)
@@ -269,6 +275,8 @@ class Wall:
 
         debug_svg.add(debug_svg.polygon(self.window.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
         debug_svg.add(debug_svg.polygon(self.wall.contour(0), fill_opacity=0, stroke="black", stroke_width=0.25))
+
+        print("\n".join(sorted(list(dir(self.result)))))
 
         self.result = self.wall - self.result
         # wall.result = wall.result | block
@@ -318,12 +326,12 @@ def inset_boost(t: float) -> float:
 
 
 def main():
-    random.seed(42)
+    random.seed(47)
 
     prod_svg = svgwrite.Drawing(f'wall2.svg', profile='tiny')
     debug_svg = svgwrite.Drawing(f'wall2-.svg', profile='tiny')
-    for i in range(1):
-        wall = Wall(f"wall{i}", outer, x_offset=i * (146 + 10))
+    for i in range(14):
+        wall = Wall(f"wall{i + 1}", outer, x_offset=i * (146 + 10))
         wall.make(prod_svg, debug_svg)
         wall.to_svg(prod_svg)
         wall.make_stl()

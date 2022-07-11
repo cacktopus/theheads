@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 )
 
 func headEnv(name string) *cfg.Cfg {
@@ -45,6 +46,7 @@ func bossEnv() *boss.Cfg {
 
 	boss01 := &boss.Cfg{
 		ScenePath: scenePath,
+		BossFE:    os.Getenv("BOSS_FE"),
 	}
 	return boss01
 }
@@ -57,7 +59,7 @@ func runCamera(
 	instance, filename string,
 ) int {
 	camera, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository:   "camera",
+		Repository:   "camera-amd64",
 		Tag:          "latest",
 		Cmd:          []string{"/bin/sleep", "60000"},
 		Mounts:       []string{os.ExpandEnv("$PWD/dev") + ":/d"},
@@ -94,12 +96,13 @@ func runCamera(
 			}
 		}()
 
-		_, err := camera.Exec([]string{"/app/camera"}, dockertest.ExecOptions{
+		_, err := camera.Exec([]string{"/build/app/camera"}, dockertest.ExecOptions{
 			Env: []string{
 				"INSTANCE=" + instance,
 				"FILENAME=" + filename,
 				"DRAW_FRAME=roi",
 				"ROI=0,50,0,50",
+				"FLOODLIGHT_PIN=-1",
 			},
 			StdOut: wOut,
 			StdErr: wErr,
@@ -128,33 +131,39 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	done := util2.NewBroadcastCloser()
 
-	services := discovery.NewStaticDiscovery()
+	services := &discovery.StaticDiscovery{}
 
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		panic(errors.Wrap(err, "could not connect to docker"))
+	if true {
+		pool, err := dockertest.NewPool("")
+		if err != nil {
+			panic(errors.Wrap(err, "could not connect to docker"))
+		}
+
+		wg.Add(1)
+		camera01Port := runCamera(logger, done, &wg, pool, "camera-01", "/d/pi43.raw")
+		services.Register("camera", "camera-01", camera01Port)
+		wg.Add(1)
+		camera02Port := runCamera(logger, done, &wg, pool, "camera-02", "/d/pi42.raw")
+		services.Register("camera", "camera-02", camera02Port)
 	}
 
-	wg.Add(1)
-	camera01Port := runCamera(logger, done, &wg, pool, "camera-01", "/d/pi43.raw")
-	wg.Add(1)
-	camera02Port := runCamera(logger, done, &wg, pool, "camera-02", "/d/pi42.raw")
-
 	head01 := headEnv("head-01")
+	services.Register("head", head01.Instance, head01.Port)
+
 	head02 := headEnv("head-02")
+	services.Register("head", head02.Instance, head02.Port)
+
 	boss01 := bossEnv()
 
 	go head.Run(head01)
 	go head.Run(head02)
+
+	time.Sleep(50 * time.Millisecond)
+
 	go boss.Run(boss01, services)
-
-	services.Register("_head._tcp", head01.Instance, head01.Port)
-	services.Register("_head._tcp", head02.Instance, head02.Port)
-
-	services.Register("_camera._tcp", "camera-01", camera01Port)
-	services.Register("_camera._tcp", "camera-02", camera02Port)
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
@@ -164,6 +173,7 @@ func main() {
 
 	go func() {
 		<-sigc
+		wg.Done()
 		done.Close()
 	}()
 

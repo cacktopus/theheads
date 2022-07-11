@@ -1,13 +1,19 @@
 package boss
 
 import (
+	"context"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
 	"go.uber.org/zap"
 	"time"
 )
 
-func Idle(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
+func Idle(
+	ctx context.Context,
+	dj *DJ,
+	done util.BroadcastCloser,
+	logger *zap.Logger,
+) {
 	for {
 		watchdog.Feed()
 

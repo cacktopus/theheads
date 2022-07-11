@@ -56,6 +56,7 @@ func pollHead(dj *DJ, done util.BroadcastCloser, ws *sync.WaitGroup, h *scene.He
 }
 
 func FindZeros(
+	ctx context.Context,
 	dj *DJ,
 	done util.BroadcastCloser,
 	logger *zap.Logger,

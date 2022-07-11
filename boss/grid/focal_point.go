@@ -22,12 +22,6 @@ type focalPoint struct {
 	ttlLast   time.Duration // time to live for last focal point
 }
 
-// External representation
-type FocalPoint struct {
-	Pos    geom.Vec
-	Radius float64
-}
-
 func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Duration) *focalPoint {
 	return &focalPoint{
 		pos:       pos,
@@ -39,18 +33,12 @@ func NewFocalPoint(pos geom.Vec, radius float64, id string, ttl, ttlLast time.Du
 	}
 }
 
-func (fp *focalPoint) ToExternal() *FocalPoint {
-	return &FocalPoint{
-		Pos:    geom.NewVec(fp.pos.X(), fp.pos.Y()),
-		Radius: fp.radius,
-	}
-}
-
 func (fp *focalPoint) ToMsg() *schema.FocalPoint {
 	return &schema.FocalPoint{
-		Name: fp.id,
-		Pos:  schema.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
-		Ttl:  float64(fp.ttl / time.Second),
+		Name:   fp.id,
+		Pos:    schema.Pos{X: fp.pos.X(), Y: fp.pos.Y()},
+		Radius: fp.radius,
+		Ttl:    float64(fp.ttl / time.Second),
 	}
 }
 

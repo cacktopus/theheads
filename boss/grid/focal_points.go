@@ -5,12 +5,13 @@ import (
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/common/schema"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"math"
 	"sync"
 )
 
 type focalPoints struct {
+	logger      *zap.Logger
 	focalPoints map[string]*focalPoint
 	lock        sync.Mutex
 	broker      *broker.Broker
@@ -84,21 +85,21 @@ func (fps *focalPoints) publishFocalPoints() {
 		}
 	})
 
-	msg := schema.FocalPoints{
+	msg := &schema.FocalPoints{
 		FocalPoints: points,
 	}
 
 	fps.broker.Publish(msg)
 }
 
-func (fps *focalPoints) getFocalPoints() []*FocalPoint {
-	var result []*FocalPoint
+func (fps *focalPoints) getFocalPoints() schema.FocalPoints {
+	var result []*schema.FocalPoint
 	fps.withLock(func() {
 		for _, fp := range fps.focalPoints {
-			result = append(result, fp.ToExternal())
+			result = append(result, fp.ToMsg())
 		}
 	})
-	return result
+	return schema.FocalPoints{FocalPoints: result}
 }
 
 func (fps *focalPoints) cleanupStale() {
@@ -118,9 +119,9 @@ func (fps *focalPoints) cleanupStale() {
 
 	fps.publishFocalPoints()
 }
-func (fps *focalPoints) closestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
+func (fps *focalPoints) closestFocalPointTo(p geom.Vec) (*schema.FocalPoint, float64) {
 	minDist := maxFloat
-	var minFp *FocalPoint
+	var minFp *schema.FocalPoint
 
 	fps.withLock(func() {
 		for _, fp := range fps.focalPoints {
@@ -130,7 +131,7 @@ func (fps *focalPoints) closestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
 			}
 			if d2 < minDist {
 				minDist = d2
-				minFp = fp.ToExternal()
+				minFp = fp.ToMsg()
 			}
 		}
 	})
@@ -163,7 +164,7 @@ func (fps *focalPoints) maybeSpawnFocalPoint(p geom.Vec) {
 		newFp.id = assignID()
 		fps.focalPoints[newFp.id] = newFp
 		activeFocalPointCount.Inc()
-		logrus.WithField("pos", p.AsStr()).Debug("Spawning new focal point")
+		fps.logger.Debug("spawning new focal point", zap.String("pos", p.AsStr()))
 	})
 
 	fps.publishFocalPoints()

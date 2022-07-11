@@ -8,7 +8,6 @@ import (
 	"github.com/cacktopus/theheads/common/discovery"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/schema"
-	"github.com/grandcat/zeroconf"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -30,22 +29,30 @@ var eventReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
 	"source",
 })
 
-func stream(logger *zap.Logger, discovery discovery.Discovery, serviceName string, callback func(addr string)) {
+func stream(logger *zap.Logger, discover discovery.Discovery, serviceName string, callback func(addr string)) {
 	allAddr := map[string]bool{}
 	var lock sync.Mutex
 
 	logger = logger.With(zap.String("service", serviceName))
 
-	ctx := context.Background()
+	services, err := discover.Discover(logger)
+	if err != nil {
+		logger.Info("error streaming", zap.Error(err))
+	}
 
-	discovery.Discover(logger, ctx, fmt.Sprintf("_%s._tcp", serviceName),
-		func(entry *zeroconf.ServiceEntry) {
-			host := strings.TrimRight(entry.HostName, ".")
-			addr := fmt.Sprintf("%s:%d", host, entry.Port)
-			logger.Info("found service",
-				zap.String("instance", entry.Instance),
-				zap.String("addr", addr),
-			)
+	for _, entry := range services {
+		if entry.Service != serviceName {
+			continue
+		}
+
+		host := strings.TrimRight(entry.Hostname, ".")
+		addr := fmt.Sprintf("%s:%d", host, entry.Port)
+		logger.Info("found service",
+			zap.String("instance", entry.Instance),
+			zap.String("addr", addr),
+		)
+
+		func() {
 			lock.Lock()
 			defer lock.Unlock()
 			_, found := allAddr[addr]
@@ -53,8 +60,8 @@ func stream(logger *zap.Logger, discovery discovery.Discovery, serviceName strin
 				go callback(addr)
 			}
 			allAddr[addr] = true
-		},
-	)
+		}()
+	}
 }
 
 func streamHead(logger *zap.Logger, b *broker.Broker, addr string) {
@@ -83,7 +90,7 @@ func streamHead(logger *zap.Logger, b *broker.Broker, addr string) {
 					return err
 				}
 
-				err = publish(b, msg.Type, msg.Data)
+				err = publish(b, msg.Type, []byte(msg.Data))
 				if err != nil {
 					panic(err)
 				}
@@ -120,7 +127,7 @@ func streamCamera(logger *zap.Logger, b *broker.Broker, addr string) {
 					return err
 				}
 
-				err = publish(b, msg.Type, msg.Data)
+				err = publish(b, msg.Type, []byte(msg.Data))
 				if err != nil {
 					panic(err)
 				}
@@ -134,7 +141,7 @@ func streamCamera(logger *zap.Logger, b *broker.Broker, addr string) {
 }
 
 func publish(b *broker.Broker, typ string, data []byte) error {
-	event := schema.HeadEvent{Type: typ}
+	event := schema.Event{Type: typ}
 	err := json.Unmarshal(data, &event.Data)
 	if err != nil {
 		return err
@@ -142,9 +149,9 @@ func publish(b *broker.Broker, typ string, data []byte) error {
 
 	switch event.Type {
 	case "head-positioned":
-		msg := broker.HeadPositioned{}
+		msg := &schema.HeadPositioned{}
 
-		err = json.Unmarshal(event.Data, &msg)
+		err = json.Unmarshal(event.Data, msg)
 		if err != nil {
 			return err
 		}
@@ -152,8 +159,8 @@ func publish(b *broker.Broker, typ string, data []byte) error {
 		b.Publish(msg)
 
 	case "motion-detected":
-		msg := broker.MotionDetected{}
-		err = json.Unmarshal(event.Data, &msg)
+		msg := &schema.MotionDetected{}
+		err = json.Unmarshal(event.Data, msg)
 		if err != nil {
 			return err
 		}
@@ -161,12 +168,12 @@ func publish(b *broker.Broker, typ string, data []byte) error {
 		b.Publish(msg)
 
 	case "active":
-		msg := schema.Active{}
-		err = json.Unmarshal(event.Data, &msg)
+		msg := &schema.Active{}
+		err = json.Unmarshal(event.Data, msg)
 		if err != nil {
 			return err
 		}
-		source := fmt.Sprintf("%s-%s", msg.Component, msg.Name_)
+		source := fmt.Sprintf("%s-%s", msg.Component, msg.HeadName)
 		eventReceived.WithLabelValues(event.Type, source).Inc()
 		b.Publish(msg)
 	}

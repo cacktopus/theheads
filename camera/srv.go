@@ -2,8 +2,8 @@ package camera
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
-	"fmt"
 	"github.com/cacktopus/theheads/camera/cpumon"
 	"github.com/cacktopus/theheads/camera/ffmpeg"
 	"github.com/cacktopus/theheads/camera/recorder"
@@ -13,8 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sirupsen/logrus"
-	"html/template"
+	"go.uber.org/zap"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -23,6 +22,12 @@ import (
 )
 
 var upgrader = websocket.Upgrader{}
+
+//go:embed fe/index.html
+var index []byte
+
+//go:embed fe/jsmpeg.min.js
+var jsmpeg []byte
 
 func init() {
 	mypid := os.Getpid()
@@ -49,9 +54,7 @@ func init() {
 	}
 }
 
-func setupRoutes(frameBroker *broker.Broker, router *gin.Engine, port int) {
-	router.Static("/js", "./js")
-
+func setupRoutes(logger *zap.Logger, frameBroker *broker.Broker, router *gin.Engine) {
 	router.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, http.Header{"Sec-WebSocket-Protocol": {"null"}})
 		if err != nil {
@@ -66,22 +69,15 @@ func setupRoutes(frameBroker *broker.Broker, router *gin.Engine, port int) {
 			msg := m.(*ffmpeg.Buffer)
 			err := ws.WriteMessage(websocket.BinaryMessage, msg.Data)
 			if err != nil {
-				logrus.WithError(err).Error("ws write")
+				logger.Error("error writing to websocket", zap.Error(err))
 				return
 			}
 		}
 	}))
 
-	router.GET("/", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("index.html")
-		if err != nil {
-			panic(err)
-		}
-		err = tmpl.Execute(w, struct{ WSPort string }{fmt.Sprintf("%d", port)})
-		if err != nil {
-			panic(err)
-		}
-	}))
+	staticHTML(router, "/jsmpeg.min.js", jsmpeg)
+	staticHTML(router, "/index.html", index)
+	staticHTML(router, "/", index)
 
 	router.GET("/restart", func(c *gin.Context) {
 		go func() {
@@ -94,9 +90,18 @@ func setupRoutes(frameBroker *broker.Broker, router *gin.Engine, port int) {
 	})
 }
 
+func staticHTML(router *gin.Engine, path string, content []byte) {
+	router.GET(path, func(c *gin.Context) {
+		c.Writer.Header()["Content-Type"] = []string{"text/html; charset=utf-8"}
+		c.Status(200)
+		c.Writer.Write(content)
+	})
+}
+
 type handler struct {
 	broker *broker.Broker
 	rec    *recorder.Recorder
+	logger *zap.Logger
 }
 
 func (h *handler) StartRecording(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
@@ -130,7 +135,7 @@ func (h *handler) Events(empty *gen.Empty, server gen.Camera_EventsServer) error
 
 		err = server.Send(&gen.Event{
 			Type: m.Name(),
-			Data: data,
+			Data: string(data),
 		})
 
 		if err != nil {
@@ -138,6 +143,6 @@ func (h *handler) Events(empty *gen.Empty, server gen.Camera_EventsServer) error
 		}
 	}
 
-	logrus.Info("Events() handler finished")
+	h.logger.Info("Events() handler finished")
 	return nil
 }

@@ -2,7 +2,6 @@ import json
 import math
 import random
 import subprocess
-import time
 from typing import List
 
 import Polygon
@@ -16,7 +15,7 @@ from transformations import Vec
 from walls import Wall
 
 circles_cfg = Config(
-    r=13,
+    r=6.5,
     line_width=2,
     pad_x=8,
     pad_y=4,
@@ -27,10 +26,10 @@ circles_cfg = Config(
 )
 
 
-def mitchell(cfg, seed: int):
-    wall = Wall(f"mitchell-{seed}", cfg)
+def mitchell(cfg, seed: int, i: int):
+    wall = Wall(f"mitchell-{i}", cfg)
 
-    output = subprocess.check_output(["mitchell/mitchell", str(seed)])
+    output = subprocess.check_output(["mitchell/mitchell", str(seed + i)])
 
     circles = json.loads(output)
 
@@ -46,23 +45,26 @@ def mitchell(cfg, seed: int):
     wall.make_stl()
 
 
-def fun_circles(cfg, seed: int):
-    random.seed(seed)
-    wall = Wall(f"fun-circles-{seed}", cfg)
+def fun_circles(cfg, seed: int, i: int):
+    random.seed(seed + i)
+    wall = Wall(f"fun-circles-{i}", cfg)
 
-    points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.70)
+    points = poisson_disc_samples(width=cfg.width * 3, height=cfg.height * 3, r=cfg.r * 0.67)
 
     radii = {}
     for i in range(len(points)):
         radii[i] = min(distance(points[i], points[j]) for j in range(len(points)) if i != j) / 2
 
     for i, point in enumerate(points):
-        r = radii[i] * 1.05
+        r = radii[i] * 1.10
         center = Vec(*point)
         points = circle_points(center, r, 20)
 
         poly = Polygon.Polygon([p.point2 for p in points]) & wall.window
         wall.result = wall.result + poly
+
+    wall.result.scale(2.4, 2.4, wall.center[0], wall.center[1])
+    wall.result = wall.result & wall.window
 
     wall.result = wall.wall - wall.result
     wall.make_stl()
@@ -152,10 +154,11 @@ def make_wall(cfg, points, name, debug_svg, x_offset, total_x):
 
 
 def main():
+    seed = 42
     # fun_circles(circles_cfg)
-    # for i in range(1):
-    #     fun_circles(circles_cfg, i)
-    mitchell(circles_cfg, 1)
+    for i in range(8):
+        # fun_circles(circles_cfg, seed, i + 1)
+        mitchell(circles_cfg, seed, i + 1)
 
 
 if __name__ == '__main__':

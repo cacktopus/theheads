@@ -1,42 +1,46 @@
-package main
+package timesync
 
 import (
 	"github.com/cacktopus/theheads/common/discovery"
 	"github.com/cacktopus/theheads/common/util"
+	"github.com/cacktopus/theheads/timesync/cfg"
+	"go.uber.org/zap"
 	"testing"
 	"time"
 )
 
 func Test_sync(t *testing.T) {
-	services := discovery.NewStaticDiscovery()
+	logger, _ := zap.NewProduction()
+	services := &discovery.StaticDiscovery{}
 
-	c1 := &Config{
-		Port:     util.RandomPort(),
-		RTC:      true,
-		Interval: 5 * time.Second,
+	c1 := &cfg.Config{
+		Port:       util.RandomPort(),
+		RTC:        true,
+		Interval:   5 * time.Second,
+		MinSources: 1,
 	}
-	c2 := &Config{
-		Port:     util.RandomPort(),
-		RTC:      true,
-		Interval: 6 * time.Second,
+	c2 := &cfg.Config{
+		Port:       util.RandomPort(),
+		RTC:        true,
+		Interval:   6 * time.Second,
+		MinSources: 1,
 	}
-	c3 := &Config{
-		Port:     util.RandomPort(),
-		RTC:      false,
-		Interval: 7 * time.Second,
+	c3 := &cfg.Config{
+		Port:       util.RandomPort(),
+		RTC:        false,
+		Interval:   7 * time.Second,
+		MinSources: 1,
 	}
 
-	go run(c1, services)
-	go run(c2, services)
-	go run(c3, services)
+	go run(logger, c1, services)
+	go run(logger, c2, services)
+	go run(logger, c3, services)
 
 	time.Sleep(200 * time.Millisecond)
 
-	services.Register("_timesync._tcp", "timesync-01", c1.Port)
-	services.Register("_timesync._tcp", "timesync-02", c2.Port)
-	services.Register("_timesync._tcp", "timesync-03", c3.Port)
-
-	go services.Run()
+	services.Register("timesync", "timesync-01", c1.Port)
+	services.Register("timesync", "timesync-02", c2.Port)
+	services.Register("timesync", "timesync-03", c3.Port)
 
 	select {}
 }

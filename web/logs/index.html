@@ -1,0 +1,22 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+        // connection = new WebSocket('ws://localhost/ws');
+        // connection.binaryType = "arraybuffer";
+        // connection.onopen = function (event) {
+        //     console.log("open");
+        // }
+        // connection.onmessage = function (event) {
+        //     console.log("message");
+        // }
+    </script>
+</head>
+<body>
+</body>
+</html>

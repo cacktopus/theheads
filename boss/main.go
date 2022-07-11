@@ -1,6 +1,7 @@
 package boss
 
 import (
+	"embed"
 	"github.com/cacktopus/theheads/boss/grid"
 	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
@@ -11,8 +12,8 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
+	"io/fs"
 	"math/rand"
 	"net/http"
 	"os"
@@ -22,9 +23,13 @@ import (
 type Cfg struct {
 	ScenePath   string
 	SpawnPeriod time.Duration `envconfig:"default=250ms"`
+	BossFE      string        `envconfig:"required=false"`
 }
 
 var upgrader = websocket.Upgrader{}
+
+//go:embed fe
+var fe embed.FS
 
 func Run(env *Cfg, discovery discovery.Discovery) {
 	logger, err := zap.NewProduction()
@@ -32,12 +37,9 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 		panic(err)
 	}
 
-	logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	go watchdog.Watch()
+	go watchdog.Watch(logger)
 
 	broker := broker.NewBroker()
 	go broker.Start()
@@ -48,6 +50,7 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 	}
 
 	grid := grid.NewGrid(
+		logger,
 		env.SpawnPeriod,
 		-10, -10, 10, 10,
 		400, 400,
@@ -84,15 +87,27 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 			r.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 				conn, err := upgrader.Upgrade(w, r, nil)
 				if err != nil {
-					logrus.WithError(err).Error("Failed to set websocket upgrade")
+					logger.Info("failed to upgrade websocket", zap.Error(err))
 					return
 				}
 				manageWebsocket(conn, broker)
 			}))
 
+			r.GET("/ws2", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
+				conn, err := upgrader.Upgrade(w, r, nil)
+				if err != nil {
+					logger.Info("failed to upgrade websocket", zap.Error(err))
+					return
+				}
+				if err := manageWebsocket2(logger, conn, broker); err != nil {
+					logger.Info("websocket error", zap.Error(err))
+				}
+
+			}))
+
 			r.GET("/restart", func(c *gin.Context) {
 				origin := c.GetHeader("Origin")
-				logrus.WithField("origin", origin).Info("restart")
+				logger.Info("restart", zap.String("origin", origin))
 
 				c.Header("Access-Control-Allow-Origin", "*")
 
@@ -107,6 +122,18 @@ func Run(env *Cfg, discovery discovery.Discovery) {
 					c.Status(http.StatusBadRequest)
 				}
 			})
+
+			if env.BossFE != "" {
+				logger.Info("loading frontend from filesystem", zap.String("path", env.BossFE))
+				// TODO: some checking on contents of env.BossFE directory
+				r.Static("/fe", env.BossFE)
+			} else {
+				sub, err := fs.Sub(fe, "fe")
+				if err != nil {
+					panic(err)
+				}
+				r.StaticFS("/fe", http.FS(sub))
+			}
 
 			return nil
 		},

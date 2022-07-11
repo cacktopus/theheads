@@ -7,13 +7,11 @@ import (
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/timesync/cfg"
 	"github.com/cacktopus/theheads/timesync/util"
-	"github.com/grandcat/zeroconf"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"math"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -22,10 +20,12 @@ const (
 	discoveryTimeout = 10 * time.Second
 )
 
+var startTime = time.Now()
+
 func getConns(
 	logger *zap.Logger,
 	env *cfg.Config,
-	discovery discovery.Discovery,
+	discover discovery.Discovery,
 	fastDiscover bool,
 ) []*grpc.ClientConn {
 	ctx, cancel := context.WithTimeout(context.Background(), discoveryTimeout)
@@ -35,31 +35,51 @@ func getConns(
 	var lock sync.Mutex
 	var result []*grpc.ClientConn
 
-	discovery.Discover(logger, ctx, "_timesync._tcp", func(entry *zeroconf.ServiceEntry) {
-		host := strings.TrimRight(entry.HostName, ".")
-		addr := fmt.Sprintf("%s:%d", host, entry.Port)
-		logger := logger.With(zap.String("addr", addr))
-		logger.Info("found timesync peer")
-		conn, timeResp, err := primeConnection(logger, env, ctx, addr)
-		if err != nil {
-			logger.Warn("error priming connection", zap.Error(err))
-			return
-		}
-		lock.Lock()
-		defer lock.Unlock()
-		if done {
-			return
-		}
+	services, err := discover.Discover(logger)
+	if err != nil {
+		logger.Warn("error discovering services", zap.Error(err))
+		return nil
+	}
 
-		if timeResp.HasRtc {
-			logger.Info("found rtc")
-			result = append(result, conn)
+	var servers []*discovery.Entry
+	for _, entry := range services {
+		if entry.Service == "timesync" {
+			servers = append(servers, entry)
 		}
+	}
 
-		if fastDiscover && len(result) >= env.MinSources {
-			cancel()
-		}
-	})
+	if len(servers) == 0 {
+		logger.Debug("no timesync servers found")
+		cancel()
+	}
+
+	for _, entry := range servers {
+		go func(entry *discovery.Entry) {
+			addr := fmt.Sprintf("%s:%d", entry.Hostname, entry.Port)
+			logger := logger.With(zap.String("addr", addr))
+			logger.Debug("found timesync peer")
+
+			conn, timeResp, err := primeConnection(logger, env, ctx, addr)
+			if err != nil {
+				logger.Debug("error priming connection", zap.Error(err))
+				return
+			}
+			lock.Lock()
+			defer lock.Unlock()
+			if done {
+				return
+			}
+
+			if timeResp.HasRtc {
+				logger.Debug("found rtc")
+				result = append(result, conn)
+			}
+
+			if fastDiscover && len(result) >= env.MinSources {
+				cancel()
+			}
+		}(entry)
+	}
 
 	<-ctx.Done()
 
@@ -77,7 +97,7 @@ func primeConnection(
 ) (*grpc.ClientConn, *gen.TimeOut, error) {
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
 	if err != nil {
-		logger.Error("dial", zap.Error(err))
+		logger.Debug("dial", zap.Error(err))
 		return nil, nil, errors.Wrap(err, "dial")
 	}
 
@@ -90,11 +110,11 @@ func primeConnection(
 	// call time once to determine if we have a time source and also to "prime" the connection
 	resp, err := gen.NewTimeClient(conn).Time(ctx, &gen.TimeIn{})
 	if err != nil {
-		logger.Error("time rpc", zap.Error(err))
+		logger.Debug("time rpc", zap.Error(err))
 		return nil, nil, errors.Wrap(err, "time rpc")
 	}
 
-	logger.Info("primed connection", zap.Bool("has_rtc", resp.HasRtc), zap.Float64("t", resp.T))
+	logger.Debug("primed connection", zap.Bool("has_rtc", resp.HasRtc), zap.Float64("t", resp.T))
 
 	return conn, resp, err
 }
@@ -109,7 +129,7 @@ func getValues(logger *zap.Logger, conns []*grpc.ClientConn) ([]*gen.TimeOut, er
 		go func(conn *grpc.ClientConn) {
 			resp, err := gen.NewTimeClient(conn).Time(ctx, &gen.TimeIn{})
 			if err != nil {
-				logger.Warn("time rpc failed", zap.Error(err))
+				logger.Debug("time rpc failed", zap.Error(err))
 				return
 			}
 			ch <- resp
@@ -131,7 +151,11 @@ func getValues(logger *zap.Logger, conns []*grpc.ClientConn) ([]*gen.TimeOut, er
 	}
 }
 
-func processValues(env *cfg.Config, logger *zap.Logger, responses []*gen.TimeOut) {
+func processValues(
+	env *cfg.Config,
+	logger *zap.Logger,
+	responses []*gen.TimeOut,
+) error {
 	var values []float64
 	for _, resp := range responses {
 		if resp.HasRtc {
@@ -140,12 +164,13 @@ func processValues(env *cfg.Config, logger *zap.Logger, responses []*gen.TimeOut
 	}
 
 	if len(values) < env.MinSources {
-		logger.Warn(
-			"Not enough clock sources found",
+		err := errors.New("not enough clock sources found")
+		logger.Debug(
+			err.Error(),
 			zap.Int("found", len(values)),
 			zap.Int("need", env.MinSources),
 		)
-		return
+		return err
 	}
 
 	sort.Float64s(values)
@@ -155,41 +180,56 @@ func processValues(env *cfg.Config, logger *zap.Logger, responses []*gen.TimeOut
 	rtcDelta := max - min
 
 	if rtcDelta > 5.0 {
-		logger.Warn("Clock source (RTC) delta is too large", zap.Float64("rtcDelta", rtcDelta))
-		return
+		err := errors.New("clock source (RTC) delta is too large")
+		logger.Debug(err.Error(), zap.Float64("rtcDelta", rtcDelta))
+		return err
 	}
 
 	localDelta := math.Abs(util.Now() - max)
 	if localDelta < 5.0 {
-		logger.Info("Local clock is fine, not changing", zap.Float64("localDelta", localDelta))
-		return
+		logger.Debug("local clock is fine, not changing", zap.Float64("localDelta", localDelta))
+		return nil
 	}
 
+	setTime := time.UnixMicro(int64(max * 1e6))
+	logger.Debug(
+		"setting system time",
+		zap.String("new_time", setTime.UTC().String()),
+		zap.String("old_time", time.Now().UTC().String()),
+		zap.Duration("elapsed", time.Now().Sub(startTime)),
+	)
 	if err := util.SetTime(max); err != nil {
-		logger.Error("Error setting time", zap.Error(err))
-		return
+		return errors.Wrap(err, "setting time")
 	}
 
-	return
+	return nil
 }
 
-func Synctime(env *cfg.Config, logger *zap.Logger, discovery discovery.Discovery, fastDiscover bool) {
+func Synctime(
+	env *cfg.Config,
+	logger *zap.Logger,
+	discovery discovery.Discovery,
+	fastDiscover bool,
+) error {
 	logger = logger.With(zap.Bool("fast_discover", fastDiscover))
-	logger.Info("running synctime")
+	logger.Debug("running synctime")
 	conns := getConns(logger, env, discovery, fastDiscover)
 
 	if len(conns) == 0 {
-		logger.Warn("no connections could be made")
-		return
+		return errors.New("no connections could be made")
 	}
 
 	t0 := time.Now()
 	values, err := getValues(logger, conns)
 	if err != nil {
-		logger.Error("error reading values", zap.Error(err))
-		return
+		return errors.Wrap(err, "reading values")
 	}
-	logger.Info("read values", zap.Duration("elapsed_time", time.Now().Sub(t0)))
+	logger.Debug("read values", zap.Duration("elapsed_time", time.Now().Sub(t0)))
 
-	processValues(env, logger, values)
+	err = processValues(env, logger, values)
+	if err != nil {
+		return errors.Wrap(err, "process values")
+	}
+
+	return nil
 }

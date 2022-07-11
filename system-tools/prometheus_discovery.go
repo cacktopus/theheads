@@ -1,16 +1,16 @@
-package main
+package system_tools
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/cacktopus/theheads/common/serf_service"
 	"github.com/hashicorp/serf/client"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -54,85 +54,24 @@ func discoverLoop(logger *zap.Logger, env *Cfg) error {
 	}
 	defer serfClient.Close()
 
-	members, err := serfClient.Members()
+	serfServices, err := serf_service.LoadServices(logger, serfClient)
 	if err != nil {
-		return errors.Wrap(err, "members")
+		return errors.Wrap(err, "load services")
 	}
 
-	for _, m := range members {
-		for k, v := range m.Tags {
-			if !strings.HasPrefix(k, "s:") {
-				continue
-			}
-
-			srv, err := parseSerfService(logger, k, v)
-			if err != nil {
-				logger.Warn("error parsing service", zap.Error(err))
-				continue
-			}
-
-			if srv.ServicePort == 0 {
-				continue
-			}
-
-			buildPromFile(logger, env, &prometheusService{
-				Hostname:    m.Name,
-				ServiceName: srv.Name,
-				Port:        srv.ServicePort,
-			})
+	for _, srv := range serfServices {
+		if srv.ServicePort == 0 {
+			continue
 		}
+
+		buildPromFile(logger, env, &prometheusService{
+			Hostname:    srv.Host,
+			ServiceName: srv.Name,
+			Port:        srv.ServicePort,
+		})
 	}
 
 	return nil
-}
-
-type serfService struct {
-	Name        string
-	ServicePort int
-}
-
-func parseSerfService(logger *zap.Logger, k string, v string) (*serfService, error) {
-	result := &serfService{}
-
-	{
-		parts := strings.Split(k, ":")
-		if len(parts) != 2 {
-			return nil, errors.New("invalid service name")
-		}
-		if parts[0] != "s" {
-			return nil, errors.New("invalid service name")
-		}
-
-		result.Name = parts[1]
-	}
-
-	{
-		v = strings.TrimSpace(v)
-		if len(v) == 0 {
-			return result, nil
-		}
-		pairs := strings.Split(v, " ")
-		for _, pair := range pairs {
-			parts := strings.Split(pair, ":")
-			if len(parts) < 2 {
-				return nil, errors.New("invalid pair")
-			}
-			rest := strings.Join(parts[1:], ":")
-			tagname := parts[0]
-			switch tagname {
-			case "sp":
-				sp, err := strconv.Atoi(rest)
-				if err != nil {
-					return nil, errors.Wrap(err, "invalid port")
-				}
-				result.ServicePort = sp
-			default:
-				logger.Warn("unknown service tag", zap.String("tag", tagname))
-			}
-		}
-	}
-
-	return result, nil
 }
 
 type prometheusService struct {

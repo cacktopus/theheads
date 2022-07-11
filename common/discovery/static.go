@@ -1,30 +1,21 @@
 package discovery
 
 import (
-	"context"
-	"github.com/grandcat/zeroconf"
 	"go.uber.org/zap"
 	"sync"
 )
 
-var entries []*zeroconf.ServiceEntry
-var lock sync.Mutex
-
 type StaticDiscovery struct {
+	entries []*Entry
+	lock    sync.Mutex
 }
 
-func NewStaticDiscovery() *StaticDiscovery {
-	sd := &StaticDiscovery{}
-	return sd
-}
+func (s *StaticDiscovery) Discover(logger *zap.Logger) ([]*Entry, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-func (s *StaticDiscovery) Discover(
-	logger *zap.Logger,
-	ctx context.Context,
-	serviceName string,
-	callback func(*zeroconf.ServiceEntry),
-) {
-	go s.run(serviceName, callback)
+	copied := append([]*Entry{}, s.entries...)
+	return copied, nil
 }
 
 func (s *StaticDiscovery) Register(
@@ -32,29 +23,13 @@ func (s *StaticDiscovery) Register(
 	instance string,
 	port int,
 ) {
-	lock.Lock()
-	defer lock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	entries = append(entries, &zeroconf.ServiceEntry{
-		ServiceRecord: zeroconf.ServiceRecord{
-			Instance: instance,
-			Service:  service,
-			Domain:   "",
-		},
-		HostName: "localhost",
+	s.entries = append(s.entries, &Entry{
+		Hostname: "localhost",
 		Port:     port,
-		AddrIPv4: nil,
-		AddrIPv6: nil,
+		Instance: instance,
+		Service:  service,
 	})
-}
-
-func (s *StaticDiscovery) run(serviceName string, callback func(entry *zeroconf.ServiceEntry)) {
-	lock.Lock()
-	defer lock.Unlock()
-
-	for _, e := range entries {
-		if e.Service == serviceName {
-			go callback(e)
-		}
-	}
 }

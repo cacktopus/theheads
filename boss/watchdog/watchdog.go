@@ -3,7 +3,7 @@ package watchdog
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"os"
 	"time"
 )
@@ -30,15 +30,16 @@ func Feed() {
 	feedCh <- true
 }
 
-func check() {
+func check(logger *zap.Logger) {
 	expiry := lastUpdated.Add(timeout)
 	if time.Now().After(expiry) {
-		logrus.Error("Watchdog timed out")
+		logger.Error("watchdog timed out")
+		time.Sleep(time.Second)
 		os.Exit(-10)
 	}
 }
 
-func Watch() {
+func Watch(logger *zap.Logger) {
 	ticker := time.NewTicker(checkInterval)
 	for {
 		select {
@@ -46,7 +47,7 @@ func Watch() {
 			watchdogFed.Inc()
 			lastUpdated = time.Now()
 		case <-ticker.C:
-			check()
+			check(logger)
 		}
 	}
 }

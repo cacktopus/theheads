@@ -99,6 +99,7 @@ func (c *Camera) Setup() {
 		Port:   c.env.Port,
 		GrpcSetup: func(s *grpc.Server) error {
 			h := &handler{
+				logger: c.logger,
 				broker: c.broker,
 				rec:    c.rec,
 			}
@@ -107,7 +108,7 @@ func (c *Camera) Setup() {
 			return nil
 		},
 		HttpSetup: func(engine *gin.Engine) error {
-			setupRoutes(wsBroker, engine, c.env.Port)
+			setupRoutes(c.logger, wsBroker, engine)
 			return nil
 		},
 	})
@@ -138,10 +139,11 @@ func (c *Camera) Setup() {
 		}
 		frames, err := runRaspiVid(c.logger, c.rec, c.env.Width, c.env.Height, c.env.Framerate, extraArgs...)
 		if err == nil {
-			fmt.Println("Using raspiVid")
+			c.logger.Info("camera source", zap.String("source", "raspivid"))
 			c.grabber = fromRaspi(c.env, frames)
 		} else {
-			fmt.Println("Falling back to gocv: ", err)
+			c.logger.Warn("falling back to gocv", zap.Error(err))
+			c.logger.Info("camera source", zap.String("source", "gocv"))
 			c.grabber = fromWebCam(c.env)
 		}
 	}
@@ -242,7 +244,7 @@ func (c *Camera) runRecorder() {
 			if end != none {
 				if now.After(end) {
 					end = none
-					c.logger.Info("stopping recorder after timeout")
+					c.logger.Debug("stopping recorder after timeout")
 					c.rec.Stop()
 				}
 			}

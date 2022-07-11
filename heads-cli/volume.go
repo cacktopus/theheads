@@ -1,4 +1,4 @@
-package main
+package heads_cli
 
 import (
 	"context"
@@ -14,7 +14,6 @@ type volumeCmd struct {
 	Match string `long:"match" description:"host pattern to match" default:"^head"`
 	Vol   int    `long:"vol" description:"volume db to use" required:"true"`
 }
-
 
 func (opt *volumeCmd) Execute(args []string) error {
 	return lib.ConnectAll(opt.Match, 8080, func(ctx context.Context, m *client.Member, conn *grpc.ClientConn) error {

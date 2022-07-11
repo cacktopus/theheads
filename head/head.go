@@ -7,23 +7,21 @@ import (
 	"github.com/cacktopus/theheads/common/standard_server"
 	"github.com/cacktopus/theheads/head/cfg"
 	headgrpc "github.com/cacktopus/theheads/head/grpc"
-	headhttp "github.com/cacktopus/theheads/head/http"
 	"github.com/cacktopus/theheads/head/log_limiter"
 	"github.com/cacktopus/theheads/head/motor"
 	"github.com/cacktopus/theheads/head/motor/fake_stepper"
 	"github.com/cacktopus/theheads/head/motor/idle"
-	"github.com/cacktopus/theheads/head/motor/seeker"
 	"github.com/cacktopus/theheads/head/motor/stepper"
 	"github.com/cacktopus/theheads/head/sensor"
 	"github.com/cacktopus/theheads/head/sensor/gpio_sensor"
 	"github.com/cacktopus/theheads/head/sensor/magnetometer"
 	"github.com/cacktopus/theheads/head/sensor/null_sensor"
 	"github.com/cacktopus/theheads/head/voices"
-	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -33,9 +31,9 @@ func publishLoop(b *broker.Broker, cfg *cfg.Cfg, controller *motor.Controller) {
 
 		state := controller.GetState()
 
-		msg := schema.Active{
+		msg := &schema.Active{
 			Component: "head",
-			Name_:     cfg.Instance,
+			HeadName:  cfg.Instance,
 			Extra: schema.Extra{
 				HeadName:     "",
 				StepPosition: state.Pos,
@@ -46,6 +44,8 @@ func publishLoop(b *broker.Broker, cfg *cfg.Cfg, controller *motor.Controller) {
 		b.Publish(msg)
 	}
 }
+
+var metricsOnce sync.Once
 
 func Run(env *cfg.Cfg) {
 	logger, err := zap.NewProduction()
@@ -73,8 +73,6 @@ func Run(env *cfg.Cfg) {
 
 	b := broker.NewBroker()
 	go b.Start()
-
-	seeker := seeker.New(env.Motor.NumSteps)
 
 	var sensor sensor.Sensor
 	if env.FakeStepper {
@@ -110,7 +108,6 @@ func Run(env *cfg.Cfg) {
 		controller,
 		log_limiter.NewLimiter(250*time.Millisecond),
 		logger,
-		seeker,
 		sensor,
 		mm,
 		&env.Motor,
@@ -124,23 +121,15 @@ func Run(env *cfg.Cfg) {
 			gen.RegisterVoicesServer(grpcServer, voices.NewServer(&env.Voices, logger))
 			return nil
 		},
-		HttpSetup: func(router *gin.Engine) error {
-			headhttp.Routes(
-				router,
-				logger,
-				controller,
-				seeker,
-				sensor,
-				&env.Motor,
-			)
-			return nil
-		},
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	setupMetrics(mm)
+	// hack: use sync.Once to allow multiple instances in-process
+	metricsOnce.Do(func() {
+		setupMetrics(mm)
+	})
 
 	err = s.Run()
 	if err != nil {

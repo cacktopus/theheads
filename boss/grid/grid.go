@@ -5,6 +5,8 @@ import (
 	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/schema"
+	"go.uber.org/zap"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
@@ -14,7 +16,7 @@ import (
 
 const (
 	maxFloat = 1e99
-	fpRadius = 0.8
+	fpRadius = 0.6
 )
 
 var idCounter int // TODO: atomic, etc
@@ -55,6 +57,7 @@ type Grid struct {
 }
 
 func NewGrid(
+	logger *zap.Logger,
 	spawnPeriod time.Duration,
 	minX, minY, maxX, maxY float64,
 	imgsizeX, imgsizeY int,
@@ -75,6 +78,7 @@ func NewGrid(
 		layers:      map[string]*mat.Dense{},
 		broker:      broker,
 		_focalPoints: &focalPoints{
+			logger:      logger,
 			focalPoints: map[string]*focalPoint{},
 			broker:      broker,
 			scene:       scene,
@@ -271,10 +275,10 @@ func (g *Grid) maybeSpawnFocalPoint() {
 	g._focalPoints.maybeSpawnFocalPoint(p)
 }
 
-func (g *Grid) GetFocalPoints() []*FocalPoint {
+func (g *Grid) GetFocalPoints() schema.FocalPoints {
 	return g._focalPoints.getFocalPoints()
 }
 
-func (g *Grid) ClosestFocalPointTo(p geom.Vec) (*FocalPoint, float64) {
+func (g *Grid) ClosestFocalPointTo(p geom.Vec) (*schema.FocalPoint, float64) {
 	return g._focalPoints.closestFocalPointTo(p)
 }

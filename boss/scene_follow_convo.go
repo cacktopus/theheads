@@ -1,109 +1,59 @@
 package boss
 
 import (
-	"github.com/cacktopus/theheads/boss/grid"
+	"context"
+	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/util"
 	"github.com/cacktopus/theheads/boss/watchdog"
-	"github.com/sirupsen/logrus"
+	"github.com/cacktopus/theheads/common/schema"
 	"go.uber.org/zap"
 	"math/rand"
 	"sort"
+	"sync"
 	"time"
 )
 
 type FpHeadPair struct {
 	head *scene.Head
-	fp   *grid.FocalPoint
-}
-
-type FpHeadPairs []FpHeadPair
-
-func (p FpHeadPairs) Len() int {
-	return len(p)
-}
-
-func (p FpHeadPairs) Less(i, j int) bool {
-	di := p[i].head.GlobalPos().Sub(p[i].fp.Pos).AbsSq()
-	dj := p[j].head.GlobalPos().Sub(p[j].fp.Pos).AbsSq()
-
-	return di < dj
-
-}
-
-func (p FpHeadPairs) Swap(i, j int) {
+	fp   *schema.FocalPoint
 }
 
 type FollowConvo struct {
+	once         sync.Once
 	texts        []*scene.Text
 	textPosition int
 }
 
-func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, logger *zap.Logger) {
-	// initialize texts if first run
-	if f.texts == nil {
-		// copy texts
-		f.texts = append(f.texts, dj.texts...)
-		rand.Shuffle(len(f.texts), func(i, j int) {
-			f.texts[i], f.texts[j] = f.texts[j], f.texts[i]
-		})
-	}
+func (f *FollowConvo) Run(
+	ctx context.Context,
+	dj *DJ,
+	done util.BroadcastCloser,
+	logger *zap.Logger,
+) {
+	defer done.Close()
+	f.setup(dj)
 
 	for _, head := range dj.scene.Heads {
-		go FollowClosestFocalPoint(dj, done, head, -1.0)
+		go FollowClosestFocalPoint(ctx, logger, dj, done, head, -1.0)
 	}
 
 	f.textPosition %= len(f.texts)
 	text := f.texts[f.textPosition]
 	f.textPosition++
 
-	selectHead := func(pairs FpHeadPairs, allHeads []*scene.Head) *scene.Head {
-		var choices FpHeadPairs
-
-		if len(pairs) == 0 {
-			i := rand.Intn(len(allHeads))
-			return allHeads[i]
-		}
-
-		// Choose a random head to speak with some bias
-		if len(pairs) >= 1 {
-			choices = append(choices, pairs[0], pairs[0], pairs[0])
-		}
-
-		if len(pairs) >= 2 {
-			choices = append(choices, pairs[1], pairs[1])
-		}
-
-		if len(pairs) >= 3 {
-			choices = append(choices, pairs[2])
-		}
-
-		i := rand.Intn(len(choices))
-		choice := choices[i]
-
-		return choice.head
-	}
-
 	for _, part := range text.Content {
-		var pairs FpHeadPairs
-		// find closest focal point + head pairs
-		for _, h := range dj.scene.Heads {
-			for _, fp := range dj.grid.GetFocalPoints() {
-				p := FpHeadPair{head: h, fp: fp}
-				pairs = append(pairs, p)
-			}
-		}
+		h0 := f.selectHead(dj)
 
-		sort.Sort(pairs)
+		logger.Debug(
+			"saying",
+			zap.String("part", part.ID),
+			zap.String("head", h0.Name),
+		)
 
-		h0 := selectHead(pairs, dj.scene.HeadList)
-
-		logrus.WithFields(logrus.Fields{
-			"part": part.ID,
-			"head": h0.Name,
-		}).Debug("saying")
-
-		dj.headManager.Say(h0.Name, part.ID)
+		dj.headManager.SetActor(ctx, h0.Name, "Jitter")
+		dj.headManager.Say(ctx, h0.Name, part.ID)
+		dj.headManager.SetActor(ctx, h0.Name, "Seeker")
 
 		delay := (300 + time.Duration(rand.Intn(400))) * time.Millisecond
 		dj.Sleep(done, delay)
@@ -111,6 +61,62 @@ func (f *FollowConvo) Run(dj *DJ, done util.BroadcastCloser, logger *zap.Logger)
 		watchdog.Feed()
 	}
 
-	logrus.Info("Finishing Tracking Convo")
-	done.Close()
+	logger.Info("Finishing Tracking Convo")
+}
+
+func (f *FollowConvo) setup(dj *DJ) {
+	f.once.Do(func() {
+		// initialize texts if first run
+		f.texts = append(f.texts, dj.texts...) // copy texts
+		rand.Shuffle(len(f.texts), func(i, j int) {
+			f.texts[i], f.texts[j] = f.texts[j], f.texts[i]
+		})
+	})
+}
+
+func (f *FollowConvo) selectHead(dj *DJ) *scene.Head {
+	var pairs []FpHeadPair
+	// find the closest (focal point, head) pairs
+	for _, h := range dj.scene.Heads {
+		for _, fp := range dj.grid.GetFocalPoints().FocalPoints {
+			p := FpHeadPair{
+				head: h,
+				fp:   fp,
+			}
+			pairs = append(pairs, p)
+		}
+	}
+
+	sort.Slice(pairs, func(i, j int) bool {
+		vi := geom.NewVec(pairs[i].fp.Pos.X, pairs[i].fp.Pos.Y)
+		vj := geom.NewVec(pairs[j].fp.Pos.X, pairs[j].fp.Pos.Y)
+		d0 := pairs[i].head.GlobalPos().Sub(vi).AbsSq()
+		d1 := pairs[j].head.GlobalPos().Sub(vj).AbsSq()
+		return d0 < d1
+	})
+
+	var choices []FpHeadPair
+
+	if len(pairs) == 0 {
+		i := rand.Intn(len(dj.scene.HeadList))
+		return dj.scene.HeadList[i]
+	}
+
+	// Choose a random head to speak with some bias
+	if len(pairs) >= 1 {
+		choices = append(choices, pairs[0], pairs[0], pairs[0])
+	}
+
+	if len(pairs) >= 2 {
+		choices = append(choices, pairs[1], pairs[1])
+	}
+
+	if len(pairs) >= 3 {
+		choices = append(choices, pairs[2])
+	}
+
+	i := rand.Intn(len(choices))
+	choice := choices[i]
+
+	return choice.head
 }

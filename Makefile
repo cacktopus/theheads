@@ -14,15 +14,15 @@ build-arm64:
 
 .PHONY: build-armv6
 build-armv6:
-	$(BUILDX) --load --platform linux/arm/v6 --tag heads-build-armv6 -f arm/Dockerfile.build-armv6 .
+	$(BUILD) --platform linux/arm/v6 --tag heads-build-armv6 -f arm/Dockerfile.build-armv6 .
 
 .PHONY: build-amd64
 build-amd64:
-	$(BUILDX) --load --platform linux/amd64 --tag heads-build-amd64 -f arm/Dockerfile.build-amd64 .
+	$(BUILD) --platform linux/amd64 --tag heads-build-amd64 -f arm/Dockerfile.build-amd64 .
 
 .PHONY: %-arm
 %-arm:
-	$(BUILD) --platform linux/arm/v6 --tag $*-arm -f $*/Dockerfile.arm .
+	$(BUILD) --platform linux/arm/v7 --tag $*-arm -f cmd/$*/Dockerfile.arm .
 	docker cp `docker container create --platform linux/arm/v7 $*-arm`:/build/$*_0.0.0_armhf.tar.gz .
 	shasum -a 256 $*_0.0.0_armhf.tar.gz
 
@@ -34,14 +34,14 @@ build-amd64:
 
 .PHONY: %-armv6
 %-armv6:
-	time $(BUILD) --platform linux/arm/v6 --tag $*-armv6 -f $*/Dockerfile.armv6 .
+	time $(BUILD) --platform linux/arm/v6 --tag $*-armv6 -f cmd/$*/Dockerfile.armv6 .
 	docker cp `docker container create --platform linux/arm/v6 $*-armv6`:/build/$*_0.0.0_armv6.tar.gz .
 	shasum -a 256 $*_0.0.0_armv6.tar.gz
 
 .PHONY: %-amd64
 %-amd64:
-	time $(BUILD) --tag $*-amd64 -f $*/Dockerfile.amd64 .
-	docker cp `docker container create $*-amd64`:/build/$*_0.0.0_amd64.tar.gz .
+	time $(BUILD) --platform linux/amd64 --tag $*-amd64 -f cmd/$*/Dockerfile.amd64 .
+	docker cp `docker container create --platform linux/amd64 $*-amd64`:/build/$*_0.0.0_amd64.tar.gz .
 	shasum -a 256 $*_0.0.0_amd64.tar.gz
 
 .PHONY: camera
@@ -63,6 +63,10 @@ bin/camera:
 .PHONY: bin/leds
 bin/leds:
 	(cd cmd/leds && go build -o ${TOP}/bin/ .)
+
+.PHONY: bin/lowred
+bin/lowred:
+	(cd cmd/lowred && go build -o ${TOP}/bin/ .)
 
 .PHONY: bin/rtunneld
 bin/rtunneld:

@@ -90,10 +90,13 @@ func Run() {
 		panic(<-errCh)
 	}()
 
-	fl := floodlight.NewFloodlight(env.Floodlight.Pin)
-	err = fl.Setup()
-	if err != nil {
-		panic(err)
+	var fl *floodlight.Floodlight
+	if env.Floodlight.Pin >= 0 {
+		fl = floodlight.NewFloodlight(env.Floodlight.Pin)
+		err = fl.Setup()
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	c := NewCamera(

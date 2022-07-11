@@ -59,6 +59,12 @@ var cBytesWritten = prometheus.NewCounter(prometheus.CounterOpts{
 	Name:      "bytes_written",
 })
 
+var gRecording = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "heads",
+	Subsystem: "camera_recorder",
+	Name:      "recording",
+})
+
 type fileWriter struct {
 	file *os.File
 }
@@ -198,6 +204,7 @@ func (r *Recorder) write() error {
 			r.logger.Warn("unexpected command", zap.String("state", "writing"), zap.String("command", "drop"))
 
 		case <-r.cmdStop:
+			gRecording.Set(0)
 			// TODO: should we drain the buffer?
 			return nil
 
@@ -291,6 +298,7 @@ func (r *Recorder) mainloop() error {
 			r.logger.Warn("unexpected command", zap.String("state", "stopped"), zap.String("command", "stop"))
 
 		case <-r.cmdRecord:
+			gRecording.Set(1)
 			if err := r.write(); err != nil {
 				return err
 			}

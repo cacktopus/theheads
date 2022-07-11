@@ -1,7 +1,6 @@
-package main
+package solar
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/common/standard_server"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -9,7 +8,6 @@ import (
 	"github.com/spagettikod/gotracer"
 	"go.uber.org/zap"
 	"math"
-	"os"
 	"sync"
 	"time"
 )
@@ -31,7 +29,7 @@ var opt struct {
 	Port       int    `long:"port" env:"PORT" default:"8089"`
 }
 
-func run() error {
+func Run() error {
 	logger, _ := zap.NewProduction()
 
 	_, err := flags.Parse(&opt)
@@ -151,12 +149,4 @@ func SetupStats(logger *zap.Logger) {
 	newStat("device_temperature_fahrenheit", func(status *gotracer.TracerStatus) float64 {
 		return float64(status.BatteryTemp)*9.0/5.0 + 32.0
 	})
-}
-
-func main() {
-	err := run()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "error: %s", err.Error())
-		os.Exit(-1)
-	}
 }

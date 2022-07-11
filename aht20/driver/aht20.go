@@ -60,7 +60,6 @@ func New() (*Device, error) {
 // Configure the device
 func (d *Device) Calibrate() error {
 	err := d.dev.Tx([]byte{CMD_CALIBRATE, 0x08, 0x00}, nil)
-	//_, err := d.i2c.WriteBytes([]byte{CMD_CALIBRATE, 0x08, 0x00})
 	for retry := 0; retry < 3; retry++ {
 		status, err := d.Status()
 		if err != nil {
@@ -89,7 +88,6 @@ func (d *Device) Calibrate() error {
 // Reset the device
 func (d *Device) Reset() error {
 	err := d.dev.Tx([]byte{CMD_SOFTRESET}, nil)
-	//_, err := d.i2c.WriteBytes([]byte{CMD_SOFTRESET})
 	if err != nil {
 		return errors.Wrap(err, "reset")
 	}
@@ -101,7 +99,6 @@ func (d *Device) Reset() error {
 func (d *Device) Status() (byte, error) {
 	buf := make([]byte, 1)
 	err := d.dev.Tx(nil, buf)
-	//_, err := d.i2c.ReadBytes(buf)
 	return buf[0], errors.Wrap(err, "status")
 }
 
@@ -115,7 +112,6 @@ func (d *Device) Read() (*Data, error) {
 	cmd := []byte{CMD_TRIGGER, 0x33, 0x00}
 
 	err := d.dev.Tx(cmd, nil)
-	//_, err := d.i2c.WriteBytes(cmd)
 	if err != nil {
 		return nil, errors.Wrap(err, "cmd")
 	}
@@ -125,7 +121,6 @@ func (d *Device) Read() (*Data, error) {
 
 		buf := make([]byte, 6)
 		err := d.dev.Tx(nil, buf)
-		//_, err = d.i2c.ReadBytes(buf)
 		if err != nil {
 			return nil, errors.Wrap(err, "cmd")
 		}
