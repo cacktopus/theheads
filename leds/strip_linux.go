@@ -28,14 +28,14 @@ type Strip struct {
 	scale    float64
 	minScale float64
 	mu       sync.Mutex
-	strip    *ws2811.WS2811
+	hw       *ws2811.WS2811
 }
 
-func NewStrip(env *config, msgBroker *broker.Broker) (*Strip, error) {
+func NewStrip(app *App) (*Strip, error) {
 	opts := ws2811.DefaultOptions
 	opts.Channels[0].GpioPin = 18
 	opts.Channels[0].Brightness = 255
-	opts.Channels[0].LedCount = env.NumLeds
+	opts.Channels[0].LedCount = app.env.NumLeds
 
 	strip, err := ws2811.MakeWS2811(&opts)
 	if err != nil {
@@ -48,13 +48,13 @@ func NewStrip(env *config, msgBroker *broker.Broker) (*Strip, error) {
 	}
 
 	return &Strip{
-		env:      env,
-		broker:   msgBroker,
-		leds:     make([]Led, env.NumLeds),
-		scale:    clamp(env.MinScale, env.Scale, 1.0),
-		minScale: env.MinScale,
+		env:      app.env,
+		broker:   app.broker,
+		leds:     make([]Led, app.env.NumLeds),
+		scale:    clamp(app.env.MinScale, app.env.Scale, 1.0),
+		minScale: app.env.MinScale,
 		mu:       sync.Mutex{},
-		strip:    strip,
+		hw:       strip,
 	}, nil
 }
 
@@ -70,15 +70,14 @@ func (s *Strip) send2() error {
 		g = clampUint32(0, g, 255)
 		b = clampUint32(0, b, 255)
 
-		// 2 * r ???
-		s.strip.Leds(0)[i] = 2*r<<16 + g<<8 + b<<0
+		s.hw.Leds(0)[i] = r<<16 + g<<8 + b<<0
 
 		if s.env.Debug {
-			fmt.Println(g, r, b, s.strip.Leds(0)[i])
+			fmt.Println(g, r, b, s.hw.Leds(0)[i])
 		}
 	}
 
-	err := s.strip.Render()
+	err := s.hw.Render()
 	return errors.Wrap(err, "render")
 }
 
@@ -123,5 +122,5 @@ func (s *Strip) ScaleDown() {
 }
 
 func (s *Strip) Fini() {
-	s.strip.Fini()
+	s.hw.Fini()
 }

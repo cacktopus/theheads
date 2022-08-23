@@ -7,20 +7,26 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
+	"strings"
 )
 
 type TftpCmd struct {
+	Filename string `long:"filename" required:"true"`
 }
 
 func (t *TftpCmd) Execute(args []string) error {
-	s := tftp.NewServer(func(filename string, rf io.ReaderFrom) error {
-		if filename != "tp_recovery.bin" {
+	if !strings.HasSuffix(t.Filename, ".bin") {
+		return errors.New("invalid file")
+	}
+
+	s := tftp.NewServer(func(reqFilename string, rf io.ReaderFrom) error {
+		if reqFilename != "tp_recovery.bin" {
 			return errors.New("invalid file")
 		}
 
 		fmt.Println("got")
 
-		file, err := ioutil.ReadFile(filename)
+		file, err := ioutil.ReadFile(t.Filename)
 		if err != nil {
 			return errors.Wrap(err, "read file")
 		}

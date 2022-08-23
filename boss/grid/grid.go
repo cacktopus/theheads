@@ -2,15 +2,16 @@ package grid
 
 import (
 	"fmt"
-	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/geom"
 	"github.com/cacktopus/theheads/common/schema"
 	"go.uber.org/zap"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -19,11 +20,10 @@ const (
 	fpRadius = 0.6
 )
 
-var idCounter int // TODO: atomic, etc
+var idCounter uint64 // TODO: atomic, etc
 
 func assignID() string {
-	result := idCounter
-	idCounter++
+	result := atomic.AddUint64(&idCounter, 1)
 	return fmt.Sprintf("g%d", result)
 }
 
@@ -114,7 +114,9 @@ func (g *Grid) getLayer(cameraName string) *mat.Dense {
 func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
 	hit := g._focalPoints.traceFocalPoints(p0, p1)
 
-	if !hit {
+	if hit {
+		cTraceHitFocalPoint.Inc()
+	} else {
 		g.withLock(func() {
 			g.traceGrid(cameraName, p0, p1)
 		})
@@ -123,6 +125,8 @@ func (g *Grid) Trace(cameraName string, p0, p1 geom.Vec) {
 }
 
 func (g *Grid) traceGrid(cameraName string, p0, p1 geom.Vec) {
+	cTraceGrid.Inc()
+
 	szX, szY := g.getPixelSize()
 	stepSize := math.Min(szX, szY) / 4.0
 
@@ -239,6 +243,9 @@ func (g *Grid) combined() *mat.Dense {
 		sum.Add(sum, layer)
 	}
 
+	gFocusSum.Set(mat.Sum(sum))
+	gFocusMax.Set(mat.Max(sum))
+
 	mask.Apply(func(i, j int, v float64) float64 {
 		if v > 1.0 {
 			return 1.0
@@ -263,6 +270,7 @@ func (g *Grid) idxToVec(i, j int) geom.Vec {
 func (g *Grid) focus() (geom.Vec, float64) {
 	layer := g.combined()
 	i, j, v := argmax(layer)
+	gFocus.Set(v)
 	return g.idxToVec(i, j), v
 }
 

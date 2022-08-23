@@ -4,13 +4,14 @@ option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
 package heads;
 
 import "common.proto";
+import "google/protobuf/timestamp.proto";
 
 message TimeIn {
 }
 
 
 message TimeOut {
-  double t = 1;
+  google.protobuf.Timestamp t = 1;
   bool has_rtc = 2;
 }
 

@@ -1,15 +1,16 @@
 package ffmpeg
 
 import (
-	"fmt"
 	"github.com/cacktopus/theheads/camera/cfg"
-	"github.com/cacktopus/theheads/camera/motion_detector"
-	"github.com/cacktopus/theheads/camera/util"
 	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"gocv.io/x/gocv"
-	"image"
-	"image/color"
+	"io"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 type Buffer struct {
@@ -21,98 +22,91 @@ func (f *Buffer) Name() string {
 }
 
 type Ffmpeg struct {
-	buf    gocv.Mat
 	env    *cfg.Cfg // TODO: separate cfg
-	feeder chan gocv.Mat
 	broker *broker.Broker
+	logger *zap.Logger
+
+	once   sync.Once
+	stdin  io.Writer
+	stdout io.Reader
+
+	frame          chan []byte
+	initialized    uint32
+	gDroppedFrames prometheus.Counter
+	registry       prometheus.Registerer
 }
 
-func NewFfmpeg(env *cfg.Cfg, logger *zap.Logger, broker *broker.Broker) *Ffmpeg {
-	return &Ffmpeg{
-		buf:    gocv.NewMat(),
-		env:    env,
-		broker: broker,
-		feeder: runFfmpeg(logger, broker, env.Bitrate, env.Framerate),
+func NewFfmpeg(
+	logger *zap.Logger,
+	env *cfg.Cfg,
+	registry prometheus.Registerer,
+	broker *broker.Broker,
+) *Ffmpeg {
+	result := &Ffmpeg{
+		logger:         logger,
+		env:            env,
+		registry:       registry,
+		broker:         broker,
+		frame:          make(chan []byte),
+		gDroppedFrames: metrics.SimpleCounter(registry, "camera", "ffmpeg_dropped_frame"),
 	}
+
+	return result
 }
 
 func (ff *Ffmpeg) Ffmpeg(
 	src *gocv.Mat,
-	maxRecord *motion_detector.MotionRecord,
-	isRecording bool,
-	hasMotion bool,
 ) {
-	if ff.broker.SubCount() == 0 {
+	ff.once.Do(func() {
+		size := src.Size()
+		height := size[0]
+		width := size[1]
+
+		ff.logger.Info("spawning ffmpeg", zap.Int("width", width), zap.Int("height", height))
+		ff.stdin, ff.stdout = ff.spawnFfmpeg(width, height)
+		go ff.feeder()
+		go ff.publisher()
+
+		atomic.StoreUint32(&ff.initialized, 1)
+	})
+
+	if !ff.HasWatchers() {
 		return
 	}
 
-	util.T("copy", func() {
-		src.CopyTo(&ff.buf)
-	})
-
-	if ff.env.CenterLine {
-		util.T("center-line", func() {
-			sz := ff.buf.Size()
-			x := sz[1]
-			y := sz[0]
-			gocv.Line(
-				&ff.buf,
-				image.Point{X: x/2 - 1, Y: 0},
-				image.Point{X: x/2 - 1, Y: y},
-				color.RGBA{B: 128, G: 128, R: 128, A: 128},
-				2,
-			)
-		})
-	}
-
-	if ff.env.DrawMotion {
-		util.T("draw-motion", func() {
-			// TODO: this isn't going to work when we have different frame sizes for detection and drawing
-			if maxRecord != nil && maxRecord.Area > 0 {
-				gocv.Rectangle(&ff.buf, maxRecord.Bounds, color.RGBA{R: 128, G: 128, B: 128, A: 255}, 2)
-			}
-		})
-	}
-
-	util.T("put-text", func() {
-		//currentTime := time.Now().Format("2006-01-02 15:04:05")
-
-		recording := " "
-		if isRecording {
-			recording = "R"
-		}
-
-		motion := " "
-		if hasMotion {
-			motion = "M"
-		}
-
-		status := fmt.Sprintf("[%s%s]", recording, motion)
-
-		gocv.PutText(
-			&ff.buf,
-			status,
-			image.Point{X: 13, Y: 23},
-			gocv.FontHersheySimplex,
-			0.5,
-			color.RGBA{R: 32, G: 32, B: 32, A: 255},
-			2,
-		)
-
-		gocv.PutText(
-			&ff.buf,
-			status,
-			image.Point{X: 10, Y: 20},
-			gocv.FontHersheySimplex,
-			0.5,
-			color.RGBA{R: 160, G: 160, B: 160, A: 255},
-			2,
-		)
-	})
+	matBytes := src.ToBytes()
 
 	select {
-	case ff.feeder <- ff.buf:
+	case ff.frame <- matBytes:
 	default:
-		// TODO: dropped frame counter
+		ff.gDroppedFrames.Inc()
 	}
+}
+
+func (ff *Ffmpeg) feeder() {
+	for frame := range ff.frame {
+		_, err := ff.stdin.Write(frame)
+		if err != nil {
+			panic(err) // I wonder if we ever hit this?
+		}
+	}
+}
+
+func (ff *Ffmpeg) publisher() {
+	buf := make([]byte, 64*1024)
+	for {
+		nread, err := ff.stdout.Read(buf)
+		if err != nil {
+			time.Sleep(1 * time.Second)
+			panic(err)
+		}
+
+		ff.broker.Publish(&Buffer{
+			Data: buf[:nread],
+		})
+	}
+}
+
+func (ff *Ffmpeg) HasWatchers() bool {
+	return ff.broker.SubCount() > 0 || atomic.LoadUint32(&ff.initialized) == 0
 }

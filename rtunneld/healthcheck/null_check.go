@@ -2,10 +2,14 @@ package healthcheck
 
 import (
 	"github.com/cacktopus/theheads/rtunneld/config"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 )
 
-func NullCheck(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, iLog *log.Entry) error {
+func NullCheck(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	sshConfig *ssh.ClientConfig,
+) error {
 	return nil
 }

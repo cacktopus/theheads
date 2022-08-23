@@ -1,13 +1,10 @@
 package motion_detector
 
 import (
-	"errors"
 	"github.com/cacktopus/theheads/camera/cfg"
 	"github.com/cacktopus/theheads/camera/util"
 	"gocv.io/x/gocv"
 	"image"
-	"strconv"
-	"strings"
 )
 
 type MotionDetector struct {
@@ -21,17 +18,17 @@ type MotionDetector struct {
 	blurred    gocv.Mat
 	orig       gocv.Mat
 	resized    gocv.Mat
-	roi        gocv.Mat
-
-	roiP0 image.Point
-	roiP1 image.Point
 
 	frames map[string]*gocv.Mat
+
+	frameCount int
+	cpuTimer   *util.CPUTimer
 }
 
-func NewMotionDetector(env *cfg.Cfg) *MotionDetector {
+func NewMotionDetector(env *cfg.Cfg, cpuTimer *util.CPUTimer) *MotionDetector {
 	md := &MotionDetector{
 		env:        env,
+		cpuTimer:   cpuTimer,
 		avg:        gocv.NewMat(),
 		frameDelta: gocv.NewMat(),
 		thresh:     gocv.NewMat(),
@@ -39,7 +36,6 @@ func NewMotionDetector(env *cfg.Cfg) *MotionDetector {
 		blurred:    gocv.NewMat(),
 		orig:       gocv.NewMat(),
 		resized:    gocv.NewMat(),
-		roi:        gocv.NewMat(),
 	}
 
 	md.frames = map[string]*gocv.Mat{
@@ -49,42 +45,27 @@ func NewMotionDetector(env *cfg.Cfg) *MotionDetector {
 		"blurred":     &md.blurred,
 		"orig":        &md.orig,
 		"resized":     &md.resized,
-		"roi":         &md.roi,
-	}
-
-	if env.ROI != "" {
-		var coords [4]int
-		parts := strings.Split(env.ROI, ",")
-		if len(parts) != 4 {
-			panic(errors.New("invalid ROI"))
-		}
-		for i, part := range parts {
-			var err error
-			coords[i], err = strconv.Atoi(part)
-			if err != nil {
-				panic(errors.New("invalid ROI"))
-			}
-		}
-		md.roiP0 = image.Point{X: coords[0], Y: coords[1]}
-		md.roiP1 = image.Point{X: coords[2], Y: coords[3]}
 	}
 
 	return md
 }
 
 type MotionRecord struct {
-	Bounds     image.Rectangle
-	X          int
-	Area       float64
-	FrameWidth int // width of original full frame used to perform motion detection
+	Bounds      util.Rectangle
+	ContourArea float64
 }
 
-func (md *MotionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
-	util.T("copy", func() {
+func (md *MotionDetector) Detect(
+	env *cfg.Cfg,
+	m gocv.Mat,
+) []*MotionRecord {
+	md.frameCount++
+
+	md.cpuTimer.T("copy", func() {
 		m.CopyTo(&md.orig)
 	})
 
-	util.T("resize", func() {
+	md.cpuTimer.T("resize", func() {
 		sz := md.orig.Size()
 		width, height := sz[1], sz[0]
 
@@ -96,66 +77,53 @@ func (md *MotionDetector) Detect(env *cfg.Cfg, m gocv.Mat) []*MotionRecord {
 		gocv.Resize(md.orig, &md.resized, image.Pt(newWidth, newHeight), 0, 0, gocv.InterpolationNearestNeighbor)
 	})
 
-	util.T("roi", func() {
-		sz := md.resized.Size()
-		width, height := sz[1], sz[0]
-
-		roi := md.resized.Region(image.Rectangle{
-			Min: md.roiP0,
-			Max: image.Point{X: width - md.roiP1.X, Y: height - md.roiP1.Y},
-		})
-		defer roi.Close()
-		roi.CopyTo(&md.roi)
-	})
-
-	util.T("blur", func() {
-		gocv.GaussianBlur(md.roi, &md.blurred, image.Point{X: 7, Y: 7}, 0, 0, gocv.BorderDefault)
+	md.cpuTimer.T("blur", func() {
+		gocv.GaussianBlur(md.resized, &md.blurred, image.Point{X: 7, Y: 7}, 0, 0, gocv.BorderDefault)
 	})
 
 	if md.avg.Empty() {
-		util.T("copy", func() {
+		md.cpuTimer.T("copy", func() {
 			md.blurred.CopyTo(&md.avg)
 		})
 	}
 
-	util.T("add-weighted", func() {
+	md.cpuTimer.T("add-weighted", func() {
 		gocv.AddWeighted(md.blurred, 0.35, md.avg, 0.65, 0, &md.avg)
 	})
 
-	util.T("abs-diff", func() {
+	md.cpuTimer.T("abs-diff", func() {
 		gocv.AbsDiff(md.blurred, md.avg, &md.frameDelta)
 	})
 
-	util.T("threshold", func() {
+	md.cpuTimer.T("threshold", func() {
 		gocv.Threshold(md.frameDelta, &md.thresh, float32(env.MotionThreshold), 255, gocv.ThresholdBinary)
 	})
 
-	var contours [][]image.Point
-	util.T("contours", func() {
+	var contours gocv.PointsVector
+	md.cpuTimer.T("contours", func() {
 		contours = gocv.FindContours(md.thresh, gocv.RetrievalExternal, gocv.ChainApproxSimple)
 	})
+	defer contours.Close()
+
+	if md.frameCount < env.WarmupFrames {
+		return nil
+	}
 
 	var records []*MotionRecord
-	for _, c := range contours {
-		bounds := gocv.BoundingRect(c)
-
-		// add the "clipped" sections that were "removed" when doing ROI so
-		// that we are working in full frame coordinates.
-		bounds.Min.X += md.roiP0.X
-		bounds.Min.Y += md.roiP0.Y
-		bounds.Max.X += md.roiP0.X
-		bounds.Max.Y += md.roiP0.Y
-
-		x := bounds.Min.X + bounds.Dx()/2 // middle of the bounding box
-
+	for i := 0; i < contours.Size(); i++ {
 		sz := md.resized.Size()
-		frameWidth := sz[1]
+		width, height := sz[1], sz[0]
+
+		bounds := gocv.BoundingRect(contours.At(i))
 
 		records = append(records, &MotionRecord{
-			Bounds:     bounds,
-			X:          x,
-			Area:       gocv.ContourArea(c),
-			FrameWidth: frameWidth,
+			Bounds: util.Rectangle{
+				Left:   float64(bounds.Min.X) / float64(width),
+				Right:  float64(bounds.Max.X) / float64(width),
+				Top:    float64(bounds.Min.Y) / float64(height),
+				Bottom: float64(bounds.Max.Y) / float64(height),
+			},
+			ContourArea: gocv.ContourArea(contours.At(i)),
 		})
 	}
 

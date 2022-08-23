@@ -1,9 +1,11 @@
 package serf_service
 
 import (
+	"fmt"
 	"github.com/hashicorp/serf/client"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"net"
 	"strconv"
 	"strings"
 )
@@ -14,9 +16,17 @@ type SerfService struct {
 
 	Host        string
 	ServicePort int
+
+	Addr string
 }
 
-func ParseSerfService(logger *zap.Logger, host string, tagKey string, tagVal string) (*SerfService, error) {
+func ParseSerfService(
+	logger *zap.Logger,
+	host string,
+	IP net.IP,
+	tagKey string,
+	tagVal string,
+) (*SerfService, error) {
 	result := &SerfService{
 		Host: host,
 	}
@@ -53,6 +63,7 @@ func ParseSerfService(logger *zap.Logger, host string, tagKey string, tagVal str
 					return nil, errors.Wrap(err, "invalid port")
 				}
 				result.ServicePort = sp
+				result.Addr = fmt.Sprintf("%s:%d", IP.String(), sp)
 			case "i":
 				result.Instance = value
 			default:
@@ -77,12 +88,11 @@ func LoadServices(logger *zap.Logger, serfClient *client.RPCClient) ([]*SerfServ
 				continue
 			}
 
-			srv, err := ParseSerfService(logger, m.Name, k, v)
+			srv, err := ParseSerfService(logger, m.Name, m.Addr, k, v)
 			if err != nil {
 				logger.Warn("error parsing service", zap.Error(err))
 				continue
 			}
-
 			serfServices = append(serfServices, srv)
 		}
 	}

@@ -4,10 +4,15 @@ option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
 package heads;
 
 import "common.proto";
+import "google/protobuf/duration.proto";
+
+message DetectFacesIn {
+  google.protobuf.Duration enable_for = 1;
+}
 
 service camera {
-  rpc events(Empty) returns (stream Event);
   rpc restart(Empty) returns (Empty);
   rpc start_recording(Empty) returns (Empty);
   rpc stop_recording(Empty) returns (Empty);
+  rpc detect_faces(DetectFacesIn) returns (Empty);
 }

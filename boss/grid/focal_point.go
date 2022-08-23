@@ -1,7 +1,7 @@
 package grid
 
 import (
-	"github.com/cacktopus/theheads/boss/geom"
+	"github.com/cacktopus/theheads/common/geom"
 	"github.com/cacktopus/theheads/common/schema"
 	"math"
 	"time"

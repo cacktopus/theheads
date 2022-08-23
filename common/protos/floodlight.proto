@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
+package heads;
+
+import "common.proto";
+
+message SetStateIn {
+  bool state = 1;
+}
+
+service floodlight {
+  rpc set_state(SetStateIn) returns (Empty);
+}

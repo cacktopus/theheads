@@ -1,8 +1,6 @@
 package leds
 
 import (
-	"context"
-	"encoding/json"
 	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/standard_server"
@@ -20,8 +18,9 @@ import (
 	"time"
 )
 
-func setup(env *config, msgBroker *broker.Broker) *Strip {
-	strip, err := NewStrip(env, msgBroker)
+func (app *App) setup() {
+	var err error
+	app.strip, err = NewStrip(app)
 	if err != nil {
 		panic(err)
 	}
@@ -31,133 +30,84 @@ func setup(env *config, msgBroker *broker.Broker) *Strip {
 		Subsystem: "leds",
 		Name:      "scale",
 	}, func() float64 {
-		return strip.GetScale()
+		return app.strip.GetScale()
 	}))
 
 	// reset
-	err = strip.send2()
+	err = app.strip.send2()
 	if err != nil {
 		panic(err)
 	}
-
-	return strip
 }
 
-func runLeds(
-	logger *zap.Logger,
-	env *config,
-	strip *Strip,
-	animations map[string]callback,
-	ch <-chan callback,
-	done <-chan bool,
-) error {
-	cb := animations[env.Animation]
+func runLeds(app *App) error {
+	cb := app.animations[app.env.Animation]
 
-	err := mainloop(env, strip, cb, ch, done)
+	err := mainloop(app, cb)
 	if err != nil {
 		return errors.Wrap(err, "mainloop")
 	}
 
-	logger.Info("shutting down leds")
+	app.logger.Info("shutting down leds")
 
 	// cleanup: set to low red
-	strip.Each(func(_ int, led *Led) {
-		led.r = env.Range.R * env.Lowred
+	app.strip.Each(func(_ int, led *Led) {
+		led.r = app.env.Range.R * app.env.Lowred
 		led.g = 0
 		led.b = 0
 	})
 
-	err = strip.send2()
+	err = app.strip.send2()
 	if err != nil {
 		return errors.Wrap(err, "send2")
 	}
 
-	strip.Fini()
+	app.strip.Fini()
 
 	return nil
 }
 
 func mainloop(
-	env *config,
-	strip *Strip,
+	app *App,
 	cb callback,
-	ch <-chan callback,
-	done <-chan bool,
 ) error {
 	startTime := time.Now()
-	t0 := startTime
+	t0 := startTime // might want to rename t0 to tprev?
 
-	ticker := time.NewTicker(env.UpdatePeriod)
+	ticker := time.NewTicker(app.env.UpdatePeriod)
 
 	for {
 		select {
-		case new_cb := <-ch:
-			startTime = time.Now()
-			cb = new_cb
+		case req := <-app.ch:
+			changed := &cb != &req.callback
+			cb = req.callback
+
+			if changed {
+				if req.newStartTime.After(time.UnixMicro(0)) {
+					startTime = req.newStartTime
+				} else {
+					startTime = time.Now()
+				}
+			}
 		case <-ticker.C:
 			now := time.Now()
 			t := now.Sub(startTime).Seconds()
 			dt := now.Sub(t0).Seconds()
 
-			if dt > 2*env.UpdatePeriod.Seconds() {
-				dt = 2 * env.UpdatePeriod.Seconds()
+			if dt > 2*app.env.UpdatePeriod.Seconds() {
+				dt = 2 * app.env.UpdatePeriod.Seconds()
 			}
 
-			cb(env, strip, t, dt)
+			cb(t, dt)
 			t0 = now
-			err := strip.send2()
+			err := app.strip.send2()
 			if err != nil {
 				return errors.Wrap(err, "send2")
 			}
-		case <-done:
+		case <-app.done:
 			return nil
 		}
 	}
-}
-
-type Handler struct {
-	ch         chan callback
-	animations map[string]callback
-	broker     *broker.Broker
-	strip      *Strip
-}
-
-func (h *Handler) SetScale(ctx context.Context, in *gen.SetScaleIn) (*gen.Empty, error) {
-	h.strip.SetScale(in.Scale)
-	return &gen.Empty{}, nil
-}
-
-func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
-	messages := h.broker.Subscribe()
-	defer h.broker.Unsubscribe(messages)
-
-	for m := range messages {
-		data, err := json.Marshal(m)
-		if err != nil {
-			return errors.Wrap(err, "marshal json")
-		}
-
-		err = server.Send(&gen.Event{
-			Type: m.Name(),
-			Data: string(data),
-		})
-
-		if err != nil {
-			break
-		}
-	}
-
-	return nil
-}
-
-func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
-	fn, ok := h.animations[in.Name]
-	if !ok {
-		return nil, errors.New("unknown animation")
-	}
-
-	h.ch <- fn
-	return &gen.Empty{}, nil
 }
 
 func setupKeytable(logger *zap.Logger, attempt int) {
@@ -173,52 +123,79 @@ func setupKeytable(logger *zap.Logger, attempt int) {
 	}
 }
 
+type App struct {
+	logger     *zap.Logger
+	env        *config
+	broker     *broker.Broker
+	strip      *Strip
+	ch         chan *animateRequest
+	animations map[string]callback
+	done       chan bool
+}
+
 func Run(logger *zap.Logger) error {
-	env := &config{}
-	err := envconfig.Init(env)
+	app := &App{
+		logger: logger,
+	}
+
+	app.env = &config{}
+
+	err := envconfig.Init(app.env)
 	if err != nil {
 		panic(err)
 	}
 
-	go func() {
-		for i := 1; i <= 60; i++ {
-			// there's some startup race condition, so keep running this for some time
-			setupKeytable(logger, i)
-			time.Sleep(5 * time.Second)
-		}
-	}()
+	if app.env.EnableIR {
+		go func() {
+			for i := 1; i <= 60; i++ {
+				// there's some startup race condition, so keep running this for some time
+				setupKeytable(logger, i)
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	}
 
-	msgBroker := broker.NewBroker()
-	go msgBroker.Start()
+	app.broker = broker.NewBroker()
+	go app.broker.Start()
 
-	strip := setup(env, msgBroker)
+	app.setup()
 
-	var animations = map[string]callback{
-		"rainbow": rainbow(strip),
-		"decay":   decay,
-		"lowred":  lowred,
-		"white":   white,
-		"bounce":  Bounce().Tick,
+	rb1 := rainbow1(app, &faderConfig{
+		timeScale: 0.3,
+	})
+
+	rb2 := rainbow2(app, &faderConfig{
+		timeScale: 0.03,
+	})
+
+	app.animations = map[string]callback{
+		"rainbow":      rb1,
+		"rainbow1":     rb1,
+		"rainbow2":     rb2,
+		"decay":        decay(app),
+		"lowred":       lowred(app),
+		"highred":      highred(app),
+		"white":        white(app),
+		"solid-random": solidRandom(app),
+		"bounce":       Bounce(app).Tick,
 		"cycle1": cycle(
-			Bounce().Tick,
-			rainbow(strip),
+			Bounce(app).Tick,
+			rb1,
 		),
+		"raindrops": raindrops(app),
 	}
 
-	ch := make(chan callback)
+	app.ch = make(chan *animateRequest)
 
-	h := &Handler{
-		ch:         ch,
-		animations: animations,
-		broker:     msgBroker,
-		strip:      strip,
+	var h = &Handler{
+		app: app,
 	}
-
 	server, err := standard_server.NewServer(&standard_server.Config{
 		Logger: logger,
 		Port:   8082,
 		GrpcSetup: func(grpcServer *grpc.Server) error {
 			gen.RegisterLedsServer(grpcServer, h)
+			gen.RegisterPingServer(grpcServer, h)
 			return nil
 		},
 		HttpSetup: func(r *gin.Engine) error {
@@ -226,9 +203,11 @@ func Run(logger *zap.Logger) error {
 
 			r.GET("/run/:name", func(c *gin.Context) {
 				name := c.Param("name")
-				fn, ok := animations[name]
+				fn, ok := app.animations[name]
 				if ok {
-					ch <- fn
+					app.ch <- &animateRequest{
+						callback: fn,
+					}
 					c.Header("Access-Control-Allow-Origin", "*")
 					c.JSON(200, gin.H{"result": "ok"})
 				}
@@ -245,19 +224,19 @@ func Run(logger *zap.Logger) error {
 		panic(server.Run())
 	}()
 
-	if env.EnableIR {
-		runIR(ch, msgBroker, animations, strip)
+	if app.env.EnableIR {
+		runIR(app)
 	}
 
 	signals := make(chan os.Signal, 1)
-	done := make(chan bool)
+	app.done = make(chan bool)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
 		<-signals
-		done <- true
+		app.done <- true
 	}()
 
-	err = runLeds(logger, env, strip, animations, ch, done)
+	err = runLeds(app)
 	return errors.Wrap(err, "run leds")
 }

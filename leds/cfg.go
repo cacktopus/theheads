@@ -18,7 +18,7 @@ type config struct {
 	Lowred float64 `envconfig:"default=0.5"`
 
 	Range struct {
-		R float64 `envconfig:"default=0.5"`
+		R float64 `envconfig:"default=0.75"`
 		G float64 `envconfig:"default=0.75"`
 		B float64 `envconfig:"default=0.75"`
 	}

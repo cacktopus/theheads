@@ -4,3 +4,4 @@
 /bin
 /scripts/__pycache__/
 /builds
+/dev/*.raw

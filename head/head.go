@@ -5,6 +5,7 @@ import (
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/cacktopus/theheads/common/standard_server"
+	"github.com/cacktopus/theheads/common/util"
 	"github.com/cacktopus/theheads/head/cfg"
 	headgrpc "github.com/cacktopus/theheads/head/grpc"
 	"github.com/cacktopus/theheads/head/log_limiter"
@@ -48,7 +49,9 @@ func publishLoop(b *broker.Broker, cfg *cfg.Cfg, controller *motor.Controller) {
 var metricsOnce sync.Once
 
 func Run(env *cfg.Cfg) {
-	logger, err := zap.NewProduction()
+	util.SetRandSeed()
+
+	logger, err := util.NewLogger(env.Debug)
 	if err != nil {
 		panic(err)
 	}
@@ -119,6 +122,8 @@ func Run(env *cfg.Cfg) {
 		GrpcSetup: func(grpcServer *grpc.Server) error {
 			gen.RegisterHeadServer(grpcServer, h)
 			gen.RegisterVoicesServer(grpcServer, voices.NewServer(&env.Voices, logger))
+			gen.RegisterEventsServer(grpcServer, h)
+			gen.RegisterPingServer(grpcServer, h)
 			return nil
 		},
 	})

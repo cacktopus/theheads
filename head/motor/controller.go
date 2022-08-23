@@ -36,8 +36,9 @@ func (s *State) StepsAway() int {
 	return fwd
 }
 
-func (s *State) Eta() float64 {
-	return float64(s.StepsAway()) / float64(s.Speed)
+func (s *State) Eta() time.Duration {
+	return time.Duration(float64(s.StepsAway()) / float64(s.Speed) * float64(time.Second))
+
 }
 
 type Actor interface {

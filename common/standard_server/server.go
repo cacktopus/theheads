@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
@@ -11,6 +12,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"io"
 	"net"
+	"net/http"
 	"os"
 )
 
@@ -27,6 +29,7 @@ type Config struct {
 	Port      int
 	GrpcSetup func(*grpc.Server) error
 	HttpSetup func(*gin.Engine) error
+	Registry  *prometheus.Registry
 }
 
 func NewServer(cfg *Config) (*Server, error) {
@@ -87,8 +90,20 @@ func NewServer(cfg *Config) (*Server, error) {
 		})
 	})
 
-	s.router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	var metricsHandler http.Handler
+	if cfg.Registry != nil {
+		metricsHandler = promhttp.InstrumentMetricHandler(
+			cfg.Registry,
+			promhttp.HandlerFor(cfg.Registry, promhttp.HandlerOpts{}),
+		)
+	} else {
+		metricsHandler = promhttp.InstrumentMetricHandler(
+			prometheus.DefaultRegisterer,
+			promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}),
+		)
+	}
 
+	s.router.GET("/metrics", gin.WrapH(metricsHandler))
 	s.mux = cmux.New(listener)
 	s.httpListener = s.mux.Match(cmux.HTTP1Fast())
 	s.grpcListener = s.mux.Match(cmux.Any())

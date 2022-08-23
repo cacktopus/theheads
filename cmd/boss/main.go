@@ -2,13 +2,14 @@ package main
 
 import (
 	"github.com/cacktopus/theheads/boss"
+	"github.com/cacktopus/theheads/boss/app"
 	"github.com/cacktopus/theheads/common/discovery"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 func run() error {
-	env := &boss.Cfg{}
+	env := &app.Cfg{}
 
 	err := envconfig.Init(env)
 	if err != nil {

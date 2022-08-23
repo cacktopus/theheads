@@ -2,7 +2,7 @@ package healthcheck
 
 import (
 	"github.com/cacktopus/theheads/rtunneld/config"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"strings"
 	"time"
@@ -10,8 +10,12 @@ import (
 
 type SshChecker struct{}
 
-func (c *SshChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, iLog *log.Entry) error {
-	iLog.Print("dialing")
+func (c *SshChecker) Check(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	sshConfig *ssh.ClientConfig,
+) error {
+	logger.Info("dialing")
 
 	// TODO: timeout here
 	if sshConfig.Timeout == 0 {
@@ -20,7 +24,7 @@ func (c *SshChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, i
 
 	jumpClient, err := ssh.Dial("tcp", tunnel.Gateway, sshConfig)
 	if err != nil {
-		iLog.WithError(err).Error("connection to gateway failed")
+		logger.Error("connection to gateway failed", zap.Error(err))
 		return err
 	}
 	go func() {
@@ -31,7 +35,7 @@ func (c *SshChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, i
 
 	conn, err := jumpClient.Dial("tcp", tunnel.Listen) // TODO: timeout?
 	if err != nil {
-		iLog.WithError(err).Error("dial failed")
+		logger.Error("dial failed", zap.Error(err))
 		return err
 	}
 	go func() {
@@ -40,19 +44,19 @@ func (c *SshChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, i
 		conn.Close()
 	}()
 
-	iLog.Print("connected")
-	iLog.Print("reading")
+	logger.Debug("connected")
+	logger.Debug("reading")
 
 	buf := make([]byte, 100)
 
 	nr, err := conn.Read(buf) // TODO: timeout
 	if err != nil {
-		iLog.WithError(err).Error("read failed")
+		logger.Error("read failed", zap.Error(err))
 		return err
 	}
 
 	body := strings.TrimRight(string(buf[:nr]), "\r\n")
-	iLog.WithField("body", body).Print("read")
+	logger.Info("body", zap.String("body", body))
 
 	return nil
 }

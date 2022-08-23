@@ -1,17 +1,12 @@
 package leds
 
 import (
-	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/leds/schema"
 	"github.com/gvalkov/golang-evdev"
+	"time"
 )
 
-func runIR(
-	ch chan callback,
-	msgBroker *broker.Broker,
-	animations map[string]callback,
-	strip *Strip,
-) {
+func runIR(app *App) {
 	device, err := evdev.Open("/dev/input/event0")
 	if err != nil {
 		panic(err)
@@ -24,17 +19,42 @@ func runIR(
 				panic(err)
 			}
 			if event.Code == 4 && event.Type == 4 {
-				msgBroker.Publish(&schema.ReceivedIR{Value: event.Value})
+				app.broker.Publish(&schema.ReceivedIR{Value: event.Value})
+
+				req := &animateRequest{newStartTime: time.Now()}
 
 				switch event.Value {
 				case 48912: // 1
-					ch <- animations["bounce"]
+					req.callback = app.animations["bounce"]
+					app.ch <- req
 				case 48913: // 2
-					ch <- animations["rainbow"]
+					req.callback = app.animations["rainbow1"]
+					app.ch <- req
+				case 48914: // 3
+					req.callback = app.animations["rainbow2"]
+					app.ch <- req
+
+				case 48916: // 4
+					req.callback = app.animations["raindrops"]
+					app.ch <- req
+
+				case 48917: // 5
+				case 48918: // 6
+
+				case 48920: // 7
+				case 48921: // 8
+					req.callback = solidRandom(app)
+					app.ch <- req
+				case 48922: // 9
+					req.callback = app.animations["white"]
+					app.ch <- req
+
+				case 48905: // enter/save
+
 				case 48896: // vol-
-					strip.ScaleDown()
+					app.strip.ScaleDown()
 				case 48898: // vol+
-					strip.ScaleUp()
+					app.strip.ScaleUp()
 				}
 			}
 		}

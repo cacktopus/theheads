@@ -1,0 +1,10 @@
+FROM heads-build-armhf
+
+WORKDIR /build
+
+COPY cmd/lowred ./cmd/lowred
+
+RUN go build -o bin/ ./cmd/lowred
+
+ARG TAG
+RUN tar -czvf "lowred_${TAG}_armhf.tar.gz" bin

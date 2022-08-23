@@ -5,6 +5,8 @@ import (
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/timesync/util"
 	"github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 )
 
 var currentTimestamp = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
@@ -23,7 +25,7 @@ type Handler struct {
 
 func (h *Handler) Time(ctx context.Context, in *gen.TimeIn) (*gen.TimeOut, error) {
 	return &gen.TimeOut{
-		T:      util.Now(),
+		T:      timestamppb.New(time.Now()),
 		HasRtc: h.RTC,
 	}, nil
 }

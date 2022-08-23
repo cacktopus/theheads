@@ -9,12 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -54,12 +55,16 @@ func allowedCopyErrors(err error) error {
 	return err
 }
 
-func handleClient(tunnel *config.Tunnel, remote net.Conn) {
-	cLog := log.WithField("component", "proxy")
-	cLog.Print("dialing")
+func handleClient(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	remote net.Conn,
+) {
+	clientLogger := logger.With(zap.String("component", "proxy"))
+	clientLogger.Info("dialing")
 	local, err := net.Dial("tcp", tunnel.Dial)
 	if err != nil {
-		cLog.Warn("Unable to connect to local service")
+		clientLogger.Warn("Unable to connect to local service")
 		return
 	}
 
@@ -74,7 +79,11 @@ func handleClient(tunnel *config.Tunnel, remote net.Conn) {
 		_, err := io.Copy(local, remote)
 		err = allowedCopyErrors(err)
 		if err != nil {
-			cLog.Print("remote->local unexpected error:", reflect.TypeOf(err), err.Error())
+			clientLogger.Info(
+				"remote->local unexpected error",
+				zap.String("type", reflect.TypeOf(err).String()),
+				zap.Error(err),
+			)
 		}
 		done <- true
 	}()
@@ -83,17 +92,30 @@ func handleClient(tunnel *config.Tunnel, remote net.Conn) {
 		_, err := io.Copy(remote, local)
 		err = allowedCopyErrors(err)
 		if err != nil {
-			cLog.Print("local->remote unexpected error:", reflect.TypeOf(err), err.Error())
+			clientLogger.Info(
+				"local->remote unexpected error",
+				zap.String("type", reflect.TypeOf(err).String()),
+				zap.Error(err),
+			)
 		}
 		done <- true
 	}()
 
-	cLog.Print("closing connections")
+	clientLogger.Info("closing connections")
 	<-done
 }
 
-func listen(cfg *config.Tunnel, client *ssh.Client, closeListener util.BroadcastCloser) error {
-	log.WithField("tunnelName", cfg.Name).Println("Starting listener on:", cfg.Listen)
+func listen(
+	logger *zap.Logger,
+	cfg *config.Tunnel,
+	client *ssh.Client,
+	closeListener util.BroadcastCloser,
+) error {
+	logger.Info(
+		"starting listener",
+		zap.String("tunnel_name", cfg.Name),
+		zap.String("listen", cfg.Listen),
+	)
 	listener, err := client.Listen("tcp", cfg.Listen)
 	if err != nil {
 		panic(err)
@@ -113,18 +135,23 @@ func listen(cfg *config.Tunnel, client *ssh.Client, closeListener util.Broadcast
 		if err != nil {
 			return err
 		}
-		go handleClient(cfg, remote)
+		go handleClient(logger, cfg, remote)
 	}
 }
 
-func connectAndListen(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, closeListener util.BroadcastCloser) error {
+func connectAndListen(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	sshConfig *ssh.ClientConfig,
+	closeListener util.BroadcastCloser,
+) error {
 	log.Println("Connecting to gateway:", tunnel.Gateway)
 	client, err := ssh.Dial("tcp", tunnel.Gateway, sshConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	return listen(tunnel, client, closeListener)
+	return listen(logger, tunnel, client, closeListener)
 }
 
 func setupLogging(cfg *config.Config) {
@@ -138,10 +165,9 @@ func setupLogging(cfg *config.Config) {
 		}
 		log.SetOutput(file)
 	}
-	log.SetLevel(log.DebugLevel)
 }
 
-func runTunnel(cfg *config.Config, index int) {
+func runTunnel(logger *zap.Logger, cfg *config.Config, index int) {
 	for {
 		closeListener := util.NewBroadcastCloser()
 
@@ -190,7 +216,7 @@ func runTunnel(cfg *config.Config, index int) {
 			panic("Unknown health check")
 		}
 
-		go healthcheck.HealthCheck(tunnel, sshConfig, closeListener, index, checker)
+		go healthcheck.HealthCheck(logger, tunnel, sshConfig, closeListener, index, checker)
 
 		quit := make(chan bool)
 		go func() {
@@ -199,14 +225,14 @@ func runTunnel(cfg *config.Config, index int) {
 			}
 		}()
 
-		err = connectAndListen(tunnel, sshConfig, closeListener)
-		log.WithError(err).Error("Got error from listener")
+		err = connectAndListen(logger, tunnel, sshConfig, closeListener)
+		logger.Error("got error from listener", zap.Error(err))
 		time.Sleep(10 * time.Second)
 		select {
 		case quit <- true:
 		default:
 		}
-		log.Info("Retrying gateway connection")
+		logger.Info("retrying gateway connection")
 	}
 }
 
@@ -232,6 +258,8 @@ func loadConfig(cfgFile string) (*config.Config, error) {
 }
 
 func Run() {
+	logger, _ := zap.NewProduction()
+
 	env := &config.Env{}
 
 	err := envconfig.Init(env)
@@ -239,16 +267,13 @@ func Run() {
 		panic(err)
 	}
 
-	log.SetOutput(os.Stdout)
-	log.SetFormatter(&log.JSONFormatter{})
-
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic("Unable to determine hostname: " + err.Error())
 	}
 
 	configKey := fmt.Sprintf("/rtunneld/config/%s.yaml", hostname)
-	log.WithField("key", configKey).Info("config key")
+	logger.Info("config key", zap.String("key", configKey))
 
 	cfg, err := loadConfig(env.ConfigFile)
 	if err != nil {
@@ -256,9 +281,7 @@ func Run() {
 	}
 	setupLogging(cfg)
 
-	log.WithFields(log.Fields{
-		"cfg": cfg,
-	}).Info("startup")
+	logger.Info("startup")
 
 	go func() {
 		addr := ":8050" // TODO
@@ -278,7 +301,7 @@ func Run() {
 	highest := 0
 	for ; highest < len(cfg.Tunnels); highest++ {
 		// simply spawn 10 tunnels for now
-		go runTunnel(cfg, highest)
+		go runTunnel(logger, cfg, highest)
 	}
 
 	select {}

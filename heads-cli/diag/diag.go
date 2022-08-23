@@ -17,7 +17,7 @@ const (
 type clients struct {
 	head   heads.HeadClient
 	voices heads.VoicesClient
-	camera heads.CameraClient
+	camera *grpc.ClientConn
 }
 
 type objects struct {
@@ -42,7 +42,7 @@ func Run(host string) {
 		clients: clients{
 			head:   heads.NewHeadClient(headConn),
 			voices: heads.NewVoicesClient(headConn),
-			camera: heads.NewCameraClient(cameraConn),
+			camera: cameraConn,
 		},
 		host:      host,
 		cameraURL: cameraURL,
@@ -114,7 +114,7 @@ func checkSound(ctx context.Context, obj *objects) {
 }
 
 func checkCamera(ctx context.Context, obj *objects) {
-	events, err := obj.clients.camera.Events(ctx, &heads.Empty{})
+	events, err := heads.NewEventsClient(obj.clients.camera).Stream(ctx, &heads.Empty{})
 	handleErr(err)
 
 	go func() {

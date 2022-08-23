@@ -10,6 +10,8 @@ type Entry struct {
 
 	Hostname string `json:"hostname"`
 	Port     int    `json:"port,omitempty"`
+
+	Addr string `json:"addr"`
 }
 
 type Discovery interface {

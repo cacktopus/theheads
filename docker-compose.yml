@@ -69,6 +69,18 @@ services:
     ports:
       - 5011:5000
 
-
-
-
+  camera01-arm64:
+    image: camera-arm64
+    command:
+      - /build/bin/camera
+    environment:
+      INSTANCE: camera-01
+      FILENAME: /d/pi42.raw
+      DRAW_FRAME: resized
+      MOTION_DETECT_WIDTH: 320
+      MOTION_THRESHOLD: 4
+      FLOODLIGHT_PIN: -1
+    volumes:
+      - ./dev:/d:ro
+    ports:
+      - 5010:5000

@@ -38,10 +38,11 @@ func (s *Serf) Discover(logger *zap.Logger) ([]*Entry, error) {
 
 	for _, s := range services {
 		result = append(result, &Entry{
+			Service:  s.Name,
+			Instance: s.Instance,
 			Hostname: s.Host,
 			Port:     s.ServicePort,
-			Instance: s.Instance,
-			Service:  s.Name,
+			Addr:     s.Addr,
 		})
 	}
 

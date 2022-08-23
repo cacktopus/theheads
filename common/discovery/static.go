@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 	"sync"
 )
@@ -31,5 +32,6 @@ func (s *StaticDiscovery) Register(
 		Port:     port,
 		Instance: instance,
 		Service:  service,
+		Addr:     fmt.Sprintf("127.0.0.1:%d", port),
 	})
 }

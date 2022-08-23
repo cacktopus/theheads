@@ -1,14 +1,20 @@
 package zero_detector
 
 import (
+	"github.com/cacktopus/theheads/common/metrics"
 	"github.com/cacktopus/theheads/head/motor"
 	"github.com/cacktopus/theheads/head/sensor/magnetometer"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"math"
 	"math/rand"
 	"sync"
 )
+
+var metricsOnce sync.Once
+var gStepDelta prometheus.Gauge
 
 type ZeroDetector struct {
 	logger                *zap.Logger
@@ -18,6 +24,10 @@ type ZeroDetector struct {
 	once                  sync.Once
 	directionChangePauses int
 	findDirection         motor.Direction
+	predicted             *atomic.Int32
+	stepped               *atomic.Int32
+	getSteps              func() int
+	gStepDelta            prometheus.Gauge
 }
 
 type result struct {
@@ -30,6 +40,7 @@ func NewZeroDetector(
 	sensor magnetometer.Sensor,
 	numSteps int,
 	directionChangePauses int,
+	getSteps func() int,
 ) *ZeroDetector {
 	var findDirection motor.Direction
 	if rand.Float64() < 0.50 {
@@ -38,6 +49,14 @@ func NewZeroDetector(
 		findDirection = motor.Backward
 	}
 
+	metricsOnce.Do(func() {
+		gStepDelta = metrics.SimpleGauge(
+			prometheus.DefaultRegisterer,
+			"head",
+			"zero_detector_step_delta",
+		)
+	})
+
 	d := &ZeroDetector{
 		logger:                logger,
 		sensor:                sensor,
@@ -45,13 +64,39 @@ func NewZeroDetector(
 		numSteps:              numSteps,
 		directionChangePauses: directionChangePauses + 2, // add a little padding
 		findDirection:         findDirection,
+		getSteps:              getSteps,
+		predicted:             atomic.NewInt32(0),
+		stepped:               atomic.NewInt32(0),
+		gStepDelta:            gStepDelta,
 	}
 
 	return d
 }
 
 func (d *ZeroDetector) Act(pos, target int) (direction motor.Direction, done bool) {
-	return d.getStep()
+	direction, done = d.getStep()
+	if done {
+		actual := int(d.stepped.Load())
+		predicted := int(d.predicted.Load())
+
+		actual = Mod(actual, d.numSteps)
+		predicted = Mod(predicted, d.numSteps)
+		delta := actual - predicted
+
+		if delta > d.numSteps/2 {
+			delta -= d.numSteps
+		}
+
+		d.logger.Debug(
+			"finished finding zero",
+			zap.Int("predicted", predicted),
+			zap.Int("actual", actual),
+			zap.Int("delta", delta),
+		)
+
+		d.gStepDelta.Set(float64(delta))
+	}
+	return direction, done
 }
 
 func (d *ZeroDetector) Name() string {
@@ -69,6 +114,8 @@ func (d *ZeroDetector) getStep() (motor.Direction, bool) {
 
 	// this may read from the closed channel, which will result in result.open == false
 	result := <-d.ch
+	d.stepped.Add(int32(result.direction))
+
 	return result.direction, result.done
 }
 
@@ -128,6 +175,12 @@ func (d *ZeroDetector) done() {
 func (d *ZeroDetector) controller() {
 	const NumSlowSteps = 5
 	const stepsBack = NumSlowSteps / 2
+
+	d.pause()
+	predicted := Mod(d.numSteps-d.getSteps(), d.numSteps)
+	d.predicted.Store(int32(predicted))
+
+	d.logger.Debug("predicted find zero steps", zap.Int("predicted", predicted))
 
 	// 1. fast, coarse-grained find
 	{

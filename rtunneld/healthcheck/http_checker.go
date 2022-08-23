@@ -2,7 +2,7 @@ package healthcheck
 
 import (
 	"github.com/cacktopus/theheads/rtunneld/config"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net/http"
@@ -13,13 +13,17 @@ type HttpChecker struct {
 	URL string
 }
 
-func (c *HttpChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, iLog *log.Entry) error {
-	iLog.Print("dialing")
+func (c *HttpChecker) Check(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	sshConfig *ssh.ClientConfig,
+) error {
+	logger.Info("dialing")
 
 	// TODO: timeout here
 	jumpClient, err := ssh.Dial("tcp", tunnel.Gateway, sshConfig)
 	if err != nil {
-		iLog.WithError(err).Error("connection to gateway failed")
+		logger.Error("connection to gateway failed", zap.Error(err))
 		return err
 	}
 	go func() {
@@ -45,7 +49,7 @@ func (c *HttpChecker) Check(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, 
 		return err
 	}
 
-	iLog.WithField("body", string(body)).Print("body")
+	logger.Debug("body", zap.String("body", string(body)))
 
 	return nil
 }
