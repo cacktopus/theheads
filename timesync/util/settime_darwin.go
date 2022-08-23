@@ -2,8 +2,9 @@ package util
 
 import (
 	"errors"
+	"time"
 )
 
-func SetTime(max float64) error {
+func SetTime(max time.Time) error {
 	return errors.New("not setting time on darwin")
 }

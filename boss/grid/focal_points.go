@@ -1,9 +1,9 @@
 package grid
 
 import (
-	"github.com/cacktopus/theheads/boss/geom"
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/common/broker"
+	"github.com/cacktopus/theheads/common/geom"
 	"github.com/cacktopus/theheads/common/schema"
 	"go.uber.org/zap"
 	"math"
@@ -70,7 +70,11 @@ func (fps *focalPoints) mergeOverlappingFocalPoints() {
 					midpoint := fp0.pos.Add(fp1.pos).Scale(0.5)
 					fp0.pos = midpoint
 					delete(fps.focalPoints, id)
-					activeFocalPointCount.Dec()
+					fps.logger.Debug(
+						"focal point merged",
+						zap.String("id", id),
+					)
+					gActiveFocalPointCount.Dec()
 				}
 			}
 		}
@@ -113,7 +117,11 @@ func (fps *focalPoints) cleanupStale() {
 
 		for _, id := range toRemove {
 			delete(fps.focalPoints, id)
-			activeFocalPointCount.Dec()
+			fps.logger.Debug(
+				"focal point expired",
+				zap.String("id", id),
+			)
+			gActiveFocalPointCount.Dec()
 		}
 	})
 
@@ -144,11 +152,13 @@ func (fps *focalPoints) closestFocalPointTo(p geom.Vec) (*schema.FocalPoint, flo
 }
 
 func (fps *focalPoints) maybeSpawnFocalPoint(p geom.Vec) {
+	cMaybeSpawnFocalPoint.Inc()
 	newFp := NewFocalPoint(p, fpRadius, "", DefaultTTL, DefaultTTLLast)
 
 	for _, cam := range fps.scene.Cameras {
 		fakeFp := NewFocalPoint(cam.M.Translation(), fpRadius, "", DefaultTTL, DefaultTTLLast)
 		if newFp.overlaps(fakeFp, 1.0) {
+			cNewFPOverlapsCamera.Inc()
 			return
 		}
 	}
@@ -156,6 +166,7 @@ func (fps *focalPoints) maybeSpawnFocalPoint(p geom.Vec) {
 	fps.withLock(func() {
 		for _, fp := range fps.focalPoints {
 			if newFp.overlaps(fp, 1.0) {
+				cNewFPOverlapsExisting.Inc()
 				return
 			}
 		}
@@ -163,8 +174,12 @@ func (fps *focalPoints) maybeSpawnFocalPoint(p geom.Vec) {
 		// create new focal point
 		newFp.id = assignID()
 		fps.focalPoints[newFp.id] = newFp
-		activeFocalPointCount.Inc()
-		fps.logger.Debug("spawning new focal point", zap.String("pos", p.AsStr()))
+		gActiveFocalPointCount.Inc()
+		fps.logger.Debug(
+			"spawning new focal point",
+			zap.String("id", newFp.id),
+			zap.String("pos", p.AsStr()),
+		)
 	})
 
 	fps.publishFocalPoints()

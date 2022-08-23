@@ -1,0 +1,12 @@
+FROM heads-build-armhf
+
+WORKDIR /build
+
+COPY common ./common
+COPY leds ./leds
+COPY cmd/leds ./cmd/leds
+
+RUN go build -o bin/ ./cmd/leds
+
+ARG TAG
+RUN tar -czvf "leds_${TAG}_armhf.tar.gz" bin

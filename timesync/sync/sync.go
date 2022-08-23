@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"math"
 	"sort"
 	"sync"
 	"time"
@@ -114,7 +113,11 @@ func primeConnection(
 		return nil, nil, errors.Wrap(err, "time rpc")
 	}
 
-	logger.Debug("primed connection", zap.Bool("has_rtc", resp.HasRtc), zap.Float64("t", resp.T))
+	logger.Debug(
+		"primed connection",
+		zap.Bool("has_rtc", resp.HasRtc),
+		zap.String("t", resp.T.AsTime().String()),
+	)
 
 	return conn, resp, err
 }
@@ -156,10 +159,10 @@ func processValues(
 	logger *zap.Logger,
 	responses []*gen.TimeOut,
 ) error {
-	var values []float64
+	var values []time.Time
 	for _, resp := range responses {
 		if resp.HasRtc {
-			values = append(values, resp.T)
+			values = append(values, resp.T.AsTime())
 		}
 	}
 
@@ -173,25 +176,32 @@ func processValues(
 		return err
 	}
 
-	sort.Float64s(values)
+	sort.Slice(values, func(i, j int) bool {
+		return values[i].Before(values[j])
+	})
+
 	min := values[0]
 	max := values[len(values)-1]
 
-	rtcDelta := max - min
+	rtcDelta := max.Sub(min)
 
 	if rtcDelta > 5.0 {
 		err := errors.New("clock source (RTC) delta is too large")
-		logger.Debug(err.Error(), zap.Float64("rtcDelta", rtcDelta))
+		logger.Debug(err.Error(), zap.Duration("rtcDelta", rtcDelta))
 		return err
 	}
 
-	localDelta := math.Abs(util.Now() - max)
-	if localDelta < 5.0 {
-		logger.Debug("local clock is fine, not changing", zap.Float64("localDelta", localDelta))
+	localDelta := time.Now().Sub(max)
+	if localDelta < 0 {
+		localDelta = -localDelta
+	}
+
+	if localDelta < 5*time.Second {
+		logger.Debug("local clock is fine, not changing", zap.Duration("localDelta", localDelta))
 		return nil
 	}
 
-	setTime := time.UnixMicro(int64(max * 1e6))
+	setTime := max
 	logger.Debug(
 		"setting system time",
 		zap.String("new_time", setTime.UTC().String()),

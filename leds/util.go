@@ -1,5 +1,7 @@
 package leds
 
+import "time"
+
 func clamp(min, x, max float64) float64 {
 	if x < min {
 		return min
@@ -20,4 +22,9 @@ func clampUint32(min, x, max uint32) uint32 {
 	return x
 }
 
-type callback func(env *config, strip *Strip, t, dt float64)
+type callback func(t, dt float64)
+
+type animateRequest struct {
+	callback     callback
+	newStartTime time.Time
+}

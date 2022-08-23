@@ -1,4 +1,4 @@
-FROM heads-build-arm
+FROM heads-build-armhf
 
 WORKDIR /build
 COPY boss-ui/package.json boss-ui/package-lock.json ./

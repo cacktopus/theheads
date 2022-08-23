@@ -5,6 +5,7 @@ go 1.17
 replace gobot.io/x/gobot => github.com/cacktopus/gobot v1.14.1-0.20200917005259-a4270fc0f114
 
 require (
+	aead.dev/minisign v0.2.0
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/davecgh/go-spew v1.1.1
@@ -18,8 +19,10 @@ require (
 	github.com/hpinc/go3mf v0.24.0
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/kisielk/og-rek v1.2.0
 	github.com/larspensjo/Go-simplex-noise v0.0.0-20121005164837-bfdcb9fc4b93
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/montanaflynn/stats v0.6.6
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/paulmach/orb v0.4.0
 	github.com/pin/tftp v2.1.0+incompatible
@@ -28,15 +31,15 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rpi-ws281x/rpi-ws281x-go v1.0.8
 	github.com/ryanuber/go-glob v1.0.0
-	github.com/sirupsen/logrus v1.8.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spagettikod/gotracer v0.0.0-20170416124539-34461799a77b
 	github.com/stretchr/testify v1.7.1
 	github.com/toanqng/martinez-rueda v1.0.1
 	github.com/vrischmann/envconfig v1.3.0
+	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.21.0
 	gobot.io/x/gobot v1.15.0
-	gocv.io/x/gocv v0.24.0
+	gocv.io/x/gocv v0.31.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	gonum.org/v1/gonum v0.11.0
 	google.golang.org/grpc v1.45.0
@@ -98,15 +101,16 @@ require (
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/sigurn/crc8 v0.0.0-20160107002456-e55481d6f45c // indirect
 	github.com/sigurn/utils v0.0.0-20190728110027-e1fefb11a144 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

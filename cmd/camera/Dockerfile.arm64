@@ -1,0 +1,12 @@
+FROM heads-build-arm64
+
+WORKDIR /build
+
+COPY common /build/common
+COPY camera /build/camera
+COPY cmd/camera ./cmd/camera
+
+RUN mkdir -p bin && go build -o bin ./cmd/camera
+
+ARG TAG
+RUN tar -czvf "camera_${TAG}_arm64.tar.gz" bin

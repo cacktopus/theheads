@@ -19,15 +19,14 @@ COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
 
 WORKDIR /build
 
-COPY go.mod go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY Makefile .
 COPY common common
 
 COPY leds leds
 COPY cmd/leds ./cmd/leds
-RUN make bin/leds
+RUN go build -o `mktemp -d` ./cmd/leds
 
 COPY cmd/lowred ./cmd/lowred
-RUN make bin/lowred
+RUN go build -o `mktemp -d` ./cmd/lowred

@@ -6,7 +6,7 @@ import (
 	"github.com/cacktopus/theheads/rtunneld/util"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"time"
 )
@@ -23,24 +23,31 @@ var (
 	})
 )
 
-func HealthCheck(tunnel *config.Tunnel, sshConfig *ssh.ClientConfig, closeListener util.BroadcastCloser, tunnelIndex int, checker Checker) {
-	hcLog := log.WithFields(log.Fields{
-		"component": "healthCheck",
-		"index":     tunnelIndex,
-		"name":      tunnel.Name,
-	})
-	hcLog.Info("start")
+func HealthCheck(
+	logger *zap.Logger,
+	tunnel *config.Tunnel,
+	sshConfig *ssh.ClientConfig,
+	closeListener util.BroadcastCloser,
+	tunnelIndex int,
+	checker Checker,
+) {
+	hcLogger := logger.With(
+		zap.String("component", "healthCheck"),
+		zap.Int("index", tunnelIndex),
+		zap.String("name", tunnel.Name),
+	)
+	hcLogger.Info("start")
 
 loop:
 	for iteration := 1; ; iteration++ {
 		select {
 		case <-closeListener.Chan():
-			hcLog.Info("Breaking loop")
+			hcLogger.Info("Breaking loop")
 			break loop
 		default:
 		}
 
-		iLog := hcLog.WithFields(log.Fields{"iteration": iteration})
+		iLogger := hcLogger.With(zap.Int("iteration", iteration))
 
 		var interval time.Duration = 60 * time.Second
 		if tunnel.HealthcheckInterval > 0 {
@@ -49,11 +56,11 @@ loop:
 
 		time.Sleep(interval)
 
-		iLog.Info("Begin iteration")
+		iLogger.Info("begin iteration")
 
 		ret := make(chan error)
 		go func() {
-			ret <- checker(tunnel, sshConfig, iLog)
+			ret <- checker(logger, tunnel, sshConfig)
 		}()
 
 		var err error
@@ -64,7 +71,7 @@ loop:
 		}
 
 		if err != nil {
-			iLog.WithError(err).Error("health check failed")
+			iLogger.Error("health check failed", zap.Error(err))
 			healthCheckFailed.Inc()
 			SetUnhealthy(tunnelIndex)
 			closeListener.Close()

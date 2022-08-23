@@ -3,6 +3,7 @@ package web
 import (
 	"embed"
 	"fmt"
+	"github.com/cacktopus/theheads/common/discovery"
 	"github.com/cacktopus/theheads/common/wsrpc/server"
 	"github.com/cacktopus/theheads/web/systemd_analyze"
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,10 @@ func proxy(c *gin.Engine, path string, host string) {
 //go:embed logs
 var logs embed.FS
 
-func setupRoutes(logger *zap.Logger) func(router *gin.Engine) error {
+func setupRoutes(
+	logger *zap.Logger,
+	discover discovery.Discovery,
+) func(router *gin.Engine) error {
 	return func(router *gin.Engine) error {
 		templ := template.Must(template.New("").ParseFS(f, "templates/*.html"))
 		router.SetHTMLTemplate(templ)
@@ -69,7 +73,7 @@ func setupRoutes(logger *zap.Logger) func(router *gin.Engine) error {
 			router.StaticFS("/logs", http.FS(sub))
 		}
 
-		router.GET("/", index)
+		router.GET("/", index(discover))
 
 		router.GET("/ws", gin.WrapF(func(w http.ResponseWriter, r *http.Request) {
 			conn, err := new(websocket.Upgrader).Upgrade(w, r, nil)

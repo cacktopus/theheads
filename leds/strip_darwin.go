@@ -1,16 +1,14 @@
 package leds
 
-import "github.com/cacktopus/theheads/common/broker"
-
 type Strip struct {
 	env  *config
 	leds []Led
 }
 
-func NewStrip(env *config, msgBroker *broker.Broker) (*Strip, error) {
+func NewStrip(app *App) (*Strip, error) {
 	return &Strip{
-		env:  env,
-		leds: make([]Led, env.NumLeds),
+		env:  app.env,
+		leds: make([]Led, app.env.NumLeds),
 	}, nil
 }
 

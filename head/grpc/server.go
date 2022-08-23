@@ -14,6 +14,7 @@ import (
 	zero_detector2 "github.com/cacktopus/theheads/head/sensor/magnetometer/zero_detector"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type Handler struct {
@@ -26,6 +27,10 @@ type Handler struct {
 
 	motorCfg     *motor.Cfg
 	magnetometer magnetometer.Sensor
+}
+
+func (h *Handler) Ping(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+	return &gen.Empty{}, nil
 }
 
 func (h *Handler) MotorOff(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
@@ -63,7 +68,7 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) Events(empty *gen.Empty, server gen.Head_EventsServer) error {
+func (h *Handler) Stream(empty *gen.Empty, server gen.Events_StreamServer) error {
 	messages := h.controller.Broker.Subscribe()
 	defer h.controller.Broker.Unsubscribe(messages)
 
@@ -88,8 +93,6 @@ func (h *Handler) Events(empty *gen.Empty, server gen.Head_EventsServer) error {
 }
 
 func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
-	h.logger.Info("find_zero called")
-
 	var detector motor.Actor
 	if h.magnetometer.HasHardware() {
 		detector = zero_detector2.NewZeroDetector(
@@ -97,6 +100,10 @@ func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, e
 			h.magnetometer,
 			h.motorCfg.NumSteps,
 			h.motorCfg.DirectionChangePauses,
+			func() int {
+				state := h.controller.GetState()
+				return state.Pos
+			},
 		)
 	} else {
 		detector = zero_detector.NewDetector(
@@ -125,7 +132,7 @@ func (h *Handler) headState() *gen.HeadState {
 		Rotation:   state.Rotation(),
 		Controller: state.ActorName,
 		StepsAway:  int32(state.StepsAway()),
-		Eta:        state.Rotation(),
+		Eta:        durationpb.New(state.Eta()),
 	}
 }
 

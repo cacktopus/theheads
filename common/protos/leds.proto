@@ -4,9 +4,11 @@ option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
 package heads;
 
 import "common.proto";
+import "google/protobuf/timestamp.proto";
 
 message RunIn {
   string name = 1;
+  google.protobuf.Timestamp new_start_time = 2;
 }
 
 message SetScaleIn {

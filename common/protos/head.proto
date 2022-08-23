@@ -4,6 +4,7 @@ option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
 package heads;
 
 import "common.proto";
+import "google/protobuf/duration.proto";
 
 message SetTargetIn {
   double theta = 1;
@@ -20,7 +21,7 @@ message HeadState {
   double rotation = 3;
   string controller = 4;
   int32 steps_away = 5;
-  double eta = 6;
+  google.protobuf.Duration eta = 6;
 }
 
 message ReadHallEffectSensorOut {
@@ -41,7 +42,6 @@ service head {
   rpc set_actor(SetActorIn) returns (HeadState);
   rpc status(Empty) returns (HeadState);
   rpc find_zero(Empty) returns (Empty);
-  rpc events(Empty) returns (stream Event);
   rpc read_hall_effect_sensor(Empty) returns (ReadHallEffectSensorOut);
   rpc read_magnet_sensor(Empty) returns (ReadMagnetSensorOut);
   rpc motor_off(Empty) returns (Empty);

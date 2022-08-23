@@ -1,0 +1,50 @@
+# Stage 0 : Build the C library
+FROM debian@sha256:e8c184b56a94db0947a9d51ec68f42ef5584442f20547fa3bd8cbd00203b2e7a AS lib_builder
+
+WORKDIR /foundry
+
+RUN apt-get update -y && apt-get install -y build-essential cmake git
+
+RUN git clone https://github.com/jgarff/rpi_ws281x.git \
+  && cd rpi_ws281x \
+  && mkdir build \
+  && cd build \
+  && cmake -D BUILD_SHARED=OFF -D BUILD_TEST=OFF .. \
+  && cmake --build . \
+  && make install
+
+FROM golang:1.17-buster@sha256:6d0772539cd83e5a8b24a0003e82e042148f89762d36c610c220536322541e94
+
+COPY --from=lib_builder /usr/local/lib/libws2811.a /usr/local/lib/
+COPY --from=lib_builder /usr/local/include/ws2811 /usr/local/include/ws2811
+
+WORKDIR /pkg
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
+
+RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
+    wget https://theheads.sfo2.digitaloceanspaces.com/builds/opencv_4.5.5-2_${arch}.deb
+
+RUN echo '16a9489dde466c101e65cd0f91d664a83d496392e3b879ade607c2c038041666  opencv_4.5.5-2_armhf.deb' | shasum -c
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.5.5-2_*.deb
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+
+WORKDIR /build
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY common common
+
+COPY camera camera
+COPY cmd/camera ./cmd/camera
+RUN go build -o `mktemp -d` ./cmd/camera
+
+COPY leds leds
+COPY cmd/leds ./cmd/leds
+RUN go build -o `mktemp -d` ./cmd/leds
+
+COPY cmd/lowred ./cmd/lowred
+RUN go build -o `mktemp -d` ./cmd/lowred

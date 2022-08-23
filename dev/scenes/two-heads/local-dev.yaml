@@ -1,0 +1,5 @@
+scenes:
+  - follow_convo
+  - find_zeros
+
+startup_scenes: [ find_zeros ]

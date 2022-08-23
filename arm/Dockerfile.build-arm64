@@ -23,18 +23,27 @@ WORKDIR /pkg
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
 
+RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH` && \
+    wget https://theheads.sfo2.digitaloceanspaces.com/builds/opencv_4.5.5-2_${arch}.deb
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.5.5-2_*.deb
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+
+
 WORKDIR /build
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY Makefile .
 COPY common common
-
-COPY camera camera
-# COPY cmd/camera ./cmd/camera
-# RUN make bin/camera
 
 COPY leds leds
 COPY cmd/leds ./cmd/leds
-RUN make bin/leds
+RUN go build -o `mktemp -d` ./cmd/leds
+
+COPY cmd/lowred ./cmd/lowred
+RUN go build -o `mktemp -d` ./cmd/lowred
+
+COPY camera camera
+COPY cmd/camera ./cmd/camera
+RUN go build -o `mktemp -d` ./cmd/camera

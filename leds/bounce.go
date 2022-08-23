@@ -6,7 +6,7 @@ import (
 
 const (
 	CR            = 0.95
-	G             = 9.81
+	G             = 9.81 * 0.66
 	defaultRadius = 1.0 / 6.0
 )
 
@@ -100,10 +100,11 @@ type Simulation struct {
 	Balls  []*Ball
 	Planes []*Plane
 	G      float64
+	app    *App
 }
 
-func (sim *Simulation) Tick(env *config, strip *Strip, _, dt float64) {
-	dt *= 0.5
+func (sim *Simulation) Tick(_, dt float64) {
+	dt *= 0.33
 
 	da := -sim.G * dt
 
@@ -123,48 +124,51 @@ func (sim *Simulation) Tick(env *config, strip *Strip, _, dt float64) {
 	// ball/ball collisions
 	collideAll(sim.Balls)
 
+	const decay = 0.925
 	// draw
-	strip.Each(func(i int, led *Led) {
-		led.r = 0
-		led.g = 0
-		led.b = 0
+	sim.app.strip.Each(func(i int, led *Led) {
+		led.r *= decay
+		led.g *= decay
+		led.b *= decay
 	})
 
 	for _, b := range sim.Balls {
-		x0 := strip.tx(b.X - b.R)
-		x1 := strip.tx(b.X + b.R)
-		strip.fill(x0, x1, b.Color)
+		x0 := sim.app.strip.tx(b.X - b.R)
+		x1 := sim.app.strip.tx(b.X + b.R)
+		sim.app.strip.fill(x0, x1, b.Color)
 	}
 }
 
-func Bounce() *Simulation {
+func Bounce(app *App) *Simulation {
+	const brightness = 0.60
+
 	balls := []*Ball{
 		{
 			X:     4,
 			M:     2.5,
 			R:     defaultRadius,
-			Color: Led{0, 0, 0.20},
+			Color: Led{0, 0, brightness},
 		},
 
 		{
 			X:     3,
 			M:     3,
 			R:     defaultRadius,
-			Color: Led{0, 0.20, 0},
+			Color: Led{0, brightness, 0},
 		},
 
 		{
 			X:     2,
 			M:     4,
 			R:     defaultRadius,
-			Color: Led{0.14, 0.14, 0},
+			Color: Led{brightness * 0.7, 0, brightness * 0.7},
 		},
 
 		{
 			X:     1,
 			M:     8,
 			R:     defaultRadius,
-			Color: Led{0.20, 0, 0},
+			Color: Led{brightness, 0, 0},
 		},
 	}
 
@@ -177,6 +181,7 @@ func Bounce() *Simulation {
 	}
 
 	return &Simulation{
+		app:    app,
 		Balls:  balls,
 		Planes: planes,
 		G:      G,

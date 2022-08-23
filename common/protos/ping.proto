@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "github.com/cacktopus/theheads/common/gen/go/heads";
+package heads;
+
+import "common.proto";
+
+service ping {
+  rpc ping(Empty) returns (Empty);
+}

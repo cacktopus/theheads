@@ -16,4 +16,6 @@ type Cfg struct {
 
 	Motor  motor.Cfg
 	Voices voices.Cfg
+
+	Debug bool `envconfig:"optional"`
 }

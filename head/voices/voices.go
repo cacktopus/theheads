@@ -138,7 +138,7 @@ func (s *Server) play(filename string) error {
 
 	args := append(execPlay(s.cfg.Card), filename)
 
-	logger.Info("play",
+	logger.Debug("play",
 		zap.Bool("swapped", swapped),
 		zap.String("command_line", strings.Join(args, " ")),
 	)

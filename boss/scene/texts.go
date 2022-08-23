@@ -16,13 +16,16 @@ type Content struct {
 	Duration float64 `json:"duration"`
 }
 
-func LoadTexts(scenePath string) []*Text {
+func LoadTexts(scenePath, textSet string) []*Text {
 	var result []*Text
 
-	texts, err := getPrefix(path.Join(scenePath, "texts"))
-
+	texts, err := getPrefix(path.Join(scenePath, "texts", textSet))
 	if err != nil {
 		panic(err)
+	}
+
+	if len(texts) == 0 {
+		panic("no texts found")
 	}
 
 	for _, t := range texts {

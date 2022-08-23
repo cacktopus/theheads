@@ -1,75 +1,134 @@
 package camera
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/cacktopus/theheads/camera/cfg"
+	"github.com/cacktopus/theheads/camera/cpumon"
+	"github.com/cacktopus/theheads/camera/face_detector"
 	"github.com/cacktopus/theheads/camera/ffmpeg"
 	"github.com/cacktopus/theheads/camera/floodlight"
 	"github.com/cacktopus/theheads/camera/motion_detector"
-	"github.com/cacktopus/theheads/camera/recorder"
+	"github.com/cacktopus/theheads/camera/source"
 	"github.com/cacktopus/theheads/camera/util"
 	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/common/metrics"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/cacktopus/theheads/common/standard_server"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"gocv.io/x/gocv"
 	"google.golang.org/grpc"
 	"image"
+	"image/color"
+	"io/ioutil"
+	"math"
 	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
 	"time"
 )
 
+type cameraMetrics struct {
+	frameProcessed prometheus.Counter
+	brightness     prometheus.Gauge
+	motionDetected *prometheus.CounterVec
+}
+
 type Camera struct {
-	logger           *zap.Logger
-	env              *cfg.Cfg
-	gMean            prometheus.Gauge
-	grabber          frameGrabber
-	ff               *ffmpeg.Ffmpeg
-	md               *motion_detector.MotionDetector
-	broker           *broker.Broker
-	rec              *recorder.Recorder
-	cvMotionDetected *prometheus.CounterVec
-	preScaled        gocv.Mat
-	floodlight       *floodlight.Floodlight
+	logger    *zap.Logger
+	env       *cfg.Cfg
+	registry  *prometheus.Registry
+	grabber   source.FrameGrabber
+	ff        *ffmpeg.Ffmpeg
+	md        *motion_detector.MotionDetector
+	broker    *broker.Broker
+	preScaled gocv.Mat
+
+	floodlight        *floodlight.Floodlight
+	currentBrightness *atomic.Float64
+	faceDetector      *face_detector.Detector
+	cpuTimer          *util.CPUTimer
+	metrics           cameraMetrics
+	wsBroker          *broker.Broker
 }
 
-type Brightness struct {
-	Brightness float64
-}
+func NewCamera(
+	logger *zap.Logger,
+	env *cfg.Cfg,
+	mainBroker *broker.Broker,
+	floodlight *floodlight.Floodlight,
+) *Camera {
+	registry := metrics.NewRegistry()
+	wsBroker := broker.NewBroker()
 
-func (b Brightness) Name() string {
-	return "brightness"
-}
-
-func NewCamera(logger *zap.Logger, env *cfg.Cfg, broker *broker.Broker, floodlight *floodlight.Floodlight) *Camera {
-	return &Camera{
-		logger:     logger,
-		env:        env,
-		broker:     broker,
-		floodlight: floodlight,
+	c := &Camera{
+		logger:            logger,
+		env:               env,
+		broker:            mainBroker,
+		floodlight:        floodlight,
+		currentBrightness: &atomic.Float64{},
+		preScaled:         gocv.NewMat(),
+		registry:          registry,
+		cpuTimer:          util.NewCPUTimer(registry),
+		wsBroker:          wsBroker,
+		metrics: cameraMetrics{
+			frameProcessed: metrics.SimpleGauge(registry, "camera", "frame_processed"),
+			brightness:     metrics.SimpleGauge(registry, "camera", "mean_brightness"),
+			motionDetected: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "heads",
+				Subsystem: "camera",
+				Name:      "motion",
+			}, []string{
+				"min_area",
+			}),
+		},
 	}
+
+	registry.MustRegister(c.metrics.motionDetected)
+	metrics.SimpleGauge(c.registry, "camera", "width").Set(float64(c.env.Width))
+	metrics.SimpleGauge(c.registry, "camera", "height").Set(float64(c.env.Height))
+	metrics.SimpleGauge(c.registry, "camera", "pixel_count").Set(float64(c.env.Width * c.env.Height))
+	metrics.SimpleGauge(c.registry, "camera", "bit_rate").Set(float64(c.env.BitrateKB))
+
+	promauto.With(c.registry).NewCounterFunc(prometheus.CounterOpts{
+		Namespace: "heads",
+		Subsystem: "camera",
+		Name:      "ffmpeg_subscriptions",
+	}, func() float64 {
+		return float64(wsBroker.SubCount())
+	})
+
+	promauto.With(c.registry).NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "heads",
+		Subsystem: "camera",
+		Name:      "floodlight_active",
+	}, func() float64 {
+		value, err := c.floodlight.Value()
+		if err != nil {
+			logger.Error("error reading floodlight status", zap.Error(err))
+			return math.NaN()
+		}
+		if value {
+			return 1.0
+		} else {
+			return 0.0
+		}
+	})
+
+	c.faceDetector = face_detector.NewDetector(env, c.registry, c.onFaceDetect)
+
+	return c
 }
 
 func (c *Camera) Setup() {
-	simpleGauge("width").Set(float64(c.env.Width))
-	simpleGauge("height").Set(float64(c.env.Height))
-	simpleGauge("pixel_count").Set(float64(c.env.Width * c.env.Height))
-	simpleGauge("bit_rate").Set(float64(c.env.Bitrate))
-	c.gMean = simpleGauge("mean_brightness")
-
-	c.cvMotionDetected = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "heads",
-		Subsystem: "camera",
-		Name:      "motion",
-	}, []string{
-		"min_area",
-	})
-
-	prometheus.MustRegister(c.cvMotionDetected)
+	setupCPUMonitoring(c.registry)
 
 	if c.env.RaspiStill {
 		err := raspiStill(c.logger)
@@ -78,37 +137,28 @@ func (c *Camera) Setup() {
 		}
 	}
 
-	wsBroker := broker.NewBroker()
-	go wsBroker.Start()
-
-	promauto.NewCounterFunc(prometheus.CounterOpts{
-		Name: "heads_camera_ffmpeg_subscriptions",
-	}, func() float64 {
-		return float64(wsBroker.SubCount())
-	})
-
-	c.rec = recorder.NewRecorder(
-		c.logger,
-		c.env.RecorderBufsize,
-		os.ExpandEnv(c.env.Outdir),
-		c.env.RecorderMaxSize,
-	)
+	go c.wsBroker.Start()
 
 	s, err := standard_server.NewServer(&standard_server.Config{
 		Logger: c.logger,
 		Port:   c.env.Port,
 		GrpcSetup: func(s *grpc.Server) error {
 			h := &handler{
-				logger: c.logger,
-				broker: c.broker,
-				rec:    c.rec,
+				logger:     c.logger,
+				broker:     c.broker,
+				floodlight: c.floodlight,
+				camera:     c,
 			}
 
 			gen.RegisterCameraServer(s, h)
+			gen.RegisterFloodlightServer(s, h)
+			gen.RegisterEventsServer(s, h)
+			gen.RegisterPingServer(s, h)
 			return nil
 		},
+		Registry: c.registry,
 		HttpSetup: func(engine *gin.Engine) error {
-			setupRoutes(c.logger, wsBroker, engine)
+			setupRoutes(c.logger, c.env, c.wsBroker, engine)
 			return nil
 		},
 	})
@@ -120,72 +170,73 @@ func (c *Camera) Setup() {
 		panic(s.Run())
 	}()
 
-	if c.env.Filename != "" {
-		c.logger.Info("streaming from file", zap.String("filename", c.env.Filename))
-		frames, err := runFileStreamer(c.env.Filename, c.env.Width, c.env.Height, c.env.Framerate)
-		if err != nil {
-			panic(err)
-		}
-		c.grabber = fromRaspi(c.env, frames)
-	} else {
-		var extraArgs []string
-		extraArgs = append(extraArgs, c.env.RaspividExtraArgs...)
-
-		if c.env.Hflip {
-			extraArgs = append(extraArgs, "-hf")
-		}
-		if c.env.Vflip {
-			extraArgs = append(extraArgs, "-vf")
-		}
-		frames, err := runRaspiVid(c.logger, c.rec, c.env.Width, c.env.Height, c.env.Framerate, extraArgs...)
-		if err == nil {
-			c.logger.Info("camera source", zap.String("source", "raspivid"))
-			c.grabber = fromRaspi(c.env, frames)
-		} else {
-			c.logger.Warn("falling back to gocv", zap.Error(err))
-			c.logger.Info("camera source", zap.String("source", "gocv"))
-			c.grabber = fromWebCam(c.env)
-		}
+	err = c.setupSource()
+	if err != nil {
+		panic(err)
 	}
 
-	c.ff = ffmpeg.NewFfmpeg(c.env, c.logger, wsBroker)
-	c.md = motion_detector.NewMotionDetector(c.env)
+	c.ff = ffmpeg.NewFfmpeg(
+		c.logger,
+		c.env,
+		c.registry,
+		c.wsBroker,
+	)
+
+	c.md = motion_detector.NewMotionDetector(c.env, c.cpuTimer)
+}
+
+func (c *Camera) setupSource() error {
+	c.logger.Info("camera source", zap.String("source", c.env.Source))
+	var err error
+
+	parts := strings.Split(c.env.Source, ":")
+	sourceName := parts[0]
+	args := parts[1:]
+
+	switch sourceName {
+	case "raspivid":
+		c.grabber, err = source.NewRaspivid(c.logger, c.env)
+	case "webcam":
+		c.grabber, err = source.NewWebcam(c.env)
+	case "file":
+		c.grabber = source.NewFileStreamer(c.logger, c.env, args[0])
+	default:
+		panic("unknown source:")
+	}
+
+	return err
 }
 
 func (c *Camera) Run() {
-	go c.runRecorder()
+	c.logger.Info("running")
 
-	c.preScaled = gocv.NewMat()
-
-	func() {
-		m := gocv.NewMat()
-		defer m.Close()
-		for frameNo := 0; frameNo < warmupFrames; frameNo++ {
-			c.grabber(&m) // handle !ok
-		}
-	}()
+	go c.publishBrightness()
 
 	for {
-		util.T("whole-frame", func() {
+		c.cpuTimer.T("whole-frame", func() {
 			c.readFrame()
 		})
 	}
 }
 
 func (c *Camera) readFrame() {
-	var ok bool
-	var frame gocv.Mat
-
-	util.T("read-frame", func() {
-		ok = c.grabber(&frame)
-	})
-	if !ok {
-		c.logger.Warn("unable to read frame")
-		return
-	}
+	var err error
+	frame := gocv.NewMat()
 	defer frame.Close()
 
-	util.T("prescale", func() {
+	c.cpuTimer.T("read-frame", func() {
+		err = c.grabber.Grab(&frame)
+	})
+	switch err {
+	case nil:
+		// pass
+	case source.ErrFrameReadFailed:
+		c.logger.Warn("unable to read frame")
+	default:
+		panic(err)
+	}
+
+	c.cpuTimer.T("prescale", func() {
 		sz := frame.Size()
 		width, height := sz[1], sz[0]
 		scale := float64(c.env.PrescaleWidth) / float64(width)
@@ -200,56 +251,40 @@ func (c *Camera) readFrame() {
 		gocv.Resize(frame, &c.preScaled, image.Pt(newWidth, newHeight), 0, 0, gocv.InterpolationNearestNeighbor)
 	})
 
-	util.T("frame-stats", func() {
+	c.cpuTimer.T("frame-stats", func() {
 		mean := c.preScaled.Mean()
 		brightness := mean.Val1
-		c.gMean.Set(brightness)
-		c.broker.Publish(&Brightness{Brightness: brightness})
+		c.metrics.brightness.Set(brightness)
+		c.currentBrightness.Store(brightness)
 	})
 
 	motion := c.md.Detect(c.env, c.preScaled)
 	maxRecord := c.processMotion(motion)
 
-	drawFrame, ok := c.md.GetFrame(c.env.DrawFrame)
-	if !ok {
-		panic(fmt.Errorf("unknown frame: %s", c.env.DrawFrame))
+	if c.env.DetectFaces {
+		c.faceDetector.DetectFaces(&c.preScaled)
 	}
 
-	hasMotion := maxRecord != nil && maxRecord.Area > 0
-	c.ff.Ffmpeg(
-		drawFrame,
-		maxRecord,
-		c.rec.IsRecording(),
-		hasMotion,
-	)
-
-	util.FrameProcessed.Inc()
-}
-
-func (c *Camera) runRecorder() {
-	motionCh := c.broker.Subscribe()
-	ticker := time.NewTicker(100 * time.Millisecond)
-	var end time.Time
-	var none time.Time
-
-	for {
-		select {
-		case m := <-motionCh:
-			_, ok := m.(*schema.MotionDetected)
-			if ok {
-				c.rec.Record()
-				end = time.Now().Add(c.env.MotionShutoffDelay)
-			}
-		case now := <-ticker.C:
-			if end != none {
-				if now.After(end) {
-					end = none
-					c.logger.Debug("stopping recorder after timeout")
-					c.rec.Stop()
-				}
-			}
+	if c.ff.HasWatchers() {
+		drawFrameSrc, ok := c.md.GetFrame(c.env.DrawFrame)
+		if !ok {
+			panic(fmt.Errorf("unknown frame: %s", c.env.DrawFrame))
 		}
+
+		drawFrame := gocv.NewMat()
+		defer drawFrame.Close()
+
+		switch drawFrameSrc.Channels() {
+		case 1:
+			gocv.CvtColor(*drawFrameSrc, &drawFrame, gocv.ColorGrayToBGR)
+		}
+
+		c.drawOnFrame(&drawFrame, maxRecord)
+		c.faceDetector.DrawFaces(&drawFrame)
+		c.ff.Ffmpeg(&drawFrame)
 	}
+
+	c.metrics.frameProcessed.Inc()
 }
 
 func (c *Camera) processMotion(
@@ -259,24 +294,20 @@ func (c *Camera) processMotion(
 	var maxRecord *motion_detector.MotionRecord
 
 	for _, mr := range motion {
-		if mr.Area < c.env.MotionMinArea {
-			c.cvMotionDetected.WithLabelValues("false").Add(mr.Area)
+		if mr.ContourArea < c.env.MotionMinArea {
+			c.metrics.motionDetected.WithLabelValues("false").Add(mr.ContourArea)
 			continue
 		}
-		c.cvMotionDetected.WithLabelValues("true").Add(mr.Area)
-		if mr.Area > maxArea {
-			maxArea = mr.Area
+		c.metrics.motionDetected.WithLabelValues("true").Add(mr.ContourArea)
+		if mr.ContourArea > maxArea {
+			maxArea = mr.ContourArea
 			maxRecord = mr
 		}
 	}
 
 	if maxArea > 0 {
-		half := maxRecord.FrameWidth / 2
-		t := float64(maxRecord.X-half) / float64(half)
-		pos2 := -int(fovScale * t)
-
 		msg := &schema.MotionDetected{
-			Position:   float64(pos2),
+			Position:   maxRecord.Bounds.Theta(c.env.FOV),
 			CameraName: c.env.Instance,
 		}
 
@@ -284,4 +315,136 @@ func (c *Camera) processMotion(
 	}
 
 	return maxRecord
+}
+
+func (c *Camera) drawOnFrame(
+	frame *gocv.Mat,
+	maxRecord *motion_detector.MotionRecord,
+) {
+	hasMotion := maxRecord != nil && maxRecord.ContourArea > 0
+
+	switch frame.Channels() {
+	case 1:
+		gocv.CvtColor(*frame, frame, gocv.ColorGrayToBGR)
+	case 3:
+		// pass
+	default:
+		panic("unexpected number of channels")
+	}
+
+	if c.env.CenterLine {
+		c.cpuTimer.T("center-line", func() {
+			sz := frame.Size()
+			x := sz[1]
+			y := sz[0]
+			gocv.Line(
+				frame,
+				image.Point{X: x/2 - 1, Y: 0},
+				image.Point{X: x/2 - 1, Y: y},
+				color.RGBA{B: 128, G: 128, R: 128, A: 128},
+				2,
+			)
+		})
+	}
+
+	if c.env.DrawMotion {
+		c.cpuTimer.T("draw-motion", func() {
+			if maxRecord != nil && maxRecord.ContourArea > 0 {
+				blue := color.RGBA{R: 64, G: 64, B: 128, A: 255}
+				maxRecord.Bounds.Draw(frame, blue)
+			}
+		})
+	}
+
+	c.cpuTimer.T("put-text", func() {
+		currentTime := time.Now().Format("2006-01-02 15:04:05")
+
+		motion := " "
+		if hasMotion {
+			motion = "M"
+		}
+
+		status := fmt.Sprintf("[%s] %s", motion, currentTime)
+
+		gocv.PutText(
+			frame,
+			status,
+			image.Point{X: 13, Y: 23},
+			gocv.FontHersheySimplex,
+			0.5,
+			color.RGBA{R: 32, G: 32, B: 32, A: 255},
+			2,
+		)
+
+		gocv.PutText(
+			frame,
+			status,
+			image.Point{X: 10, Y: 20},
+			gocv.FontHersheySimplex,
+			0.5,
+			color.RGBA{R: 160, G: 160, B: 160, A: 255},
+			2,
+		)
+	})
+}
+
+func (c *Camera) onFaceDetect(faces []*face_detector.Face, imgBytes []byte) {
+	// sort by largest face area
+	sort.Slice(faces, func(i, j int) bool {
+		return faces[i].Bounds.Area() > faces[j].Bounds.Area()
+	})
+
+	face := faces[0]
+
+	c.broker.Publish(&schema.FaceDetected{
+		CameraName: c.env.Instance,
+		Position:   face.Bounds.Theta(c.env.FOV),
+		Area:       face.Bounds.Area(),
+	})
+
+	if c.env.WriteFacesPath != "" {
+		go func() {
+			facesPath := os.ExpandEnv(c.env.WriteFacesPath)
+			now := time.Now()
+			outdir := filepath.Join(facesPath, now.Format("2006-01-02"))
+
+			err := os.MkdirAll(outdir, 0o750)
+			if err != nil {
+				c.logger.Error("error creating faces directory", zap.Error(err))
+				return
+			}
+
+			outfile := filepath.Join(outdir, "face-"+now.Format("2006-01-02T15:04:05.000")+".jpg")
+			err = ioutil.WriteFile(outfile, imgBytes, 0o600)
+			if err != nil {
+				c.logger.Error("error writing face", zap.Error(err))
+				return
+			}
+		}()
+	}
+}
+
+func setupCPUMonitoring(registry prometheus.Registerer) {
+	mypid := os.Getpid()
+
+	if runtime.GOOS == "linux" {
+		promauto.With(registry).NewCounterFunc(prometheus.CounterOpts{
+			Name: "heads_camera_cpu_user_jiffies",
+		}, func() float64 {
+			return cpumon.ParseProc(mypid, 13)
+		})
+
+		promauto.With(registry).NewCounterFunc(prometheus.CounterOpts{
+			Name: "heads_camera_cpu_system_jiffies",
+		}, func() float64 {
+			return cpumon.ParseProc(mypid, 14)
+		})
+
+		promauto.With(registry).NewCounterFunc(prometheus.CounterOpts{
+			Name: "heads_camera_cpu_hz",
+		}, func() float64 {
+			var a = cpumon.GetHz()
+			return float64(a)
+		})
+	}
 }

@@ -5,10 +5,8 @@ WORKDIR /build
 COPY common ./common
 COPY leds ./leds
 COPY cmd/leds ./cmd/leds
-COPY Makefile .
 
-RUN make bin/leds
-RUN mkdir app
-RUN cp bin/leds app
+RUN go build -o bin/ ./cmd/leds
 
-RUN tar -czvf "leds_0.0.0_arm64.tar.gz" app
+ARG TAG
+RUN tar -czvf "leds_${TAG}_arm64.tar.gz" bin

@@ -2,8 +2,9 @@ package web
 
 import (
 	"embed"
+	"github.com/cacktopus/theheads/common/discovery"
 	"github.com/cacktopus/theheads/common/standard_server"
-	"github.com/cacktopus/theheads/web/serf/client"
+	serfClient "github.com/cacktopus/theheads/web/serf/client"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"os"
@@ -13,7 +14,7 @@ import (
 //go:embed templates/*
 var f embed.FS
 
-func Run() error {
+func Run(discover discovery.Discovery) error {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		return errors.Wrap(err, "new logger")
@@ -33,7 +34,7 @@ func Run() error {
 		Logger:    logger,
 		Port:      port,
 		GrpcSetup: nil,
-		HttpSetup: setupRoutes(logger),
+		HttpSetup: setupRoutes(logger, discover),
 	})
 
 	errCh := make(chan error)
@@ -46,7 +47,7 @@ func Run() error {
 	go turnOffLeds(logger, errCh)
 	go turnOffHDMI(logger, errCh)
 	go monitorLowVoltage(logger, errCh)
-	go client.Run(errCh)
+	go serfClient.Run(logger, errCh)
 
 	for err := range errCh {
 		if err != nil {

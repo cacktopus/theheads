@@ -1,16 +1,14 @@
 package util
 
 import (
-	"math"
 	"syscall"
+	"time"
 )
 
-func SetTime(max float64) error {
-	whole, frac := math.Modf(max)
+func SetTime(time time.Time) error {
 	tv := syscall.Timeval{
-		Sec:  int64(whole),
-		Usec: int64(frac * 1e6),
+		Sec:  time.Unix(),
+		Usec: int64(time.Nanosecond() / 1e3),
 	}
-
 	return syscall.Settimeofday(&tv)
 }

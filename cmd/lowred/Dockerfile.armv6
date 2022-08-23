@@ -3,10 +3,8 @@ FROM heads-build-armv6
 WORKDIR /build
 
 COPY cmd/lowred ./cmd/lowred
-COPY Makefile .
 
-RUN make bin/lowred
-RUN mkdir app
-RUN cp bin/lowred app
+RUN go build -o bin/ ./cmd/lowred
 
-RUN tar -czvf "lowred_0.0.0_armv6.tar.gz" app
+ARG TAG
+RUN tar -czvf "lowred_${TAG}_armv6.tar.gz" bin

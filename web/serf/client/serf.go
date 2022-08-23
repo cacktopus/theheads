@@ -1,11 +1,13 @@
 package client
 
 import (
-	"fmt"
 	"github.com/hashicorp/serf/client"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"os"
 	"os/exec"
+	"regexp"
 	"time"
 )
 
@@ -21,18 +23,28 @@ type Query struct {
 	Payload []byte
 }
 
-func Run(errCh chan error) {
-	for {
-		fmt.Println("connecting to serf")
-		err := connectAndListenForEvents()
-		if err != nil {
-			fmt.Println("serf error:", err)
-		}
-		time.Sleep(time.Second)
+var hostname string
+
+func init() {
+	var err error
+	hostname, err = os.Hostname()
+	if err != nil {
+		panic("unable to determine hostname")
 	}
 }
 
-func connectAndListenForEvents() error {
+func Run(logger *zap.Logger, errCh chan error) {
+	for {
+		logger.Debug("connecting to serf")
+		err := connectAndListenForEvents(logger)
+		if err != nil {
+			logger.Error("serf error", zap.Error(err))
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func connectAndListenForEvents(logger *zap.Logger) error {
 	serfClient, err := client.NewRPCClient("127.0.0.1:7373")
 	if err != nil {
 		return errors.Wrap(err, "connect")
@@ -44,28 +56,32 @@ func connectAndListenForEvents() error {
 	}
 
 	for _, member := range members {
-		fmt.Println(member.Name, member.Status, member.Addr)
+		logger.Debug(
+			"member",
+			zap.String("name", member.Name),
+			zap.String("status", member.Status),
+			zap.String("addr", member.Addr.String()),
+		)
 	}
 
 	ch := make(chan map[string]interface{})
 
-	fmt.Println("stream ...")
+	logger.Debug("stream")
 
 	_, err = serfClient.Stream("", ch)
 	if err != nil {
 		return errors.Wrap(err, "stream")
 	}
 
-	fmt.Println("listening for events")
+	logger.Debug("listening for events")
 	for e := range ch {
-		fmt.Println(e)
 		shell := &EventShell{}
 		err := mapstructure.Decode(e, shell)
 		if err != nil {
 			return errors.Wrap(err, "decode")
 		}
 
-		fmt.Println(shell)
+		logger.Debug("shell", zap.String("event", shell.Event))
 
 		switch shell.Event {
 		case "query":
@@ -75,7 +91,7 @@ func connectAndListenForEvents() error {
 				return errors.Wrap(err, "decode")
 			}
 
-			response := handleQuery(query)
+			response := handleQuery(logger, query)
 			if response != nil {
 				err = serfClient.Respond(query.ID, response)
 				if err != nil {
@@ -88,38 +104,55 @@ func connectAndListenForEvents() error {
 	return nil
 }
 
-func handleQuery(query *Query) []byte {
+func handleQuery(logger *zap.Logger, query *Query) []byte {
 	switch query.Name {
 	case "reboot":
-		fmt.Println("reboot request")
-		go scheduleReboot(5 * time.Second)
+		logger.Info("reboot request")
+		if ok, msg := matchedHost(query.Payload); !ok {
+			return msg
+		}
+		go scheduleReboot(logger, 5*time.Second)
 		return []byte("reboot scheduled")
 
 	case "halt":
-		fmt.Println("halt request")
-		go scheduleHalt(5 * time.Second)
+		if ok, msg := matchedHost(query.Payload); !ok {
+			return msg
+		}
+		logger.Info("halt request")
+		go scheduleHalt(logger, 5*time.Second)
 		return []byte("halt scheduled")
 
 	case "time":
-		fmt.Println("time request")
+		logger.Info("time request")
 		return []byte(time.Now().String())
 	}
 
 	return nil
 }
 
-func scheduleReboot(delay time.Duration) {
+func matchedHost(payload []byte) (bool, []byte) {
+	rx, err := regexp.Compile(string(payload))
+	if err != nil {
+		return false, []byte("invalid host regex")
+	}
+
+	if rx.Match([]byte(hostname)) {
+		return true, nil
+	}
+
+	return false, []byte("host not matched")
+}
+
+func scheduleReboot(logger *zap.Logger, delay time.Duration) {
 	time.Sleep(delay)
 	cmd := exec.Command("sudo", "-n", "/sbin/shutdown", "-r", "now")
 	output, err := cmd.CombinedOutput()
-	fmt.Println(err)
-	fmt.Println(string(output))
+	logger.Error("/sbin/shutdown error", zap.String("output", string(output)), zap.Error(err))
 }
 
-func scheduleHalt(delay time.Duration) {
+func scheduleHalt(logger *zap.Logger, delay time.Duration) {
 	time.Sleep(delay)
 	cmd := exec.Command("sudo", "-n", "/sbin/shutdown", "-h", "now")
 	output, err := cmd.CombinedOutput()
-	fmt.Println(err)
-	fmt.Println(string(output))
+	logger.Error("/sbin/shutdown error", zap.String("output", string(output)), zap.Error(err))
 }
