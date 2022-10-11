@@ -24,7 +24,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
 
 RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH` && \
-    wget https://theheads.sfo2.digitaloceanspaces.com/builds/opencv_4.5.5-2_${arch}.deb
+    wget https://theheads.sfo2.digitaloceanspaces.com/shared/builds/arm64/opencv_4.5.5-2_${arch}.deb
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ./opencv_4.5.5-2_*.deb
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg

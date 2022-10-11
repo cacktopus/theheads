@@ -9,11 +9,17 @@ import (
 func FindZeros(sp *dj.SceneParams) {
 	sp.DJ.Scene.ClearFearful()
 
-	sp.DJ.HeadManager.CheckIn(sp.Ctx, sp.Logger, sp.DJ.Scene)
+	sp.DJ.HeadManager.CheckIn(
+		sp.Ctx,
+		sp.Logger,
+		sp.DJ.Scene,
+		sp.DJ.Boss.Env.CheckInTime,
+	)
 
 	scenes.SceneSetup(sp, "rainbow")
 
 	go setupFloodLights(sp)
+	go setVolume(sp)
 	go findHeadZeros(sp)
 
 	<-sp.Done.Chan()

@@ -31,3 +31,15 @@ func setupFloodLights(sp *dj.SceneParams) {
 		go setupFloodLight(newSp, cameraURI, sp.DJ.FloodlightController())
 	}
 }
+
+func setVolume(sp *dj.SceneParams) {
+	for _, h := range sp.DJ.Scene.Heads {
+		uri := h.URI()
+		logger := sp.Logger.With(zap.String("uri", uri))
+		go sp.DJ.HeadManager.SetVolume(
+			sp.Ctx,
+			logger,
+			uri,
+		)
+	}
+}

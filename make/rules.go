@@ -10,8 +10,8 @@ import (
 )
 
 var rules = map[string]func(rule string){
-	"bin/aht20":           bin,
-	"bin/boss":            bin,
+	//"bin/aht20":           bin,
+	//"bin/boss":            bin,
 	"bin/camera":          bin,
 	"bin/head":            bin,
 	"bin/heads-cli":       bin,
@@ -19,27 +19,27 @@ var rules = map[string]func(rule string){
 	"bin/logstream":       bin,
 	"bin/lowred":          bin,
 	"bin/minisign-verify": bin,
-	"bin/rtunneld":        bin,
+	//"bin/rtunneld":        bin,
 	"bin/set-system-time": bin,
 	"bin/solar":           bin,
-	"bin/metrics-finder":  bin,
+	//"bin/metrics-finder":  bin,
 	"bin/timesync":        bin,
 	"bin/web":             bin,
 
-	"aht20-arm64":           pkg,
+	//"aht20-arm64":           pkg,
 	"boss-arm64":            steps(bossFrontend, pkg),
 	"heads-cli-arm64":       pkg,
 	"logstream-arm64":       pkg,
 	"minisign-verify-arm64": pkg,
-	"rtunneld-arm64":        pkg,
+	//"rtunneld-arm64":        pkg,
 	"set-system-time-arm64": pkg,
 	"solar-arm64":           pkg,
 	"timesync-arm64":        pkg,
 	"metrics-finder-arm64":  pkg,
 	"web-arm64":             pkg,
-	"lowred-arm64":          docker,
-	"leds-arm64":            docker,
-	"camera-arm64":          docker,
+	//"lowred-arm64":          docker,
+	//"leds-arm64":            docker,
+	//"camera-arm64":          docker,
 
 	"aht20-armhf":           pkg,
 	"head-armhf":            pkg,
@@ -62,6 +62,41 @@ var rules = map[string]func(rule string){
 	"timesync-armv6":        pkg,
 	"web-armv6":             pkg,
 	"lowred-armv6":          docker,
+
+	"pibuild-all": func(_ string) {
+		var err error
+		err = os.MkdirAll(filepath.Join(cfg.SharedFolder, "builds", "armhf"), 0o750)
+		noError(err)
+
+		err = os.MkdirAll(filepath.Join(cfg.SharedFolder, "builds", "arm64"), 0o750)
+		noError(err)
+
+		pkg("aht20-armhf")
+		pkg("camera-armhf")
+		pkg("head-armhf")
+		pkg("heads-cli-armhf")
+		pkg("leds-armhf")
+		pkg("logstream-armhf")
+		pkg("lowred-armhf")
+		pkg("minisign-verify-armhf")
+		pkg("rtunneld-armhf")
+		pkg("set-system-time-armhf")
+		pkg("timesync-armhf")
+		pkg("web-armhf")
+
+		bossFrontend("boss-arm64")
+
+		pkg("boss-arm64")
+		pkg("heads-cli-arm64")
+		pkg("logstream-arm64")
+		pkg("metrics-finder-arm64")
+		pkg("minisign-verify-arm64")
+		pkg("rtunneld-arm64")
+		pkg("set-system-time-arm64")
+		pkg("solar-arm64")
+		pkg("timesync-arm64")
+		pkg("web-arm64")
+	},
 
 	"docker-armhf-builder": func(string) {
 		run(nil, "docker", "build",

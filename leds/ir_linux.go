@@ -25,17 +25,17 @@ func runIR(app *App) {
 
 				switch event.Value {
 				case 48912: // 1
-					req.callback = app.animations["bounce"]
+					req.name = "bounce"
 					app.ch <- req
 				case 48913: // 2
-					req.callback = app.animations["rainbow1"]
+					req.name = "rainbow1"
 					app.ch <- req
 				case 48914: // 3
-					req.callback = app.animations["rainbow2"]
+					req.name = "rainbow2"
 					app.ch <- req
 
 				case 48916: // 4
-					req.callback = app.animations["raindrops"]
+					req.name = "raindrops"
 					app.ch <- req
 
 				case 48917: // 5
@@ -43,13 +43,14 @@ func runIR(app *App) {
 
 				case 48920: // 7
 				case 48921: // 8
-					req.callback = solidRandom(app)
-					app.ch <- req
+					//req.name = solidRandom(app)
+					//app.ch <- req
 				case 48922: // 9
-					req.callback = app.animations["white"]
+					req.name = "white"
 					app.ch <- req
 
 				case 48905: // enter/save
+					app.saveSettings()
 
 				case 48896: // vol-
 					app.strip.ScaleDown()

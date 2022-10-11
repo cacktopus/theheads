@@ -20,7 +20,7 @@ func main() {
 	}
 
 	fmt.Println("setting system time:", t.String())
-	err = util.SetTime(util.TimeToFloat64(t))
+	err = util.SetTime(t)
 	if err != nil {
 		fmt.Println("error setting system time:", err.Error())
 		return

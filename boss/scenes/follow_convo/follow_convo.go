@@ -32,7 +32,7 @@ func (f *FollowConvo) Run(sp *dj.SceneParams) {
 	f.setup(sp.DJ)
 
 	//go f.interruptScene(sp, randomlyInterrupt())
-	go f.interruptScene(sp, fearfulInterrupt(sp, 1, 90*time.Second))
+	go f.interruptScene(sp, fearfulInterrupt(sp, sp.DJ.Boss.Env.FearfulCount, 90*time.Second))
 
 	scenes.SceneSetup(sp, "rainbow")
 

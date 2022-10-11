@@ -44,13 +44,13 @@ func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
 }
 
 func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
-	fn, ok := h.app.animations[in.Name]
+	_, ok := h.app.animations[in.Name]
 	if !ok {
 		return nil, errors.New("unknown animation")
 	}
 
 	h.app.ch <- &animateRequest{
-		callback:     fn,
+		name:         in.Name,
 		newStartTime: in.NewStartTime.AsTime(),
 	}
 	return &gen.Empty{}, nil

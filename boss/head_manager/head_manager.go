@@ -72,6 +72,7 @@ func (h *HeadManager) CheckIn(
 	ctx context.Context,
 	logger *zap.Logger,
 	sc *scene.Scene,
+	timeout time.Duration,
 ) {
 	logger.Info("checkin")
 	t0 := time.Now()
@@ -83,7 +84,7 @@ func (h *HeadManager) CheckIn(
 
 	found := make(chan *Connection)
 
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	remaining := map[string]bool{}

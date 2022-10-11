@@ -72,6 +72,23 @@ func (h *HeadManager) Say(
 	}
 }
 
+func (h *HeadManager) SetVolume(
+	ctx context.Context,
+	logger *zap.Logger,
+	headURI string,
+) {
+	conn, err := h.GetConn(headURI)
+	if err != nil {
+		logger.Error("error fetching head connection", zap.Error(err))
+	} else {
+		client := gen.NewVoicesClient(conn.Conn)
+		_, err = client.SetVolume(ctx, &gen.SetVolumeIn{VolDb: -1})
+		if err != nil {
+			logger.Error("error setting volume", zap.Error(err))
+		}
+	}
+}
+
 func (h *HeadManager) SayRandom(ctx context.Context, headURI string) error {
 	conn, err := h.GetConn(headURI)
 	if err != nil {
@@ -84,11 +101,13 @@ func (h *HeadManager) SayRandom(ctx context.Context, headURI string) error {
 
 func (h *HeadManager) SetLedsAnimation(
 	ctx context.Context,
-	logger *zap.Logger,
+	parentLogger *zap.Logger,
 	uri string,
 	animationName string,
 	startTime time.Time,
 ) {
+	logger := parentLogger.With(zap.String("uri", uri))
+
 	conn, err := h.GetConn(uri)
 	if err != nil {
 		logger.Error("error fetching head connection", zap.Error(err))

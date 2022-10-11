@@ -14,4 +14,7 @@ type Cfg struct {
 	DayDetector []string `envconfig:"default=time-based;7h30m;20h15m"`
 
 	Debug bool `envconfig:"optional"`
+
+	CheckInTime  time.Duration `envconfig:"default=500ms"`
+	FearfulCount int           `envconfig:"default=3"`
 }

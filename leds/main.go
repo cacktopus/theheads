@@ -1,6 +1,7 @@
 package leds
 
 import (
+	"encoding/json"
 	"github.com/cacktopus/theheads/common/broker"
 	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/standard_server"
@@ -9,8 +10,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vrischmann/envconfig"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -40,10 +43,9 @@ func (app *App) setup() {
 	}
 }
 
-func runLeds(app *App) error {
-	cb := app.animations[app.env.Animation]
-
-	err := mainloop(app, cb)
+func runLeds(app *App, setting *settings) error {
+	app.strip.SetScale(setting.Scale)
+	err := mainloop(app, setting.Animation)
 	if err != nil {
 		return errors.Wrap(err, "mainloop")
 	}
@@ -67,10 +69,7 @@ func runLeds(app *App) error {
 	return nil
 }
 
-func mainloop(
-	app *App,
-	cb callback,
-) error {
+func mainloop(app *App, currentAnimation string) error {
 	startTime := time.Now()
 	t0 := startTime // might want to rename t0 to tprev?
 
@@ -79,8 +78,8 @@ func mainloop(
 	for {
 		select {
 		case req := <-app.ch:
-			changed := &cb != &req.callback
-			cb = req.callback
+			changed := req.name != currentAnimation
+			currentAnimation = req.name
 
 			if changed {
 				if req.newStartTime.After(time.UnixMicro(0)) {
@@ -98,6 +97,8 @@ func mainloop(
 				dt = 2 * app.env.UpdatePeriod.Seconds()
 			}
 
+			app.currentAnimation.Store(currentAnimation)
+			cb := app.animations[currentAnimation]
 			cb(t, dt)
 			t0 = now
 			err := app.strip.send2()
@@ -124,18 +125,66 @@ func setupKeytable(logger *zap.Logger, attempt int) {
 }
 
 type App struct {
-	logger     *zap.Logger
-	env        *config
-	broker     *broker.Broker
-	strip      *Strip
-	ch         chan *animateRequest
-	animations map[string]callback
-	done       chan bool
+	logger           *zap.Logger
+	env              *config
+	broker           *broker.Broker
+	strip            *Strip
+	ch               chan *animateRequest
+	animations       map[string]callback
+	done             chan bool
+	currentAnimation *atomic.String
+}
+
+type settings struct {
+	Animation string
+	Scale     float64
+}
+
+func (app *App) saveSettings() {
+	animation := app.currentAnimation.Load()
+	if animation == "" {
+		app.logger.Error("no current animation")
+		return
+	}
+
+	save := &settings{
+		Animation: animation,
+		Scale:     app.strip.GetScale(),
+	}
+	content, _ := json.MarshalIndent(save, "", "  ")
+	filename := app.env.ConfigFile
+
+	app.logger.Info(
+		"saving settings",
+		zap.String("content", string(content)),
+		zap.String("filename", filename),
+	)
+
+	err := ioutil.WriteFile(filename, content, 0o600)
+	if err != nil {
+		app.logger.Error("error saving settings", zap.Error(err))
+	}
+}
+
+func (app *App) loadSettings(s *settings) {
+	logger := app.logger.With(zap.String("filename", app.env.ConfigFile))
+	content, err := ioutil.ReadFile(app.env.ConfigFile)
+	if err != nil {
+		logger.Info("unable to load settings file", zap.Error(err))
+		return
+	}
+	err = json.Unmarshal(content, s)
+	if err != nil {
+		logger.Error("error parsing settings file", zap.Error(err))
+		return
+	}
+	logger.Info("loaded settings file")
 }
 
 func Run(logger *zap.Logger) error {
 	app := &App{
-		logger: logger,
+		logger:           logger,
+		currentAnimation: atomic.NewString(""),
 	}
 
 	app.env = &config{}
@@ -144,6 +193,13 @@ func Run(logger *zap.Logger) error {
 	if err != nil {
 		panic(err)
 	}
+
+	settings := &settings{
+		Animation: app.env.Animation, // default
+		Scale:     app.env.Scale,     //default
+	}
+
+	app.loadSettings(settings)
 
 	if app.env.EnableIR {
 		go func() {
@@ -203,10 +259,10 @@ func Run(logger *zap.Logger) error {
 
 			r.GET("/run/:name", func(c *gin.Context) {
 				name := c.Param("name")
-				fn, ok := app.animations[name]
+				_, ok := app.animations[name]
 				if ok {
 					app.ch <- &animateRequest{
-						callback: fn,
+						name: name,
 					}
 					c.Header("Access-Control-Allow-Origin", "*")
 					c.JSON(200, gin.H{"result": "ok"})
@@ -237,6 +293,6 @@ func Run(logger *zap.Logger) error {
 		app.done <- true
 	}()
 
-	err = runLeds(app)
+	err = runLeds(app, settings)
 	return errors.Wrap(err, "run leds")
 }

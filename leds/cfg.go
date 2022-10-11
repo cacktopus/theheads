@@ -24,4 +24,6 @@ type config struct {
 	}
 
 	Debug bool `envconfig:"default=false"`
+
+	ConfigFile string `envconfig:"default=/boot/leds-cfg.json"`
 }

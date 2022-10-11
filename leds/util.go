@@ -25,6 +25,6 @@ func clampUint32(min, x, max uint32) uint32 {
 type callback func(t, dt float64)
 
 type animateRequest struct {
-	callback     callback
+	name         string
 	newStartTime time.Time
 }

@@ -81,6 +81,8 @@ func NewDJ(
 		FloodlightController: boss.FloodlightControl,
 
 		interrupted: atomic.NewString(""),
+
+		Boss: boss,
 	}
 }
 

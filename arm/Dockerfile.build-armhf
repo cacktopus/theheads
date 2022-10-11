@@ -24,7 +24,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget dpkg-dev
 
 RUN arch=`dpkg-architecture -q DEB_BUILD_ARCH`; \
-    wget https://theheads.sfo2.digitaloceanspaces.com/builds/opencv_4.5.5-2_${arch}.deb
+    wget https://theheads.sfo2.digitaloceanspaces.com/shared/builds/armhf/opencv_4.5.5-2_${arch}.deb
 
 RUN echo '16a9489dde466c101e65cd0f91d664a83d496392e3b879ade607c2c038041666  opencv_4.5.5-2_armhf.deb' | shasum -c
 
