@@ -2,7 +2,7 @@ package recorder
 
 import (
 	"fmt"
-	"github.com/cacktopus/theheads/camera/h264"
+	"github.com/cacktopus/theheads/common/metrics"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -14,83 +14,72 @@ import (
 	"time"
 )
 
-const (
-	naluTypeSlice = 1
-	naluTypeIDR   = 5
-	naluTypeSPS   = 7
-	naluTypePPS   = 8
-)
+type RecorderInfo struct {
+	FileExtension string
+}
 
-type sequence struct {
-	sps    []byte
-	pps    []byte
-	idr    []byte
-	slices [][]byte
+type FrameRecorder interface {
+	StartRecording(writer io.WriteCloser)
+	StopRecording()
+	Info() RecorderInfo
 }
 
 type Recorder struct {
 	logger *zap.Logger
 
-	buf chan *sequence
-
-	cmdRecord   chan bool
-	cmdDrop     chan bool
-	cmdStop     chan bool
-	outdir      string
-	isRecording int32
-	cleaner     *cleaner
+	cmdRecord     chan bool
+	cmdStop       chan bool
+	outdir        string
+	isRecording   int32
+	cleaner       *cleaner
+	gRecording    prometheus.Gauge
+	cBytesWritten prometheus.Counter
+	frameRecorder FrameRecorder
 }
 
-var cFramesDropped = prometheus.NewCounter(prometheus.CounterOpts{
+var cFramesDropped_ = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "heads",
 	Subsystem: "camera_recorder",
 	Name:      "frames_dropped",
 })
 
-var cFramesWritten = prometheus.NewCounter(prometheus.CounterOpts{
+var cFramesWritten_ = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "heads",
 	Subsystem: "camera_recorder",
 	Name:      "frames_written",
 })
 
-var cBytesWritten = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "heads",
-	Subsystem: "camera_recorder",
-	Name:      "bytes_written",
-})
-
-var gRecording = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "heads",
-	Subsystem: "camera_recorder",
-	Name:      "recording",
-})
-
 type fileWriter struct {
-	file *os.File
+	file          *os.File
+	cBytesWritten prometheus.Counter
+}
+
+func (f *fileWriter) Close() error {
+	return f.file.Close()
 }
 
 func (f *fileWriter) Write(p []byte) (n int, err error) {
 	n, err = f.file.Write(p)
-	cBytesWritten.Add(float64(n))
+	f.cBytesWritten.Add(float64(n))
 	return
 }
 
-func init() {
-	prometheus.MustRegister(cFramesDropped)
-	prometheus.MustRegister(cFramesWritten)
-	prometheus.MustRegister(cBytesWritten)
-}
-
-func NewRecorder(logger *zap.Logger, bufSize int, outdir string, maxSize int64) *Recorder {
+func NewRecorder(
+	logger *zap.Logger,
+	registry *prometheus.Registry,
+	frameRecorder FrameRecorder,
+	outdir string,
+	maxSize int64,
+) *Recorder {
 	c := &cleaner{
-		logger:  logger,
-		outdir:  outdir,
-		maxSize: maxSize,
-		dryRun:  false,
+		logger:        logger,
+		outdir:        outdir,
+		maxSize:       maxSize,
+		dryRun:        false,
+		fileExtension: frameRecorder.Info().FileExtension,
 	}
 
-	// TODO: sync.Once here?
-	prometheus.MustRegister(
+	registry.MustRegister(
 		prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 			Namespace: "heads",
 			Subsystem: "camera_recorder",
@@ -109,17 +98,18 @@ func NewRecorder(logger *zap.Logger, bufSize int, outdir string, maxSize int64) 
 		logger: logger,
 		outdir: outdir,
 
-		buf: make(chan *sequence, bufSize),
-
 		cmdRecord: make(chan bool),
-		cmdDrop:   make(chan bool),
 		cmdStop:   make(chan bool),
 
-		cleaner: c,
+		cleaner:       c,
+		frameRecorder: frameRecorder,
+
+		gRecording:    metrics.SimpleGauge(registry, "camera_recorder", "recording"),
+		cBytesWritten: metrics.SimpleCounter(registry, "camera_recorder", "bytes_written"),
 	}
 }
 
-func (r *Recorder) Run(reader io.Reader) error {
+func (r *Recorder) Run() error {
 	_, err := os.Stat(r.outdir)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(r.outdir, 0o750)
@@ -133,10 +123,6 @@ func (r *Recorder) Run(reader io.Reader) error {
 	ch := make(chan error)
 
 	go r.runCleaner(ch)
-
-	go func() {
-		ch <- errors.Wrap(r.split(reader), "split")
-	}()
 
 	go func() {
 		ch <- errors.Wrap(r.mainloop(), "mainloop")
@@ -157,14 +143,6 @@ func (r *Recorder) IsRecording() bool {
 	return atomic.LoadInt32(&r.isRecording) != 0
 }
 
-func writeNALU(writer io.Writer, b []byte) error {
-	if _, err := writer.Write([]byte{0, 0, 0, 1}); err != nil {
-		return err
-	}
-	_, err := writer.Write(b)
-	return err
-}
-
 func (r *Recorder) write() error {
 	atomic.StoreInt32(&r.isRecording, 1)
 	defer atomic.StoreInt32(&r.isRecording, 0)
@@ -183,140 +161,45 @@ func (r *Recorder) write() error {
 
 	filename := filepath.Join(
 		dir,
-		fmt.Sprintf("%s.h264", now.Format("15_04_05")),
+		fmt.Sprintf(
+			"%s.%s",
+			now.Format("15_04_05"),
+			r.frameRecorder.Info().FileExtension,
+		),
 	)
 
-	writer := &fileWriter{}
+	writer := &fileWriter{
+		cBytesWritten: r.cBytesWritten,
+	}
 	writer.file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0o640)
 	if err != nil {
 		return err
 	}
-	defer writer.file.Close() // TODO actually capture and return error
-
-	first := true
+	r.frameRecorder.StartRecording(writer)
 
 	for {
 		select {
 		case <-r.cmdRecord:
 			// this is ok
 
-		case <-r.cmdDrop:
-			r.logger.Warn("unexpected command", zap.String("state", "writing"), zap.String("command", "drop"))
-
 		case <-r.cmdStop:
-			gRecording.Set(0)
-			// TODO: should we drain the buffer?
+			r.frameRecorder.StopRecording()
+			r.gRecording.Set(0)
 			return nil
-
-		case s := <-r.buf:
-			if err := r.WriteFrame(writer, first, s); err != nil {
-				return errors.Wrap(err, "writeframe")
-			}
-			if first {
-				first = false
-			}
 		}
 	}
-}
-
-func (r *Recorder) WriteFrame(writer io.Writer, first bool, s *sequence) error {
-	if first {
-		if err := writeNALU(writer, s.sps); err != nil {
-			return err
-		}
-		if err := writeNALU(writer, s.pps); err != nil {
-			return err
-		}
-	}
-	if err := writeNALU(writer, s.idr); err != nil {
-		return err
-	}
-	for _, slice := range s.slices {
-		if err := writeNALU(writer, slice); err != nil {
-			return err
-		}
-	}
-	cFramesWritten.Add(1)
-	return nil
-}
-
-func (r *Recorder) dropOne() {
-	select {
-	case <-r.buf:
-		cFramesDropped.Inc()
-	default:
-	}
-}
-
-func (r *Recorder) split(reader io.Reader) error {
-	count := 0
-
-	var sps []byte
-	var pps []byte
-	var seq *sequence
-
-	return h264.Split(reader, func(nalu []byte) error {
-		typ := nalu[0] & 0b11111
-
-		switch typ {
-		case naluTypeSPS:
-			sps = nalu
-		case naluTypePPS:
-			pps = nalu
-		case naluTypeIDR:
-			if sps == nil || pps == nil {
-				return errors.New("missing sps or pps")
-			}
-			if seq != nil {
-				// TODO: handle eof (i.e., last in file)
-				r.feed(seq)
-			}
-			seq = &sequence{
-				sps: sps,
-				pps: pps,
-				idr: nalu,
-			}
-		case naluTypeSlice:
-			// TODO: handle eof (i.e., last in file)
-			if seq == nil {
-				return errors.New("missing seq")
-			} else if seq.idr == nil {
-				return errors.New("missing idr")
-			}
-			seq.slices = append(seq.slices, nalu)
-		}
-
-		count++
-		return nil
-	})
 }
 
 func (r *Recorder) mainloop() error {
 	for {
 		select {
-		case <-r.cmdDrop:
-			r.logger.Warn("unexpected command", zap.String("state", "stopped"), zap.String("command", "stop"))
-
 		case <-r.cmdRecord:
-			gRecording.Set(1)
+			r.gRecording.Set(1)
 			if err := r.write(); err != nil {
 				return err
 			}
-		case <-r.cmdDrop:
-			r.dropOne()
 		}
 	}
-}
-
-func (r *Recorder) feed(s *sequence) {
-	select {
-	case r.buf <- s:
-		return
-	default:
-	}
-
-	r.dropOne()
-	r.buf <- s
 }
 
 func (r *Recorder) runCleaner(ch chan error) {

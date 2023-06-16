@@ -3,7 +3,7 @@ package heads_cli
 import (
 	"context"
 	"fmt"
-	"github.com/cacktopus/theheads/common/gen/go/heads"
+	heads2 "github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/heads-cli/lib"
 	"github.com/hashicorp/serf/client"
 	"github.com/pkg/errors"
@@ -32,8 +32,8 @@ func (opt *TestSteppingCmd) run(m *client.Member, conn *grpc.ClientConn) error {
 	defer cancel()
 	fmt.Println("find zero for", m.Name)
 
-	client := heads.NewHeadClient(conn)
-	_, err := client.FindZero(ctx, &heads.Empty{})
+	client := heads2.NewHeadClient(conn)
+	_, err := client.FindZero(ctx, &heads2.Empty{})
 	if err != nil {
 		return errors.Wrap(err, "find zero")
 	}
@@ -41,7 +41,7 @@ func (opt *TestSteppingCmd) run(m *client.Member, conn *grpc.ClientConn) error {
 
 	target := rand.Float64() * 360.0
 	fmt.Println("set target for", m.Name, target)
-	_, err = client.SetTarget(ctx, &heads.SetTargetIn{
+	_, err = client.SetTarget(ctx, &heads2.SetTargetIn{
 		Theta: target,
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func (opt *TestSteppingCmd) run(m *client.Member, conn *grpc.ClientConn) error {
 
 	for i := 0; i < 4; i++ {
 		fmt.Println("set actor for", m.Name)
-		_, err = client.SetActor(ctx, &heads.SetActorIn{Actor: "Jitter"})
+		_, err = client.SetActor(ctx, &heads2.SetActorIn{Actor: "Jitter"})
 		if err != nil {
 			return errors.Wrap(err, "set actor")
 		}

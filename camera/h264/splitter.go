@@ -10,6 +10,13 @@ var ErrMaxBufsize = errors.New("max buffer size exceeded")
 
 const maxBufSize = 2 * 1024 * 1024
 
+const (
+	naluTypeSlice = 1
+	naluTypeIDR   = 5
+	naluTypeSPS   = 7
+	naluTypePPS   = 8
+)
+
 // Split is a non-compliant h264 NALU parser. It will only parse certain files (e.g, those produced by raspivid)
 // correctly
 func Split(r io.Reader, callback func([]byte) error) error {
@@ -49,4 +56,47 @@ func Split(r io.Reader, callback func([]byte) error) error {
 			buf = append(buf, read...)
 		}
 	}
+}
+
+func ParseStream(reader io.Reader, frames chan *Sequence) error {
+	count := 0
+
+	var sps []byte
+	var pps []byte
+	var seq *Sequence
+
+	return Split(reader, func(nalu []byte) error {
+		typ := nalu[0] & 0b11111
+
+		switch typ {
+		case naluTypeSPS:
+			sps = nalu
+		case naluTypePPS:
+			pps = nalu
+		case naluTypeIDR:
+			if sps == nil || pps == nil {
+				return errors.New("missing sps or pps")
+			}
+			if seq != nil {
+				// TODO: handle eof (i.e., last in file)
+				frames <- seq
+			}
+			seq = &Sequence{
+				sps: sps,
+				pps: pps,
+				idr: nalu,
+			}
+		case naluTypeSlice:
+			// TODO: handle eof (i.e., last in file)
+			if seq == nil {
+				return errors.New("missing seq")
+			} else if seq.idr == nil {
+				return errors.New("missing idr")
+			}
+			seq.slices = append(seq.slices, nalu)
+		}
+
+		count++
+		return nil
+	})
 }

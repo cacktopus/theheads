@@ -3,8 +3,8 @@ package leds
 import (
 	"encoding/json"
 	"github.com/cacktopus/theheads/common/broker"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/standard_server"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -250,8 +250,8 @@ func Run(logger *zap.Logger) error {
 		Logger: logger,
 		Port:   8082,
 		GrpcSetup: func(grpcServer *grpc.Server) error {
-			gen.RegisterLedsServer(grpcServer, h)
-			gen.RegisterPingServer(grpcServer, h)
+			heads.RegisterLedsServer(grpcServer, h)
+			heads.RegisterPingServer(grpcServer, h)
 			return nil
 		},
 		HttpSetup: func(r *gin.Engine) error {

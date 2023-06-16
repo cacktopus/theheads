@@ -5,8 +5,8 @@ import (
 	"github.com/cacktopus/theheads/boss/scene"
 	"github.com/cacktopus/theheads/boss/services"
 	"github.com/cacktopus/theheads/common/discovery"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/metrics"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -179,7 +179,7 @@ func (h *HeadManager) connect(
 		return
 	}
 
-	_, err = gen.NewPingClient(grpcConn).Ping(ctx, &gen.Empty{})
+	_, err = heads.NewPingClient(grpcConn).Ping(ctx, &heads.Empty{})
 	if err != nil {
 		grpcConn.Close()
 		conn.connectErr = errors.Wrap(err, "ping")

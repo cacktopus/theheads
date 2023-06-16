@@ -12,10 +12,11 @@ import (
 )
 
 type cleaner struct {
-	logger  *zap.Logger
-	outdir  string
-	maxSize int64
-	dryRun  bool
+	logger        *zap.Logger
+	outdir        string
+	maxSize       int64
+	dryRun        bool
+	fileExtension string
 }
 
 type file struct {
@@ -89,7 +90,7 @@ func (c *cleaner) gather() ([]*file, error) {
 			return nil
 		}
 
-		if !strings.HasSuffix(path, ".h264") {
+		if !strings.HasSuffix(path, "."+c.fileExtension) {
 			return nil
 		}
 

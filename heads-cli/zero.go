@@ -3,7 +3,7 @@ package heads_cli
 import (
 	"context"
 	"fmt"
-	"github.com/cacktopus/theheads/common/gen/go/heads"
+	heads2 "github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/heads-cli/lib"
 	"github.com/hashicorp/serf/client"
 	"github.com/pkg/errors"
@@ -18,7 +18,7 @@ func (opt *FindZeroCmd) Execute(args []string) error {
 	return lib.ConnectAll(opt.Match, 8080, func(ctx context.Context, m *client.Member, conn *grpc.ClientConn) error {
 		fmt.Println("find zero for", m.Name)
 
-		_, err := heads.NewHeadClient(conn).FindZero(ctx, &heads.Empty{})
+		_, err := heads2.NewHeadClient(conn).FindZero(ctx, &heads2.Empty{})
 		return errors.Wrap(err, "find zero")
 	})
 }

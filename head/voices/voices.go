@@ -3,8 +3,8 @@ package voices
 import (
 	"context"
 	"fmt"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/util"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -33,7 +33,7 @@ type Server struct {
 	playing int32
 }
 
-func (s *Server) SetVolume(ctx context.Context, in *gen.SetVolumeIn) (*gen.Empty, error) {
+func (s *Server) SetVolume(ctx context.Context, in *heads.SetVolumeIn) (*heads.Empty, error) {
 	if in.VolDb >= 0 {
 		return nil, errors.New("volume (decibels) must be negative")
 	}
@@ -55,10 +55,10 @@ func (s *Server) SetVolume(ctx context.Context, in *gen.SetVolumeIn) (*gen.Empty
 		return nil, errors.Wrap(err, "setting volume")
 	}
 
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }
 
-func (s *Server) Play(ctx context.Context, in *gen.PlayIn) (*gen.Empty, error) {
+func (s *Server) Play(ctx context.Context, in *heads.PlayIn) (*heads.Empty, error) {
 	// TODO: prevent ../path style attacks
 	filename := filepath.Join(
 		s.cfg.MediaPath,
@@ -81,10 +81,10 @@ func (s *Server) Play(ctx context.Context, in *gen.PlayIn) (*gen.Empty, error) {
 		return nil, status.Error(codes.Internal, "already playing")
 	}
 
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }
 
-func (s *Server) Random(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+func (s *Server) Random(ctx context.Context, empty *heads.Empty) (*heads.Empty, error) {
 	var files []string
 	err := filepath.Walk(s.cfg.MediaPath, func(path string, info os.FileInfo, err error) error {
 		if strings.HasSuffix(path, ".wav") {
@@ -108,7 +108,7 @@ func (s *Server) Random(ctx context.Context, empty *gen.Empty) (*gen.Empty, erro
 		return nil, err
 	}
 
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }
 
 func NewServer(cfg *Cfg, logger *zap.Logger) *Server {

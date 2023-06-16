@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+message RunIn {
+  string name = 1;
+  google.protobuf.Timestamp new_start_time = 2;
+}
+
+message SetScaleIn {
+  double scale = 1;
+}
+
+service leds {
+  rpc run(RunIn) returns (Empty);
+  rpc events(Empty) returns (stream Event);
+  rpc set_scale(SetScaleIn) returns (Empty);
+}

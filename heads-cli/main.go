@@ -46,6 +46,8 @@ func Run() error {
 		{Name: "test-stepping", Data: &TestSteppingCmd{}},
 		{Name: "tftp", Data: &TftpCmd{}},
 		{Name: "volume", Data: &volumeCmd{}},
+		{Name: "plot-magnet", Data: &PlotMagnetCmd{}},
+		{Name: "position", Data: &PositionCmd{}},
 	} {
 		_, err := parser.AddCommand(c.Name, "", c.LongDescription, c.Data)
 		if err != nil {

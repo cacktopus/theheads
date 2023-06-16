@@ -9,13 +9,17 @@ import (
 	"github.com/cacktopus/theheads/camera/ffmpeg"
 	"github.com/cacktopus/theheads/camera/floodlight"
 	"github.com/cacktopus/theheads/camera/motion_detector"
+	"github.com/cacktopus/theheads/camera/recorder"
 	"github.com/cacktopus/theheads/camera/source"
+	"github.com/cacktopus/theheads/camera/source/mjpeg/file"
+	"github.com/cacktopus/theheads/camera/source/mjpeg/webcam"
+	"github.com/cacktopus/theheads/camera/source/raspivid_recorder"
 	"github.com/cacktopus/theheads/camera/util"
 	"github.com/cacktopus/theheads/common/broker"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/metrics"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/cacktopus/theheads/common/standard_server"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -49,6 +53,7 @@ type Camera struct {
 	ff        *ffmpeg.Ffmpeg
 	md        *motion_detector.MotionDetector
 	broker    *broker.Broker
+	rec       *recorder.Recorder
 	preScaled gocv.Mat
 
 	floodlight        *floodlight.Floodlight
@@ -139,21 +144,39 @@ func (c *Camera) Setup() {
 
 	go c.wsBroker.Start()
 
+	err := c.setupSource()
+	if err != nil {
+		panic(err)
+	}
+
+	frameRecorder, _ := c.grabber.(recorder.FrameRecorder)
+	if frameRecorder != nil {
+		c.rec = recorder.NewRecorder(
+			c.logger,
+			c.registry,
+			frameRecorder,
+			os.ExpandEnv(c.env.Outdir),
+			c.env.RecorderMaxSize,
+		)
+	}
+
 	s, err := standard_server.NewServer(&standard_server.Config{
 		Logger: c.logger,
 		Port:   c.env.Port,
 		GrpcSetup: func(s *grpc.Server) error {
 			h := &handler{
+				env:        c.env,
 				logger:     c.logger,
 				broker:     c.broker,
 				floodlight: c.floodlight,
 				camera:     c,
 			}
 
-			gen.RegisterCameraServer(s, h)
-			gen.RegisterFloodlightServer(s, h)
-			gen.RegisterEventsServer(s, h)
-			gen.RegisterPingServer(s, h)
+			heads.RegisterCameraServer(s, h)
+			heads.RegisterFloodlightServer(s, h)
+			heads.RegisterEventsServer(s, h)
+			heads.RegisterPingServer(s, h)
+			heads.RegisterRecorderServer(s, h)
 			return nil
 		},
 		Registry: c.registry,
@@ -169,11 +192,6 @@ func (c *Camera) Setup() {
 	go func() {
 		panic(s.Run())
 	}()
-
-	err = c.setupSource()
-	if err != nil {
-		panic(err)
-	}
 
 	c.ff = ffmpeg.NewFfmpeg(
 		c.logger,
@@ -196,10 +214,18 @@ func (c *Camera) setupSource() error {
 	switch sourceName {
 	case "raspivid":
 		c.grabber, err = source.NewRaspivid(c.logger, c.env)
+	case "raspivid-recorder":
+		c.grabber, err = raspivid_recorder.NewRaspividRecorder(c.logger, c.env)
 	case "webcam":
 		c.grabber, err = source.NewWebcam(c.env)
 	case "file":
 		c.grabber = source.NewFileStreamer(c.logger, c.env, args[0])
+	case "mjpeg-file":
+		c.grabber = file.NewMjpegFileStreamer(c.env)
+	case "mjpeg-webcam":
+		c.grabber, err = webcam.NewMjpegWebcam(c.logger, c.env)
+	case "libcamera":
+		c.grabber, err = source.NewLibcamera(c.logger, c.env)
 	default:
 		panic("unknown source:")
 	}
@@ -209,6 +235,16 @@ func (c *Camera) setupSource() error {
 
 func (c *Camera) Run() {
 	c.logger.Info("running")
+
+	if c.rec != nil {
+		go func() {
+			err := c.rec.Run()
+			if err != nil {
+				panic(err)
+			}
+		}()
+		go c.runRecorder()
+	}
 
 	go c.publishBrightness()
 
@@ -285,6 +321,32 @@ func (c *Camera) readFrame() {
 	}
 
 	c.metrics.frameProcessed.Inc()
+}
+
+func (c *Camera) runRecorder() {
+	motionCh := c.broker.Subscribe()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	var end time.Time
+	var none time.Time
+
+	for {
+		select {
+		case m := <-motionCh:
+			_, ok := m.(*schema.MotionDetected)
+			if ok {
+				c.rec.Record()
+				end = time.Now().Add(c.env.MotionShutoffDelay)
+			}
+		case now := <-ticker.C:
+			if end != none {
+				if now.After(end) {
+					end = none
+					c.logger.Debug("stopping recorder after timeout")
+					c.rec.Stop()
+				}
+			}
+		}
+	}
 }
 
 func (c *Camera) processMotion(

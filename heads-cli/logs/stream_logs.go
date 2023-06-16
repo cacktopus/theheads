@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cacktopus/theheads/common/discovery"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -50,8 +50,8 @@ func (s *StreamLogsCommand) Execute(args []string) error {
 				return
 			}
 
-			client := gen.NewLogstreamClient(conn)
-			logs, err := client.StreamLogs(context.Background(), &gen.Empty{})
+			client := heads.NewLogstreamClient(conn)
+			logs, err := client.StreamLogs(context.Background(), &heads.Empty{})
 			if err != nil {
 				showLog(&journalSchema{
 					Hostname: entry.Hostname,

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+message TimeIn {
+}
+
+
+message TimeOut {
+  google.protobuf.Timestamp t = 1;
+  bool has_rtc = 2;
+}
+
+
+service time {
+  rpc time(TimeIn) returns (TimeOut);
+}

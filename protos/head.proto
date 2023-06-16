@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+import "google/protobuf/duration.proto";
+
+message SetTargetIn {
+  double theta = 1;
+  double speed = 2;
+}
+
+message SetActorIn {
+  string actor = 1;
+}
+
+message HeadState {
+  int32 position = 1;
+  int32 target = 2;
+  double rotation = 3;
+  string controller = 4;
+  int32 steps_away = 5;
+  google.protobuf.Duration eta = 6;
+}
+
+message ReadHallEffectSensorOut {
+  bool active = 1;
+}
+
+message ReadMagnetSensorOut {
+  double bx = 1;
+  double by = 2;
+  double bz = 3;
+  double b = 4;
+  double temperature = 5;
+}
+
+
+service head {
+  rpc set_target(SetTargetIn) returns (HeadState);
+  rpc set_actor(SetActorIn) returns (HeadState);
+  rpc status(Empty) returns (HeadState);
+  rpc find_zero(Empty) returns (Empty);
+  rpc read_hall_effect_sensor(Empty) returns (ReadHallEffectSensorOut);
+  rpc read_magnet_sensor(Empty) returns (ReadMagnetSensorOut);
+  rpc motor_off(Empty) returns (Empty);
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+
+message PlayIn {
+  string sound = 1;
+}
+
+message SetVolumeIn {
+  int32 vol_db = 1;
+}
+
+service voices {
+  rpc play(PlayIn) returns (Empty);
+  rpc set_volume(SetVolumeIn) returns (Empty);
+  rpc random(Empty) returns (Empty);
+}

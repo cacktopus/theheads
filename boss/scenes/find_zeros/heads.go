@@ -4,7 +4,7 @@ import (
 	"github.com/cacktopus/theheads/boss/dj"
 	"github.com/cacktopus/theheads/boss/head_manager"
 	"github.com/cacktopus/theheads/boss/scene"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -32,9 +32,9 @@ func findHeadZero(
 ) {
 	ticker := time.NewTicker(1 * time.Second)
 
-	client := gen.NewHeadClient(conn.Conn)
+	client := heads.NewHeadClient(conn.Conn)
 
-	_, err := client.FindZero(sp.Ctx, &gen.Empty{})
+	_, err := client.FindZero(sp.Ctx, &heads.Empty{})
 	if err != nil {
 		sp.Logger.Error("error finding zero", zap.Error(err))
 		return
@@ -43,7 +43,7 @@ func findHeadZero(
 	for {
 		select {
 		case <-ticker.C:
-			status, err := client.Status(sp.Ctx, &gen.Empty{})
+			status, err := client.Status(sp.Ctx, &heads.Empty{})
 			if err != nil {
 				sp.Logger.Error("error polling head status", zap.Error(err))
 				continue

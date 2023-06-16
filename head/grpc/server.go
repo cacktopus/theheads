@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/json"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/head/log_limiter"
 	"github.com/cacktopus/theheads/head/motor"
 	"github.com/cacktopus/theheads/head/motor/jitter"
@@ -12,6 +12,7 @@ import (
 	"github.com/cacktopus/theheads/head/sensor"
 	"github.com/cacktopus/theheads/head/sensor/magnetometer"
 	zero_detector2 "github.com/cacktopus/theheads/head/sensor/magnetometer/zero_detector"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -27,18 +28,7 @@ type Handler struct {
 
 	motorCfg     *motor.Cfg
 	magnetometer magnetometer.Sensor
-}
-
-func (h *Handler) Ping(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
-	return &gen.Empty{}, nil
-}
-
-func (h *Handler) MotorOff(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
-	err := h.controller.TurnOffMotor()
-	if err != nil {
-		return nil, errors.Wrap(err, "turn off motor")
-	}
-	return &gen.Empty{}, nil
+	svgs         cmap.ConcurrentMap[string, []byte]
 }
 
 func NewHandler(
@@ -48,6 +38,7 @@ func NewHandler(
 	sensor sensor.Sensor,
 	magnetometer magnetometer.Sensor,
 	motorCfg *motor.Cfg,
+	svgs cmap.ConcurrentMap[string, []byte],
 ) *Handler {
 	actors := map[string]motor.Actor{}
 
@@ -65,10 +56,23 @@ func NewHandler(
 		sensor:       sensor,
 		motorCfg:     motorCfg,
 		magnetometer: magnetometer,
+		svgs:         svgs,
 	}
 }
 
-func (h *Handler) Stream(empty *gen.Empty, server gen.Events_StreamServer) error {
+func (h *Handler) Ping(ctx context.Context, empty *heads.Empty) (*heads.Empty, error) {
+	return &heads.Empty{}, nil
+}
+
+func (h *Handler) MotorOff(ctx context.Context, empty *heads.Empty) (*heads.Empty, error) {
+	err := h.controller.TurnOffMotor()
+	if err != nil {
+		return nil, errors.Wrap(err, "turn off motor")
+	}
+	return &heads.Empty{}, nil
+}
+
+func (h *Handler) Stream(empty *heads.Empty, server heads.Events_StreamServer) error {
 	messages := h.controller.Broker.Subscribe()
 	defer h.controller.Broker.Unsubscribe(messages)
 
@@ -78,7 +82,7 @@ func (h *Handler) Stream(empty *gen.Empty, server gen.Events_StreamServer) error
 			panic(err)
 		}
 
-		err = server.Send(&gen.Event{
+		err = server.Send(&heads.Event{
 			Type: m.Name(),
 			Data: string(data),
 		})
@@ -92,7 +96,7 @@ func (h *Handler) Stream(empty *gen.Empty, server gen.Events_StreamServer) error
 	return nil
 }
 
-func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
+func (h *Handler) FindZero(ctx context.Context, empty *heads.Empty) (*heads.Empty, error) {
 	var detector motor.Actor
 	if h.magnetometer.HasHardware() {
 		detector = zero_detector2.NewZeroDetector(
@@ -103,6 +107,9 @@ func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, e
 			func() int {
 				state := h.controller.GetState()
 				return state.Pos
+			},
+			func(name string, content []byte) {
+				h.svgs.Set(name, content)
 			},
 		)
 	} else {
@@ -116,17 +123,17 @@ func (h *Handler) FindZero(ctx context.Context, empty *gen.Empty) (*gen.Empty, e
 
 	h.controller.SetActor(detector)
 
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }
 
-func (h *Handler) Status(ctx context.Context, empty *gen.Empty) (*gen.HeadState, error) {
+func (h *Handler) Status(ctx context.Context, empty *heads.Empty) (*heads.HeadState, error) {
 	return h.headState(), nil
 }
 
-func (h *Handler) headState() *gen.HeadState {
+func (h *Handler) headState() *heads.HeadState {
 	state := h.controller.GetState()
 
-	return &gen.HeadState{
+	return &heads.HeadState{
 		Position:   int32(state.Pos),
 		Target:     int32(state.Target),
 		Rotation:   state.Rotation(),
@@ -136,7 +143,7 @@ func (h *Handler) headState() *gen.HeadState {
 	}
 }
 
-func (h *Handler) SetTarget(ctx context.Context, in *gen.SetTargetIn) (*gen.HeadState, error) {
+func (h *Handler) SetTarget(ctx context.Context, in *heads.SetTargetIn) (*heads.HeadState, error) {
 	h.limiter.Do(func() {
 		h.logger.Debug("rotation", zap.Float64("theta", in.Theta))
 	})
@@ -146,7 +153,7 @@ func (h *Handler) SetTarget(ctx context.Context, in *gen.SetTargetIn) (*gen.Head
 	return h.headState(), nil
 }
 
-func (h *Handler) SetActor(ctx context.Context, in *gen.SetActorIn) (*gen.HeadState, error) {
+func (h *Handler) SetActor(ctx context.Context, in *heads.SetActorIn) (*heads.HeadState, error) {
 	actor := h.actors[in.Actor]
 	if actor == nil {
 		return nil, errors.New("invalid actor")
@@ -156,21 +163,21 @@ func (h *Handler) SetActor(ctx context.Context, in *gen.SetActorIn) (*gen.HeadSt
 	return h.headState(), nil
 }
 
-func (h *Handler) ReadHallEffectSensor(ctx context.Context, empty *gen.Empty) (*gen.ReadHallEffectSensorOut, error) {
+func (h *Handler) ReadHallEffectSensor(ctx context.Context, empty *heads.Empty) (*heads.ReadHallEffectSensorOut, error) {
 	active, err := h.sensor.Read()
 	if err != nil {
 		return nil, errors.Wrap(err, "read sensor")
 	}
 
-	return &gen.ReadHallEffectSensorOut{Active: active}, nil
+	return &heads.ReadHallEffectSensorOut{Active: active}, nil
 }
 
-func (h *Handler) ReadMagnetSensor(ctx context.Context, empty *gen.Empty) (*gen.ReadMagnetSensorOut, error) {
+func (h *Handler) ReadMagnetSensor(ctx context.Context, empty *heads.Empty) (*heads.ReadMagnetSensorOut, error) {
 	read, err := h.magnetometer.Read()
 	if err != nil {
 		return nil, errors.Wrap(err, "read")
 	}
-	return &gen.ReadMagnetSensorOut{
+	return &heads.ReadMagnetSensorOut{
 		Bx:          read.Bx,
 		By:          read.By,
 		Bz:          read.Bz,

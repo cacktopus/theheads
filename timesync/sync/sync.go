@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cacktopus/theheads/common/discovery"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	gen "github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/timesync/cfg"
 	"github.com/cacktopus/theheads/timesync/util"
 	"github.com/pkg/errors"

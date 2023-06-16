@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+
+message SetStateIn {
+  bool state = 1;
+}
+
+service floodlight {
+  rpc set_state(SetStateIn) returns (Empty);
+}

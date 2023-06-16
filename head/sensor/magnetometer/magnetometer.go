@@ -52,25 +52,35 @@ func (t *TlvSensor) Read() (*Reading, error) {
 	}, nil
 }
 
-func Setup(logger *zap.Logger, enabled bool, i2cAddrs []string) (Sensor, error) {
+func Setup(
+	logger *zap.Logger,
+	i2cBus string,
+	enabled bool,
+	i2cAddrs []string,
+) (Sensor, error) {
 	if !enabled {
 		return &NullSensor{}, nil
 	}
 
-	return setupTLV(logger, i2cAddrs)
+	return setupTLV(logger, i2cBus, i2cAddrs)
 }
 
-func setupTLV(baseLogger *zap.Logger, addrs []string) (Sensor, error) {
+func setupTLV(
+	baseLogger *zap.Logger,
+	i2cBus string,
+	addrs []string,
+) (Sensor, error) {
 	var sensor Sensor
 	var err error
 	for _, addr := range addrs {
 		logger := baseLogger.With(zap.String("address", addr))
 		sensor, err = setupForAddr(
 			logger,
+			i2cBus,
 			addr,
 		)
 		if err != nil {
-			logger.Info("tlv setup failed for address")
+			logger.Info("tlv setup failed for address", zap.Error(err))
 			continue
 		}
 
@@ -80,7 +90,11 @@ func setupTLV(baseLogger *zap.Logger, addrs []string) (Sensor, error) {
 	return nil, err
 }
 
-func setupForAddr(logger *zap.Logger, i2cAddr string) (Sensor, error) {
+func setupForAddr(
+	logger *zap.Logger,
+	i2cBus string,
+	i2cAddr string,
+) (Sensor, error) {
 	parsed, err := strconv.ParseInt(i2cAddr, 16, 8)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse addr")
@@ -92,7 +106,7 @@ func setupForAddr(logger *zap.Logger, i2cAddr string) (Sensor, error) {
 	}
 
 	// Open default I²C bus.
-	bus, err := i2creg.Open("")
+	bus, err := i2creg.Open(i2cBus)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open I2C")
 	}

@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	gen "github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/timesync/util"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/protobuf/types/known/timestamppb"

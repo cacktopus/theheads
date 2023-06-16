@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+
+service events {
+  rpc stream(Empty) returns (stream Event);
+}

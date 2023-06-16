@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/cacktopus/theheads/common/broker"
 	"github.com/cacktopus/theheads/common/discovery"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/schema"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -29,7 +29,7 @@ var eventReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
 })
 
 type EventReceiver interface {
-	Recv() (*gen.Event, error)
+	Recv() (*heads.Event, error)
 }
 
 func discoverAsync(
@@ -111,7 +111,7 @@ func (es *EventStreamer) streamEvents(logger *zap.Logger, addr string) {
 			}
 			defer conn.Close()
 
-			events, err := gen.NewEventsClient(conn).Stream(context.Background(), &gen.Empty{})
+			events, err := heads.NewEventsClient(conn).Stream(context.Background(), &heads.Empty{})
 			if err != nil {
 				return err
 			}

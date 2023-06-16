@@ -2,257 +2,236 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"io/fs"
+	"github.com/minor-industries/grm"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var rules = map[string]func(rule string){
-	//"bin/aht20":           bin,
 	//"bin/boss":            bin,
-	"bin/camera":          bin,
-	"bin/head":            bin,
-	"bin/heads-cli":       bin,
-	"bin/leds":            bin,
-	"bin/logstream":       bin,
-	"bin/lowred":          bin,
-	"bin/minisign-verify": bin,
-	//"bin/rtunneld":        bin,
-	"bin/set-system-time": bin,
-	"bin/solar":           bin,
-	//"bin/metrics-finder":  bin,
-	"bin/timesync":        bin,
-	"bin/web":             bin,
+	"bin/camera":          grm.Bin,
+	"bin/head":            grm.Bin,
+	"bin/heads-cli":       grm.Bin,
+	"bin/leds":            grm.Bin,
+	"bin/lowred":          grm.Bin,
+	"bin/set-system-time": grm.Bin,
+	"bin/solar":           grm.Bin,
+	"bin/timesync":        grm.Bin,
+	"bin/web":             grm.Bin,
 
-	//"aht20-arm64":           pkg,
-	"boss-arm64":            steps(bossFrontend, pkg),
-	"heads-cli-arm64":       pkg,
-	"logstream-arm64":       pkg,
-	"minisign-verify-arm64": pkg,
-	//"rtunneld-arm64":        pkg,
-	"set-system-time-arm64": pkg,
-	"solar-arm64":           pkg,
-	"timesync-arm64":        pkg,
-	"metrics-finder-arm64":  pkg,
-	"web-arm64":             pkg,
+	"boss-arm64":            grm.Steps(bossFrontend, grm.Pkg),
+	"heads-cli-arm64":       grm.Pkg,
+	"head-arm64":            grm.Pkg,
+	"set-system-time-arm64": grm.Pkg,
+	"solar-arm64":           grm.Pkg,
+	"timesync-arm64":        grm.Pkg,
+	"web-arm64":             grm.Pkg,
 	//"lowred-arm64":          docker,
 	//"leds-arm64":            docker,
-	//"camera-arm64":          docker,
+	"camera-arm64":      grm.Docker,
+	"shellystats-arm64": grm.Pkg,
+	"carrier-arm64":     grm.Pkg,
 
-	"aht20-armhf":           pkg,
-	"head-armhf":            pkg,
-	"heads-cli-armhf":       pkg,
-	"logstream-armhf":       pkg,
-	"minisign-verify-armhf": pkg,
-	"rtunneld-armhf":        pkg,
-	"set-system-time-armhf": pkg,
-	"timesync-armhf":        pkg,
-	"web-armhf":             pkg,
-	"camera-armhf":          docker,
-	"leds-armhf":            docker,
-	"lowred-armhf":          docker,
+	"head-armhf":            grm.Pkg,
+	"heads-cli-armhf":       grm.Pkg,
+	"set-system-time-armhf": grm.Pkg,
+	"timesync-armhf":        grm.Pkg,
+	"web-armhf":             grm.Pkg,
+	"camera-armhf":          grm.Docker,
+	"leds-armhf":            grm.Docker,
+	"lowred-armhf":          grm.Docker,
 
-	"aht20-armv6":           pkg,
-	"heads-cli-armv6":       pkg,
-	"logstream-armv6":       pkg,
-	"minisign-verify-armv6": pkg,
-	"set-system-time-armv6": pkg,
-	"timesync-armv6":        pkg,
-	"web-armv6":             pkg,
-	"lowred-armv6":          docker,
+	"heads-cli-armv6":       grm.Pkg,
+	"set-system-time-armv6": grm.Pkg,
+	"timesync-armv6":        grm.Pkg,
+	"web-armv6":             grm.Pkg,
+	"lowred-armv6":          grm.Docker,
 
 	"pibuild-all": func(_ string) {
 		var err error
-		err = os.MkdirAll(filepath.Join(cfg.SharedFolder, "builds", "armhf"), 0o750)
+		err = os.MkdirAll(filepath.Join(grm.Opts.SharedFolder, "builds", "armhf"), 0o750)
 		noError(err)
 
-		err = os.MkdirAll(filepath.Join(cfg.SharedFolder, "builds", "arm64"), 0o750)
+		err = os.MkdirAll(filepath.Join(grm.Opts.SharedFolder, "builds", "arm64"), 0o750)
 		noError(err)
 
-		pkg("aht20-armhf")
-		pkg("camera-armhf")
-		pkg("head-armhf")
-		pkg("heads-cli-armhf")
-		pkg("leds-armhf")
-		pkg("logstream-armhf")
-		pkg("lowred-armhf")
-		pkg("minisign-verify-armhf")
-		pkg("rtunneld-armhf")
-		pkg("set-system-time-armhf")
-		pkg("timesync-armhf")
-		pkg("web-armhf")
+		//grm.Pkg("camera-armhf")
+		grm.Pkg("head-armhf")
+		grm.Pkg("heads-cli-armhf")
+		//grm.Pkg("leds-armhf")
+		//grm.Pkg("lowred-armhf")
+		grm.Pkg("set-system-time-armhf")
+		grm.Pkg("timesync-armhf")
+		grm.Pkg("web-armhf")
 
 		bossFrontend("boss-arm64")
 
-		pkg("boss-arm64")
-		pkg("heads-cli-arm64")
-		pkg("logstream-arm64")
-		pkg("metrics-finder-arm64")
-		pkg("minisign-verify-arm64")
-		pkg("rtunneld-arm64")
-		pkg("set-system-time-arm64")
-		pkg("solar-arm64")
-		pkg("timesync-arm64")
-		pkg("web-arm64")
+		grm.Pkg("boss-arm64")
+		grm.Pkg("heads-cli-arm64")
+		grm.Pkg("set-system-time-arm64")
+		grm.Pkg("solar-arm64")
+		grm.Pkg("timesync-arm64")
+		grm.Pkg("web-arm64")
 	},
 
 	"docker-armhf-builder": func(string) {
-		run(nil, "docker", "build",
+		grm.Run(nil, "docker", "build",
 			"--platform", "linux/arm/v7",
 			"--tag", "heads-build-armhf",
-			"-f", "arm/Dockerfile.build-armhf",
+			"-f", "make/arm/Dockerfile.build-armhf",
 			".",
 		)
 	},
 
 	"docker-armv6-builder": func(string) {
-		run(nil, "docker", "build",
+		grm.Run(nil, "docker", "build",
 			"--platform", "linux/arm/v6",
 			"--tag", "heads-build-armv6",
-			"-f", "arm/Dockerfile.build-armv6",
+			"-f", "make/arm/Dockerfile.build-armv6",
 			".",
 		)
 	},
 
 	"docker-arm64-builder": func(string) {
-		run(nil, "docker", "build",
+		grm.Run(nil, "docker", "build",
 			"--platform", "linux/arm64/v8",
 			"--tag", "heads-build-arm64",
-			"-f", "arm/Dockerfile.build-arm64",
+			"-f", "make/arm/Dockerfile.build-arm64",
 			".",
 		)
 	},
 
 	"docker-amd64-builder": func(string) {
-		run(nil, "docker", "build",
+		grm.Run(nil, "docker", "build",
 			"--platform", "linux/amd64",
 			"--tag", "heads-build-amd64",
-			"-f", "arm/Dockerfile.build-amd64",
+			"-f", "make/arm/Dockerfile.build-amd64",
 			".",
 		)
 	},
 
 	"sign": func(s string) {
-		findUnexpected()
-		fmt.Println("minisign -S -m", strings.Join(lsUnsigned(), " "))
+		grm.FindUnexpected()
+		fmt.Println("minisign -S -m", strings.Join(grm.LsUnsigned(), " "))
 	},
 
-	"sign2": sign2,
+	"sign2": grm.Sign2,
 
 	"ls-unsigned": func(_ string) {
-		fmt.Println(strings.Join(lsUnsigned(), "\n"))
+		fmt.Println(strings.Join(grm.LsUnsigned(), "\n"))
 	},
 
 	"boss/frontend": bossFrontend,
 
 	"rclone-up": func(rule string) {
-		if len(lsUnsigned()) > 0 {
+		if len(grm.LsUnsigned()) > 0 {
 			panic("found unsigned files")
 		}
-		findUnexpected()
-		run(nil, "rclone", "copy", "-P", filepath.Join(cfg.SharedFolder, "builds/"), "do:theheads/shared/builds/")
+		grm.FindUnexpected()
+		grm.Run(nil, "rclone", "copy", "-P", filepath.Join(grm.Opts.SharedFolder, "builds/"), "do:theheads/shared/builds/")
 	},
 
 	"rclone-down": func(rule string) {
-		if len(lsUnsigned()) > 0 {
+		if len(grm.LsUnsigned()) > 0 {
 			panic("found unsigned files")
 		}
-		findUnexpected()
-		run(nil, "rclone", "copy", "-P", "do:theheads/shared/builds/", filepath.Join(cfg.SharedFolder, "builds/"))
+		grm.FindUnexpected()
+		grm.Run(nil, "rclone", "copy", "-P", "do:theheads/shared/builds/", filepath.Join(grm.Opts.SharedFolder, "builds/"))
 	},
 
 	"fast-head":      fasthead,
 	"fast-boss":      fastboss,
 	"fast-camera":    fastcamera,
+	"fast-camera64":  fastcamera64,
 	"fast-leds":      fastleds,
 	"fast-heads-cli": fastheadscli,
-}
 
-func fastcamera(rule string) {
-	docker("camera-armhf")
-	copyCamera("camera-armhf")
-	run(nil, "rsync", "-z", "--progress", "bin/camera-armhf", "head03:")
-}
+	"protos": func(rule string) {
+		protoFiles, err := filepath.Glob("protos/*.proto")
+		noError(err)
 
-func fasthead(rule string) {
-	run([]string{"GOOS=linux", "GOARCH=arm", "GOARM=7"},
-		"go", "build", "-o", "bin/head-armhf", "./cmd/head",
-	)
-	run(nil, "rsync", "-z", "--progress", "bin/head-armhf", "head03:")
-}
-
-func fastboss(rule string) {
-	bossFrontend("boss/frontend")
-	run([]string{"GOOS=linux", "GOARCH=arm64"},
-		"go", "build", "-o", "bin/boss-arm64", "./cmd/boss",
-	)
-	run(nil, "rsync", "-z", "--progress", "bin/boss-arm64", "base01:")
-}
-
-func fastheadscli(rule string) {
-	run([]string{"GOOS=linux", "GOARCH=arm64"},
-		"go", "build", "-o", "bin/heads-cli-arm64", "./cmd/heads-cli",
-	)
-	run(nil, "rsync", "-z", "--progress", "bin/heads-cli-arm64", "base01:")
-}
-
-func fastleds(rule string) {
-	docker("leds-armhf")
-	copyLeds("leds-armhf")
-	run(nil, "rsync", "-z", "--progress", "bin/leds-armhf", "pi@dev01:")
-}
-
-func findUnexpected() {
-	err := filepath.WalkDir(filepath.Join(cfg.SharedFolder, "builds/"), func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
-			return nil
+		args := []string{
+			"/bin/protoc",
+			"--proto_path=./protos",
+			"-I/build/include",
+			"--go_out=plugins=grpc,paths=source_relative:./gen/go/heads",
 		}
 
-		if strings.Contains(path, "-dirty") {
-			panic("dirty file: " + path)
+		for _, file := range protoFiles {
+			// this may run into trouble if there are two proto files with the same name in
+			// different directories
+			base := filepath.Base(file)
+			opt := fmt.Sprintf("--go_opt=M%s=github.com/cacktopus/theheads/gen/go/heads", base)
+			args = append(args, opt)
 		}
 
-		switch filepath.Ext(path) {
-		case ".gz", ".minisig", ".deb":
-			return nil
-		default:
-			panic("unexpected file: " + path)
-		}
-	})
+		args = append(args, protoFiles...)
+
+		grm.RunDocker("heads-protoc", args...)
+	},
+
+	"heads-protoc": func(rule string) {
+		grm.Cd("common", func() {
+			grm.Run(nil, "docker", "build", "--tag", "heads-protoc", "protos")
+		})
+	},
+
+	"reflex-gear-fe": func(rule string) {
+		// reflex -v -g '**/*.go' -- go build -o frontend/fe/Run.wasm ./frontend
+		grm.Cd("gears", func() {
+			grm.Run([]string{
+				"GOOS=js",
+				"GOARCH=wasm",
+			}, "reflex", "-v", "-g", "**/*.go", "--", "go", "build", "-o", "frontend/fe/Run.wasm", "./frontend")
+		})
+	},
+}
+
+func noError(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-func lsUnsigned() []string {
-	var unsigned []string
-	err := filepath.WalkDir(filepath.Join(cfg.SharedFolder, "builds/"), func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
-			return nil
-		}
+func fastcamera64(rule string) {
+	grm.Docker("camera-arm64")
+	copyCameraARM64("camera-arm64")
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/camera-arm64", "camera@dev01:camera")
+}
 
-		ext := filepath.Ext(path)
+func fastcamera(rule string) {
+	grm.Docker("camera-armhf")
+	copyCamera("camera-armhf")
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/camera-armhf", "pi@dev02:")
+}
 
-		switch ext {
-		case ".gz", ".deb":
-		// pass
-		default:
-			return nil
-		}
+func fasthead(rule string) {
+	grm.Run([]string{"GOOS=linux", "GOARCH=arm64"},
+		"go", "build", "-o", "bin/head-arm64", "./cmd/head",
+	)
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/head-arm64", "head@dev01-inet:head")
+}
 
-		if fileExists(path + ".minisig") {
-			return nil
-		}
+func fastboss(rule string) {
+	bossFrontend("boss/frontend")
+	grm.Run([]string{"GOOS=linux", "GOARCH=arm64"},
+		"go", "build", "-o", "bin/boss-arm64", "./cmd/boss",
+	)
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/boss-arm64", "base01:")
+}
 
-		unsigned = append(unsigned, path)
+func fastheadscli(rule string) {
+	grm.Run([]string{"GOOS=linux", "GOARCH=arm64"},
+		"go", "build", "-o", "bin/heads-cli-arm64", "./cmd/heads-cli",
+	)
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/heads-cli-arm64", "base01:")
+}
 
-		return nil
-	})
-	noError(err)
-
-	return unsigned
+func fastleds(rule string) {
+	grm.Docker("leds-armhf")
+	copyLeds("leds-armhf")
+	grm.Run(nil, "rsync", "-z", "--progress", "bin/leds-armhf", "pi@dev01:")
 }
 
 func copyCamera(rule string) {
@@ -260,7 +239,15 @@ func copyCamera(rule string) {
 		panic("not yet")
 	}
 
-	dockerCopy("armhf", "camera-armhf", "/build/bin/camera", "bin/camera-armhf")
+	grm.DockerCopy("armhf", "camera-armhf", "/build/bin/camera", "bin/camera-armhf")
+}
+
+func copyCameraARM64(rule string) {
+	if !strings.Contains(rule, "arm64") {
+		panic("not yet")
+	}
+
+	grm.DockerCopy("arm64", "camera-arm64", "/build/bin/camera", "bin/camera-arm64")
 }
 
 func copyLeds(rule string) {
@@ -268,28 +255,15 @@ func copyLeds(rule string) {
 		panic("not yet")
 	}
 
-	dockerCopy("armhf", "leds-armhf", "/build/bin/leds", "bin/leds-armhf")
+	grm.DockerCopy("armhf", "leds-armhf", "/build/bin/leds", "bin/leds-armhf")
 }
 
 func bossFrontend(rule string) {
-	run([]string{"GOOS=js", "GOARCH=wasm"},
+	grm.Run([]string{"GOOS=js", "GOARCH=wasm"},
 		"go", "build",
-		"-o", "./boss/frontend/fe/main.wasm",
+		"-o", "./boss/frontend/fe/Run.wasm",
 		"./boss/frontend",
 	)
-}
-
-func steps(steplist ...func(rule string)) func(string) {
-	return func(rule string) {
-		for _, step := range steplist {
-			step(rule)
-		}
-	}
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !errors.Is(err, os.ErrNotExist)
 }
 
 func init() {
@@ -321,4 +295,8 @@ func init() {
 			}
 		}
 	}
+}
+
+func main() {
+	grm.Main(rules)
 }

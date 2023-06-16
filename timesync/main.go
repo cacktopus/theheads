@@ -2,9 +2,9 @@ package timesync
 
 import (
 	"github.com/cacktopus/theheads/common/discovery"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/retry"
 	"github.com/cacktopus/theheads/common/standard_server"
+	gen "github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/timesync/cfg"
 	"github.com/cacktopus/theheads/timesync/rtc"
 	"github.com/cacktopus/theheads/timesync/rtc/ds3231"

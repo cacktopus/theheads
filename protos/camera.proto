@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package heads;
+
+import "common.proto";
+import "google/protobuf/duration.proto";
+
+message DetectFacesIn {
+  google.protobuf.Duration enable_for = 1;
+}
+
+message ListRecordingsIn {
+  string date = 1;
+}
+
+message File {
+  string filename = 1;
+  int64 size = 2;
+}
+
+message ListRecordingsOut {
+  repeated File files = 1;
+}
+
+message StreamFileIn {
+  string filename = 1;
+}
+
+message FileChunk {
+  bytes data = 1;
+  int64 offset = 2;
+}
+
+service camera {
+  rpc restart(Empty) returns (Empty);
+  rpc start_recording(Empty) returns (Empty);
+  rpc stop_recording(Empty) returns (Empty);
+  rpc detect_faces(DetectFacesIn) returns (Empty);
+}
+
+service recorder {
+  rpc list_recordings(ListRecordingsIn) returns (ListRecordingsOut);
+  rpc stream_file(StreamFileIn) returns (stream FileChunk);
+}

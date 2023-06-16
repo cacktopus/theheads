@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cacktopus/theheads/common/gen/go/heads"
+	heads2 "github.com/cacktopus/theheads/gen/go/heads"
 	"google.golang.org/grpc"
 	"strings"
 	"time"
@@ -15,8 +15,8 @@ const (
 )
 
 type clients struct {
-	head   heads.HeadClient
-	voices heads.VoicesClient
+	head   heads2.HeadClient
+	voices heads2.VoicesClient
 	camera *grpc.ClientConn
 }
 
@@ -40,8 +40,8 @@ func Run(host string) {
 
 	obj := &objects{
 		clients: clients{
-			head:   heads.NewHeadClient(headConn),
-			voices: heads.NewVoicesClient(headConn),
+			head:   heads2.NewHeadClient(headConn),
+			voices: heads2.NewVoicesClient(headConn),
 			camera: cameraConn,
 		},
 		host:      host,
@@ -67,7 +67,7 @@ func connect(url string) *grpc.ClientConn {
 func checkFindZero(ctx context.Context, obj *objects) {
 	fmt.Println("checking zero finding")
 
-	_, err := obj.clients.head.FindZero(ctx, &heads.Empty{})
+	_, err := obj.clients.head.FindZero(ctx, &heads2.Empty{})
 	handleErr(err)
 
 	fmt.Scanln()
@@ -76,7 +76,7 @@ func checkFindZero(ctx context.Context, obj *objects) {
 func checkStepper(ctx context.Context, obj *objects) {
 	fmt.Println("checking stepper")
 
-	status, err := obj.clients.head.Status(ctx, &heads.Empty{})
+	status, err := obj.clients.head.Status(ctx, &heads2.Empty{})
 	handleErr(err)
 
 	marshal, err := json.Marshal(status)
@@ -84,12 +84,12 @@ func checkStepper(ctx context.Context, obj *objects) {
 
 	fmt.Println(string(marshal))
 
-	_, err = obj.clients.head.SetActor(ctx, &heads.SetActorIn{
+	_, err = obj.clients.head.SetActor(ctx, &heads2.SetActorIn{
 		Actor: "Seeker",
 	})
 	handleErr(err)
 
-	_, err = obj.clients.head.SetTarget(ctx, &heads.SetTargetIn{
+	_, err = obj.clients.head.SetTarget(ctx, &heads2.SetTargetIn{
 		Theta: 180 + status.Rotation,
 	})
 	handleErr(err)
@@ -98,14 +98,14 @@ func checkStepper(ctx context.Context, obj *objects) {
 }
 
 func checkSound(ctx context.Context, obj *objects) {
-	_, err := obj.clients.voices.SetVolume(ctx, &heads.SetVolumeIn{VolDb: -30})
+	_, err := obj.clients.voices.SetVolume(ctx, &heads2.SetVolumeIn{VolDb: -30})
 	handleErr(err)
 
 	fmt.Println("playing sound")
-	_, err = obj.clients.voices.Random(ctx, &heads.Empty{})
+	_, err = obj.clients.voices.Random(ctx, &heads2.Empty{})
 	handleErr(err)
 
-	_, err = obj.clients.voices.SetVolume(ctx, &heads.SetVolumeIn{VolDb: -100})
+	_, err = obj.clients.voices.SetVolume(ctx, &heads2.SetVolumeIn{VolDb: -100})
 	handleErr(err)
 
 	fmt.Println("did you head a sound?")
@@ -114,7 +114,7 @@ func checkSound(ctx context.Context, obj *objects) {
 }
 
 func checkCamera(ctx context.Context, obj *objects) {
-	events, err := heads.NewEventsClient(obj.clients.camera).Stream(ctx, &heads.Empty{})
+	events, err := heads2.NewEventsClient(obj.clients.camera).Stream(ctx, &heads2.Empty{})
 	handleErr(err)
 
 	go func() {
@@ -167,7 +167,7 @@ func checkHallEffectSensor(ctx context.Context, obj *objects) {
 			func() {
 				ctx, cancel := context.WithTimeout(ctx, time.Second)
 				defer cancel()
-				result, err := obj.clients.head.ReadHallEffectSensor(ctx, &heads.Empty{})
+				result, err := obj.clients.head.ReadHallEffectSensor(ctx, &heads2.Empty{})
 				if err != nil {
 					handleErr(err)
 				}

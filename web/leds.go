@@ -49,7 +49,7 @@ func turnOffLeds(logger *zap.Logger, errCh chan error) {
 	case "armv6l":
 		name := "led0"
 		writefile(logger, fmt.Sprintf("/sys/class/leds/%s/trigger", name), "none")
-		writefile(logger, fmt.Sprintf("/sys/class/leds/%s/brightness", name), "1")
+		writefile(logger, fmt.Sprintf("/sys/class/leds/%s/brightness", name), "0")
 	default:
 		logger.Warn("unknown platform", zap.String("platform", platform))
 	}

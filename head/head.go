@@ -2,10 +2,10 @@ package head
 
 import (
 	"github.com/cacktopus/theheads/common/broker"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
 	"github.com/cacktopus/theheads/common/schema"
 	"github.com/cacktopus/theheads/common/standard_server"
 	"github.com/cacktopus/theheads/common/util"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/cacktopus/theheads/head/cfg"
 	headgrpc "github.com/cacktopus/theheads/head/grpc"
 	"github.com/cacktopus/theheads/head/log_limiter"
@@ -18,6 +18,9 @@ import (
 	"github.com/cacktopus/theheads/head/sensor/magnetometer"
 	"github.com/cacktopus/theheads/head/sensor/null_sensor"
 	"github.com/cacktopus/theheads/head/voices"
+	"github.com/gin-gonic/gin"
+	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -89,7 +92,12 @@ func Run(env *cfg.Cfg) {
 		sensor = s
 	}
 
-	mm, err := magnetometer.Setup(logger, env.EnableMagnetSensor, env.MagnetSensorAddrs)
+	mm, err := magnetometer.Setup(
+		logger,
+		env.I2CBus,
+		env.EnableMagnetSensor,
+		env.MagnetSensorAddrs,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -107,6 +115,8 @@ func Run(env *cfg.Cfg) {
 
 	go publishLoop(b, env, controller)
 
+	svgs := cmap.New[[]byte]()
+
 	h := headgrpc.NewHandler(
 		controller,
 		log_limiter.NewLimiter(250*time.Millisecond),
@@ -114,16 +124,28 @@ func Run(env *cfg.Cfg) {
 		sensor,
 		mm,
 		&env.Motor,
+		svgs,
 	)
 
 	s, err := standard_server.NewServer(&standard_server.Config{
 		Logger: logger,
 		Port:   env.Port,
 		GrpcSetup: func(grpcServer *grpc.Server) error {
-			gen.RegisterHeadServer(grpcServer, h)
-			gen.RegisterVoicesServer(grpcServer, voices.NewServer(&env.Voices, logger))
-			gen.RegisterEventsServer(grpcServer, h)
-			gen.RegisterPingServer(grpcServer, h)
+			heads.RegisterHeadServer(grpcServer, h)
+			heads.RegisterVoicesServer(grpcServer, voices.NewServer(&env.Voices, logger))
+			heads.RegisterEventsServer(grpcServer, h)
+			heads.RegisterPingServer(grpcServer, h)
+			return nil
+		},
+		HttpSetup: func(router *gin.Engine) error {
+			router.GET("/plots/:name", func(c *gin.Context) {
+				svg, ok := svgs.Get(c.Param("name")) // TODO:
+				if !ok {
+					_ = c.AbortWithError(404, errors.New("svg not found"))
+					return
+				}
+				c.Data(200, "image/svg+xml", svg)
+			})
 			return nil
 		},
 	})

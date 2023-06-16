@@ -3,7 +3,7 @@ package leds
 import (
 	"context"
 	"encoding/json"
-	gen "github.com/cacktopus/theheads/common/gen/go/heads"
+	"github.com/cacktopus/theheads/gen/go/heads"
 	"github.com/pkg/errors"
 )
 
@@ -11,16 +11,16 @@ type Handler struct {
 	app *App
 }
 
-func (h *Handler) Ping(ctx context.Context, empty *gen.Empty) (*gen.Empty, error) {
-	return &gen.Empty{}, nil
+func (h *Handler) Ping(ctx context.Context, empty *heads.Empty) (*heads.Empty, error) {
+	return &heads.Empty{}, nil
 }
 
-func (h *Handler) SetScale(ctx context.Context, in *gen.SetScaleIn) (*gen.Empty, error) {
+func (h *Handler) SetScale(ctx context.Context, in *heads.SetScaleIn) (*heads.Empty, error) {
 	h.app.strip.SetScale(in.Scale)
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }
 
-func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
+func (h *Handler) Events(empty *heads.Empty, server heads.Leds_EventsServer) error {
 	messages := h.app.broker.Subscribe()
 	defer h.app.broker.Unsubscribe(messages)
 
@@ -30,7 +30,7 @@ func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
 			return errors.Wrap(err, "marshal json")
 		}
 
-		err = server.Send(&gen.Event{
+		err = server.Send(&heads.Event{
 			Type: m.Name(),
 			Data: string(data),
 		})
@@ -43,7 +43,7 @@ func (h *Handler) Events(empty *gen.Empty, server gen.Leds_EventsServer) error {
 	return nil
 }
 
-func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
+func (h *Handler) Run(ctx context.Context, in *heads.RunIn) (*heads.Empty, error) {
 	_, ok := h.app.animations[in.Name]
 	if !ok {
 		return nil, errors.New("unknown animation")
@@ -53,5 +53,5 @@ func (h *Handler) Run(ctx context.Context, in *gen.RunIn) (*gen.Empty, error) {
 		name:         in.Name,
 		newStartTime: in.NewStartTime.AsTime(),
 	}
-	return &gen.Empty{}, nil
+	return &heads.Empty{}, nil
 }

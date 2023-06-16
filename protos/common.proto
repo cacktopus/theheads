@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package heads;
+
+message Empty {
+}
+
+message Event {
+  // TODO: fully model in protobuf (not embedded json)
+  string type = 1;
+  string data = 2;
+}

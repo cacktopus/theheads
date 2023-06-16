@@ -11,6 +11,8 @@ type Cfg struct {
 	FakeStepper bool `envconfig:"optional"`
 	SensorPin   int  `envconfig:"default=21"`
 
+	I2CBus string `envconfig:"default=1"`
+
 	EnableMagnetSensor bool     `envconfig:"default=true"`
 	MagnetSensorAddrs  []string `envconfig:"default=1f;5e"` // note semicolon to separate default values
 

@@ -1,6 +1,8 @@
 package zero_detector
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/cacktopus/theheads/common/metrics"
 	"github.com/cacktopus/theheads/head/motor"
 	"github.com/cacktopus/theheads/head/sensor/magnetometer"
@@ -8,6 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 	"math"
 	"math/rand"
 	"sync"
@@ -28,6 +34,7 @@ type ZeroDetector struct {
 	stepped               *atomic.Int32
 	getSteps              func() int
 	gStepDelta            prometheus.Gauge
+	svgCallback           func(string, []byte)
 }
 
 type result struct {
@@ -41,6 +48,7 @@ func NewZeroDetector(
 	numSteps int,
 	directionChangePauses int,
 	getSteps func() int,
+	svgCallback func(string, []byte),
 ) *ZeroDetector {
 	var findDirection motor.Direction
 	if rand.Float64() < 0.50 {
@@ -68,6 +76,7 @@ func NewZeroDetector(
 		predicted:             atomic.NewInt32(0),
 		stepped:               atomic.NewInt32(0),
 		gStepDelta:            gStepDelta,
+		svgCallback:           svgCallback,
 	}
 
 	return d
@@ -120,6 +129,7 @@ func (d *ZeroDetector) getStep() (motor.Direction, bool) {
 }
 
 func (d *ZeroDetector) find(
+	name string,
 	steps int,
 	findDirection motor.Direction,
 	pause bool,
@@ -127,6 +137,8 @@ func (d *ZeroDetector) find(
 	var values []float64
 
 	d.pause()
+
+	points := make([]*magnetometer.Reading, steps)
 
 	for i := 0; i < steps; i++ {
 		if pause {
@@ -137,17 +149,21 @@ func (d *ZeroDetector) find(
 		if err != nil {
 			return 0, errors.Wrap(err, "read sensor")
 		}
+		points[i] = read
 
-		values = append(values, read.B)
+		val := math.Abs(read.Bz) - math.Abs(read.By)
+		values = append(values, val)
 
 		d.ch <- result{direction: findDirection}
 	}
+
+	go d.plot(name, points)
 
 	_, idx := maxIdx(values)
 	return idx * int(findDirection), nil
 }
 
-func (d *ZeroDetector) seek(numSteps int) {
+func (d *ZeroDetector) seek(name string, numSteps int) error {
 	target := Mod(numSteps, d.numSteps)
 
 	direction := motor.Forward
@@ -160,11 +176,21 @@ func (d *ZeroDetector) seek(numSteps int) {
 
 	d.pause()
 
+	points := make([]*magnetometer.Reading, target)
 	for i := 0; i < target; i++ {
+		read, err := d.sensor.Read()
+		if err != nil {
+			return errors.Wrap(err, "read sensor")
+		}
+		points[i] = read
 		d.ch <- result{direction: direction}
 	}
 
+	go d.plot(name, points)
+
 	d.pause()
+
+	return nil
 }
 
 func (d *ZeroDetector) done() {
@@ -173,7 +199,7 @@ func (d *ZeroDetector) done() {
 }
 
 func (d *ZeroDetector) controller() {
-	const NumSlowSteps = 5
+	const NumSlowSteps = 50
 	const stepsBack = NumSlowSteps / 2
 
 	d.pause()
@@ -184,28 +210,44 @@ func (d *ZeroDetector) controller() {
 
 	// 1. fast, coarse-grained find
 	{
-		idx, err := d.find(d.numSteps, d.findDirection, false)
+		idx, err := d.find("coarse.svg", d.numSteps*2, d.findDirection, false)
+		idx = Mod(idx, d.numSteps)
 		if err != nil {
-			d.logger.Error("error reading sensor", zap.Error(err))
+			d.logger.Error("find error", zap.Error(err))
 			d.done()
 			return
 		}
 
-		d.seek(idx - stepsBack)
+		if err := d.seek("seek1.svg", idx-stepsBack); err != nil {
+			d.logger.Error("seek error", zap.Error(err))
+			d.done()
+			return
+		}
 	}
 
 	// 2. slow, fine-grained find
 	{
 		// with e.g. NumSlowSteps=5, we want to check positions -2, -1, 0, 1, 2 where 0 is the
 		// position obtained in the fast, coarse-grained scan
-		idx, err := d.find(NumSlowSteps, motor.Forward, true)
+		idx, err := d.find("fine.svg", NumSlowSteps, motor.Forward, true)
 		if err != nil {
-			d.logger.Error("error reading sensor", zap.Error(err))
+			d.logger.Error("find error", zap.Error(err))
+			d.done()
+			return
+		}
+		d.logger.Info("fine seek", zap.Int("idx", idx))
+
+		if err := d.seek("seek2.svg", -NumSlowSteps); err != nil {
+			d.logger.Error("seek error", zap.Error(err))
 			d.done()
 			return
 		}
 
-		d.seek(idx - NumSlowSteps)
+		if err := d.seek("seek3.svg", idx); err != nil {
+			d.logger.Error("seek error", zap.Error(err))
+			d.done()
+			return
+		}
 	}
 
 	d.done()
@@ -215,6 +257,59 @@ func (d *ZeroDetector) pause() {
 	for i := 0; i < d.directionChangePauses+1; i++ {
 		d.ch <- result{direction: motor.NoStep}
 	}
+}
+
+func (d *ZeroDetector) plot(
+	name string,
+	points []*magnetometer.Reading,
+) {
+	p := plot.New()
+
+	p.Title.Text = fmt.Sprintf("Magnet Sensor (%s)", name)
+	p.X.Label.Text = "idx"
+	p.Y.Label.Text = "B"
+
+	var ptsX, ptsY, ptsZ, ptsVal plotter.XYs
+
+	for i, pt := range points {
+		ptsX = append(ptsX, plotter.XY{
+			X: float64(i),
+			Y: pt.Bx,
+		})
+
+		ptsY = append(ptsY, plotter.XY{
+			X: float64(i),
+			Y: pt.By,
+		})
+
+		ptsZ = append(ptsZ, plotter.XY{
+			X: float64(i),
+			Y: pt.Bz,
+		})
+
+		ptsVal = append(ptsVal, plotter.XY{
+			X: float64(i),
+			Y: math.Abs(pt.Bz) - math.Abs(pt.By),
+		})
+	}
+
+	if err := plotutil.AddLinePoints(p,
+		"x", ptsX, "y", ptsY, "z", ptsZ, "val", ptsVal,
+	); err != nil {
+		d.logger.Error("plot error", zap.Error(errors.Wrap(err, "add line points")))
+		return
+	}
+
+	length := vg.Length(len(points)) / 20.0 * vg.Inch
+	w, err := p.WriterTo(length, 4*vg.Inch, "svg")
+	buf := bytes.NewBuffer(nil)
+	_, err = w.WriteTo(buf)
+	if err != nil {
+		d.logger.Error("plot error", zap.Error(errors.Wrap(err, "write to")))
+		return
+	}
+
+	d.svgCallback(name, buf.Bytes())
 }
 
 func maxIdx(values []float64) (float64, int) {
